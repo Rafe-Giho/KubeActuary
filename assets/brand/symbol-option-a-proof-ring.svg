@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">KubeActuary symbol option A - proof ring</title>
+  <desc id="desc">A cloud-native operation ring with a shield, check mark, and small risk ticks.</desc>
+  <rect width="512" height="512" rx="112" fill="#07111F"/>
+  <circle cx="256" cy="256" r="154" stroke="#326CE5" stroke-width="28"/>
+  <path d="M256 110V70M256 442V402M402 256H442M70 256H110M359 153L388 124M124 388L153 359M153 153L124 124M388 388L359 359" stroke="#7DD3FC" stroke-width="18" stroke-linecap="round"/>
+  <path d="M256 163L341 197V257C341 319 306 365 256 383C206 365 171 319 171 257V197L256 163Z" fill="#0F766E" stroke="#D1FAE5" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M214 265L244 295L304 225" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

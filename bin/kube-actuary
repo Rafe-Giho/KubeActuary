@@ -1,0 +1,732 @@
+#!/usr/bin/env python3
+"""KubeActuary CLI: draft and verify Kubernetes operation capsules."""
+
+from __future__ import annotations
+
+import argparse
+import getpass
+import hashlib
+import json
+import os
+import shlex
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+VERSION = "0.1.0"
+
+READ_VERBS = {
+    "api-resources",
+    "api-versions",
+    "auth",
+    "cluster-info",
+    "describe",
+    "diff",
+    "explain",
+    "get",
+    "logs",
+    "top",
+    "version",
+    "wait",
+}
+
+WRITE_VERBS = {
+    "annotate",
+    "apply",
+    "autoscale",
+    "cordon",
+    "create",
+    "delete",
+    "drain",
+    "edit",
+    "expose",
+    "label",
+    "patch",
+    "replace",
+    "rollout",
+    "scale",
+    "set",
+    "taint",
+    "uncordon",
+}
+
+INTERACTIVE_VERBS = {"attach", "cp", "debug", "exec", "port-forward", "proxy"}
+
+CLUSTER_SCOPED_RESOURCES = {
+    "clusterrole",
+    "clusterroles",
+    "clusterrolebinding",
+    "clusterrolebindings",
+    "crd",
+    "crds",
+    "customresourcedefinition",
+    "customresourcedefinitions",
+    "namespace",
+    "namespaces",
+    "node",
+    "nodes",
+    "persistentvolume",
+    "persistentvolumes",
+    "pv",
+}
+
+SENSITIVE_NAMESPACES = {"prod", "production", "kube-system", "kube-public", "kube-node-lease"}
+
+
+def dns_label(value: str) -> str:
+    cleaned = []
+    previous_dash = False
+    for char in value.lower():
+        if char.isalnum():
+            cleaned.append(char)
+            previous_dash = False
+        elif not previous_dash:
+            cleaned.append("-")
+            previous_dash = True
+    label = "".join(cleaned).strip("-")
+    return (label or "operation-capsule")[:63].strip("-") or "operation-capsule"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def capsule_id(seed: str) -> str:
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
+    return f"opcap-{digest}"
+
+
+def strip_kubectl(tokens: list[str]) -> list[str]:
+    if tokens and Path(tokens[0]).name in {"kubectl", "k"}:
+        return tokens[1:]
+    return tokens
+
+
+def flag_value(tokens: list[str], short_name: str, long_name: str) -> str | None:
+    for i, token in enumerate(tokens):
+        if token == short_name or token == long_name:
+            if i + 1 < len(tokens):
+                return tokens[i + 1]
+        if token.startswith(f"{long_name}="):
+            return token.split("=", 1)[1]
+    return None
+
+
+def has_flag(tokens: list[str], *names: str) -> bool:
+    return any(token in names or any(token.startswith(f"{name}=") for name in names) for token in tokens)
+
+
+def first_positional_after_verb(tokens: list[str], start: int) -> list[str]:
+    values: list[str] = []
+    skip_next = False
+    for token in tokens[start:]:
+        if skip_next:
+            skip_next = False
+            continue
+        if token in {"-n", "--namespace", "-o", "--output", "-f", "--filename", "--context"}:
+            skip_next = True
+            continue
+        if token.startswith("-"):
+            continue
+        values.append(token)
+        if len(values) == 2:
+            break
+    return values
+
+
+def parse_command(command: str | None, namespace_override: str | None) -> dict[str, Any]:
+    if not command:
+        return {
+            "raw": None,
+            "verb": "manifest",
+            "resource": None,
+            "name": None,
+            "namespace": namespace_override,
+            "scope": "unknown",
+            "modifiesCluster": True,
+        }
+
+    try:
+        tokens = shlex.split(command)
+    except ValueError as exc:
+        raise SystemExit(f"invalid command: {exc}") from exc
+
+    args = strip_kubectl(tokens)
+    verb = args[0] if args else "unknown"
+    namespace = namespace_override or flag_value(args, "-n", "--namespace")
+    all_namespaces = has_flag(args, "-A", "--all-namespaces")
+    all_selected = has_flag(args, "--all")
+    positionals = first_positional_after_verb(args, 1)
+    resource = positionals[0] if positionals else None
+    name = positionals[1] if len(positionals) > 1 else None
+    normalized_resource = (resource or "").split("/", 1)[0].lower()
+    scope = "cluster" if all_namespaces or normalized_resource in CLUSTER_SCOPED_RESOURCES else "namespace"
+    modifies = verb in WRITE_VERBS or verb in INTERACTIVE_VERBS
+
+    return {
+        "raw": command,
+        "tokens": tokens,
+        "verb": verb,
+        "resource": resource,
+        "name": name,
+        "namespace": namespace,
+        "allNamespaces": all_namespaces,
+        "allSelected": all_selected,
+        "scope": scope,
+        "modifiesCluster": modifies,
+    }
+
+
+def classify_risk(target: dict[str, Any]) -> dict[str, Any]:
+    verb = target["verb"]
+    resource = (target.get("resource") or "").split("/", 1)[0].lower()
+    namespace = (target.get("namespace") or "").lower()
+    reasons: list[str] = []
+
+    level = "low"
+    if target["modifiesCluster"]:
+        level = "medium"
+        reasons.append("cluster state may be modified")
+    if verb in INTERACTIVE_VERBS:
+        level = "high"
+        reasons.append("interactive or tunnel-like access can bypass normal review")
+    if target.get("scope") == "cluster":
+        level = max_risk(level, "high")
+        reasons.append("target appears cluster-scoped")
+    if namespace in SENSITIVE_NAMESPACES:
+        level = max_risk(level, "high")
+        reasons.append(f"namespace {namespace!r} is sensitive")
+    if target.get("allNamespaces") or target.get("allSelected"):
+        level = "critical"
+        reasons.append("selector can affect many resources")
+    if verb == "delete":
+        level = max_risk(level, "high")
+        reasons.append("delete can remove live state")
+    if verb == "delete" and resource in CLUSTER_SCOPED_RESOURCES:
+        level = "critical"
+        reasons.append("delete targets cluster-scoped infrastructure")
+    if verb in READ_VERBS and not reasons:
+        reasons.append("read-only command")
+
+    return {"level": level, "reasons": reasons}
+
+
+def max_risk(a: str, b: str) -> str:
+    order = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+    return a if order[a] >= order[b] else b
+
+
+def required_evidence(risk: str, target: dict[str, Any]) -> list[dict[str, str]]:
+    evidence = [
+        {"id": "intent", "description": "human-readable intent is present"},
+        {"id": "parsed-target", "description": "command or manifest target was parsed"},
+    ]
+
+    if not target["modifiesCluster"]:
+        evidence.append({"id": "read-auth", "description": "kubectl auth can-i proves read permission"})
+        return evidence
+
+    verb = target["verb"]
+    resource = target.get("resource") or "resource"
+    evidence.extend(
+        [
+            {
+                "id": "write-auth",
+                "description": f"kubectl auth can-i {verb} {resource} passes for the target scope",
+            },
+            {"id": "server-dry-run", "description": "server-side dry-run succeeds"},
+            {"id": "diff", "description": "diff is attached or explicitly unavailable"},
+            {"id": "rollback", "description": "rollback command or manifest is attached"},
+            {"id": "post-checks", "description": "post-change health checks are declared"},
+        ]
+    )
+
+    if risk in {"high", "critical"}:
+        evidence.extend(
+            [
+                {"id": "blast-radius", "description": "affected namespaces/resources are enumerated"},
+                {"id": "owner-approval", "description": "service or platform owner approval is attached"},
+            ]
+        )
+    if risk == "critical":
+        evidence.extend(
+            [
+                {"id": "second-approval", "description": "independent second approval is attached"},
+                {"id": "maintenance-window", "description": "approved execution window is attached"},
+            ]
+        )
+    return evidence
+
+
+def make_capsule(args: argparse.Namespace) -> dict[str, Any]:
+    target = parse_command(args.command, args.namespace)
+    risk = classify_risk(target)
+    now = utc_now()
+    seed = "|".join([now, args.intent, args.command or args.manifest or "", args.actor])
+    evidence = required_evidence(risk["level"], target)
+
+    return {
+        "apiVersion": "kubeactuary.dev/v0alpha1",
+        "kind": "OperationCapsule",
+        "metadata": {
+            "id": capsule_id(seed),
+            "createdAt": now,
+        },
+        "spec": {
+            "intent": args.intent,
+            "actor": args.actor,
+            "kubeContext": args.context,
+            "proposedCommand": args.command,
+            "manifestPath": args.manifest,
+            "target": target,
+            "risk": risk,
+            "requiredEvidence": evidence,
+            "rollback": {
+                "required": target["modifiesCluster"],
+                "provided": False,
+                "notes": "Attach rollback evidence before execution.",
+            },
+            "postChecks": default_post_checks(target),
+        },
+        "status": {
+            "state": "drafted",
+            "evidence": {},
+            "observations": [],
+        },
+    }
+
+
+def default_post_checks(target: dict[str, Any]) -> list[str]:
+    if not target["modifiesCluster"]:
+        return ["capture command output"]
+    checks = ["affected resources become Ready or Healthy", "no new warning events for affected resources"]
+    if target["verb"] in {"scale", "rollout", "set", "apply", "patch"}:
+        checks.append("rollout status succeeds")
+    return checks
+
+
+def write_json(document: dict[str, Any], output: str) -> None:
+    data = json.dumps(document, indent=2, sort_keys=True) + "\n"
+    if output == "-":
+        print(data, end="")
+        return
+    Path(output).write_text(data)
+
+
+def write_text(data: str, output: str) -> None:
+    if output == "-":
+        print(data, end="" if data.endswith("\n") else "\n")
+        return
+    Path(output).write_text(data if data.endswith("\n") else data + "\n")
+
+
+def load_capsule(path: str) -> dict[str, Any]:
+    try:
+        return json.loads(Path(path).read_text())
+    except FileNotFoundError as exc:
+        raise SystemExit(f"file not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid JSON in {path}: {exc}") from exc
+
+
+def evidence_gaps(capsule: dict[str, Any]) -> tuple[list[str], list[str]]:
+    required = [item["id"] for item in capsule.get("spec", {}).get("requiredEvidence", [])]
+    attached = capsule.get("status", {}).get("evidence", {})
+    missing = [item for item in required if item not in attached]
+    failed = [item for item in required if attached.get(item, {}).get("ok") is False]
+    return missing, failed
+
+
+def update_state_from_evidence(capsule: dict[str, Any]) -> None:
+    missing, failed = evidence_gaps(capsule)
+    status = capsule.setdefault("status", {})
+    if failed:
+        status["state"] = "blocked"
+    elif missing:
+        status["state"] = "evidence-attached"
+    else:
+        status["state"] = "verified"
+
+
+def sha256_file(path: str) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def attach_evidence_record(
+    capsule: dict[str, Any],
+    evidence_id: str,
+    evidence: dict[str, Any],
+    allow_extra: bool = False,
+) -> None:
+    required_ids = {item["id"] for item in capsule.get("spec", {}).get("requiredEvidence", [])}
+    if evidence_id not in required_ids and not allow_extra:
+        raise SystemExit(f"unknown evidence id: {evidence_id}")
+
+    status = capsule.setdefault("status", {})
+    status.setdefault("evidence", {})[evidence_id] = evidence
+    status.setdefault("observations", []).append(
+        {
+            "at": evidence["attachedAt"],
+            "actor": evidence["actor"],
+            "message": f"attached evidence {evidence_id}",
+        }
+    )
+    update_state_from_evidence(capsule)
+
+
+def write_capsule_result(capsule: dict[str, Any], file_path: str, output: str, in_place: bool) -> None:
+    write_json(capsule, file_path if in_place else output)
+
+
+def yaml_scalar(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    return json.dumps(str(value), ensure_ascii=False)
+
+
+def yaml_dump(value: Any, indent: int = 0) -> list[str]:
+    prefix = " " * indent
+    lines: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, (dict, list)):
+                lines.append(f"{prefix}{key}:")
+                lines.extend(yaml_dump(item, indent + 2))
+            else:
+                lines.append(f"{prefix}{key}: {yaml_scalar(item)}")
+    elif isinstance(value, list):
+        if not value:
+            lines.append(f"{prefix}[]")
+        for item in value:
+            if isinstance(item, dict):
+                lines.append(f"{prefix}-")
+                lines.extend(yaml_dump(item, indent + 2))
+            elif isinstance(item, list):
+                lines.append(f"{prefix}-")
+                lines.extend(yaml_dump(item, indent + 2))
+            else:
+                lines.append(f"{prefix}- {yaml_scalar(item)}")
+    else:
+        lines.append(f"{prefix}{yaml_scalar(value)}")
+    return lines
+
+
+def capsule_to_crd(capsule: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+    metadata = capsule.get("metadata", {})
+    spec = capsule.get("spec", {})
+    target = spec.get("target", {})
+    risk = spec.get("risk", {})
+    evidence = capsule.get("status", {}).get("evidence", {})
+    name = args.name or dns_label(metadata.get("id", "operation-capsule"))
+    namespace = args.namespace or target.get("namespace") or "default"
+
+    actor_name = spec.get("actor") or "unknown"
+    proposed_action = {
+        "verb": target.get("verb") or "unknown",
+    }
+    if spec.get("proposedCommand"):
+        proposed_action["command"] = spec["proposedCommand"]
+    if target.get("resource"):
+        proposed_action["resource"] = target["resource"]
+    if target.get("name"):
+        proposed_action["name"] = target["name"]
+    if target.get("namespace"):
+        proposed_action["namespace"] = target["namespace"]
+    if spec.get("manifestPath"):
+        proposed_action["manifestRef"] = spec["manifestPath"]
+
+    crd_spec: dict[str, Any] = {
+        "intent": spec.get("intent", ""),
+        "actor": {
+            "type": args.actor_type,
+            "name": actor_name,
+        },
+        "proposedAction": proposed_action,
+        "risk": {
+            "level": risk.get("level", "medium"),
+            "reasons": risk.get("reasons", []),
+        },
+        "requiredEvidence": [item.get("id") for item in spec.get("requiredEvidence", []) if item.get("id")],
+    }
+
+    if evidence:
+        crd_spec["evidence"] = [
+            {
+                "id": evidence_id,
+                "ok": bool(record.get("ok")),
+                "summary": record.get("summary", ""),
+                "actor": record.get("actor", ""),
+                "attachedAt": record.get("attachedAt", ""),
+                **({"sourceRef": record["source"]} if record.get("source") else {}),
+                **({"sourceSha256": record["sourceSha256"]} if record.get("sourceSha256") else {}),
+            }
+            for evidence_id, record in sorted(evidence.items())
+        ]
+
+    rollback = spec.get("rollback", {})
+    crd_spec["rollback"] = {
+        "required": bool(rollback.get("required")),
+    }
+    if args.rollback_command:
+        crd_spec["rollback"]["command"] = args.rollback_command
+    if args.ttl_seconds_after_finished is not None:
+        crd_spec["ttlSecondsAfterFinished"] = args.ttl_seconds_after_finished
+
+    return {
+        "apiVersion": "ops.kubeactuary.dev/v1alpha1",
+        "kind": "OperationCapsule",
+        "metadata": {
+            "name": name,
+            "namespace": namespace,
+            "labels": {
+                "kubeactuary.dev/source": "local-capsule",
+            },
+            "annotations": {
+                "kubeactuary.dev/capsule-id": metadata.get("id", ""),
+            },
+        },
+        "spec": crd_spec,
+    }
+
+
+def inspect_capsule(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    spec = capsule.get("spec", {})
+    target = spec.get("target", {})
+    risk = spec.get("risk", {})
+    attached = capsule.get("status", {}).get("evidence", {})
+    print(f"id: {capsule.get('metadata', {}).get('id', 'unknown')}")
+    print(f"state: {capsule.get('status', {}).get('state', 'unknown')}")
+    print(f"intent: {spec.get('intent', '')}")
+    print(f"actor: {spec.get('actor', '')}")
+    print(f"command: {spec.get('proposedCommand') or spec.get('manifestPath') or '-'}")
+    print(
+        "target: "
+        f"verb={target.get('verb')} resource={target.get('resource')} "
+        f"name={target.get('name')} namespace={target.get('namespace')} scope={target.get('scope')}"
+    )
+    print(f"risk: {risk.get('level', 'unknown')}")
+    for reason in risk.get("reasons", []):
+        print(f"risk-reason: {reason}")
+    print("required-evidence:")
+    for item in spec.get("requiredEvidence", []):
+        evidence_id = item.get("id")
+        state = "attached" if evidence_id in attached else "missing"
+        if attached.get(evidence_id, {}).get("ok") is False:
+            state = "failed"
+        print(f"- {evidence_id} [{state}]: {item.get('description')}")
+    return 0
+
+
+def verify_capsule(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    missing, failed = evidence_gaps(capsule)
+
+    if missing or failed:
+        print("verification: failed")
+        for item in missing:
+            print(f"missing-evidence: {item}")
+        for item in failed:
+            print(f"failed-evidence: {item}")
+        return 1
+
+    print("verification: passed")
+    return 0
+
+
+def attach_evidence(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    evidence = {
+        "ok": not args.fail,
+        "summary": args.summary,
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+    }
+    if args.source:
+        evidence["source"] = args.source
+        evidence["sourceSha256"] = sha256_file(args.source)
+
+    attach_evidence_record(capsule, args.id, evidence, args.allow_extra)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def collect_auth(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    spec = capsule.get("spec", {})
+    target = spec.get("target", {})
+    resource = target.get("resource") or "resource"
+    verb = target.get("verb") or "get"
+    evidence_id = "write-auth" if target.get("modifiesCluster") else "read-auth"
+    command = [args.kubectl, "auth", "can-i", verb, resource]
+
+    context = spec.get("kubeContext")
+    namespace = target.get("namespace")
+    if context:
+        command.extend(["--context", context])
+    if namespace and target.get("scope") != "cluster":
+        command.extend(["-n", namespace])
+
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+    ok = result.returncode == 0 and stdout.lower().splitlines()[:1] == ["yes"]
+    summary = f"{' '.join(shlex.quote(part) for part in command)} returned {result.returncode}"
+    if stdout:
+        summary += f" with stdout: {stdout.splitlines()[0]}"
+
+    evidence = {
+        "ok": ok,
+        "summary": summary,
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+        "collector": "kubectl-auth-can-i",
+        "command": command,
+        "exitCode": result.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+    }
+
+    attach_evidence_record(capsule, evidence_id, evidence)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def render_crd(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    document = capsule_to_crd(capsule, args)
+    write_text("\n".join(yaml_dump(document)), args.out)
+    return 0
+
+
+def gate(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    missing, failed = evidence_gaps(capsule)
+    risk = capsule.get("spec", {}).get("risk", {}).get("level", "unknown")
+    command = capsule.get("spec", {}).get("proposedCommand") or capsule.get("spec", {}).get("manifestPath") or "-"
+    capsule_id_value = capsule.get("metadata", {}).get("id", "unknown")
+
+    if missing or failed:
+        print("gate: closed")
+        print(f"id: {capsule_id_value}")
+        print(f"risk: {risk}")
+        for item in missing:
+            print(f"reason: missing evidence {item}")
+        for item in failed:
+            print(f"reason: failed evidence {item}")
+        return 1
+
+    print("gate: open")
+    print(f"id: {capsule_id_value}")
+    print(f"risk: {risk}")
+    print(f"command: {command}")
+    return 0
+
+
+def draft(args: argparse.Namespace) -> int:
+    if not args.command and not args.manifest:
+        raise SystemExit("draft requires --command or --manifest")
+    capsule = make_capsule(args)
+    write_json(capsule, args.out)
+    return 0
+
+
+def demo(args: argparse.Namespace) -> int:
+    demo_args = argparse.Namespace(
+        intent="increase API capacity for checkout traffic",
+        command="kubectl scale deployment checkout-api --replicas=6 -n prod",
+        manifest=None,
+        actor=args.actor,
+        context=None,
+        namespace=None,
+        out="-",
+    )
+    return draft(demo_args)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Draft and verify Kubernetes operation capsules.")
+    parser.add_argument("--version", action="version", version=f"kube-actuary {VERSION}")
+    sub = parser.add_subparsers(dest="command_name", required=True)
+
+    draft_parser = sub.add_parser("draft", help="create an operation capsule draft")
+    draft_parser.add_argument("--intent", required=True)
+    draft_parser.add_argument("--command")
+    draft_parser.add_argument("--manifest")
+    draft_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    draft_parser.add_argument("--context")
+    draft_parser.add_argument("--namespace")
+    draft_parser.add_argument("--out", default="-")
+    draft_parser.set_defaults(func=draft)
+
+    inspect_parser = sub.add_parser("inspect", help="print a capsule summary")
+    inspect_parser.add_argument("file")
+    inspect_parser.set_defaults(func=inspect_capsule)
+
+    verify_parser = sub.add_parser("verify", help="check that required evidence is attached")
+    verify_parser.add_argument("file")
+    verify_parser.set_defaults(func=verify_capsule)
+
+    attach_parser = sub.add_parser("attach-evidence", help="attach evidence to a capsule")
+    attach_parser.add_argument("file")
+    attach_parser.add_argument("--id", required=True)
+    attach_parser.add_argument("--summary", required=True)
+    attach_parser.add_argument("--source")
+    attach_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    attach_parser.add_argument("--fail", action="store_true", help="mark this evidence as failed")
+    attach_parser.add_argument("--allow-extra", action="store_true")
+    attach_parser.add_argument("--in-place", action="store_true")
+    attach_parser.add_argument("--out", default="-")
+    attach_parser.set_defaults(func=attach_evidence)
+
+    collect_parser = sub.add_parser("collect", help="collect safe evidence for a capsule")
+    collect_sub = collect_parser.add_subparsers(dest="collector_name", required=True)
+
+    auth_parser = collect_sub.add_parser("auth", help="attach kubectl auth can-i evidence")
+    auth_parser.add_argument("file")
+    auth_parser.add_argument("--kubectl", default="kubectl")
+    auth_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    auth_parser.add_argument("--in-place", action="store_true")
+    auth_parser.add_argument("--out", default="-")
+    auth_parser.set_defaults(func=collect_auth)
+
+    render_parser = sub.add_parser("render-crd", help="render a capsule as an OperationCapsule CRD object")
+    render_parser.add_argument("file")
+    render_parser.add_argument("--name")
+    render_parser.add_argument("--namespace")
+    render_parser.add_argument("--actor-type", default="ai-agent", choices=["human", "ai-agent", "ci", "controller"])
+    render_parser.add_argument("--rollback-command")
+    render_parser.add_argument("--ttl-seconds-after-finished", type=int)
+    render_parser.add_argument("--out", default="-")
+    render_parser.set_defaults(func=render_crd)
+
+    gate_parser = sub.add_parser("gate", help="open only when all required evidence has passed")
+    gate_parser.add_argument("file")
+    gate_parser.set_defaults(func=gate)
+
+    demo_parser = sub.add_parser("demo", help="print a sample high-risk capsule")
+    demo_parser.add_argument("--actor", default="ai-agent")
+    demo_parser.set_defaults(func=demo)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

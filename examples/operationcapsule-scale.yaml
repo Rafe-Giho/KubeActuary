@@ -1,0 +1,42 @@
+apiVersion: ops.kubeactuary.dev/v1alpha1
+kind: OperationCapsule
+metadata:
+  name: scale-checkout-api
+  namespace: prod
+spec:
+  intent: increase checkout API capacity for expected traffic
+  actor:
+    type: ai-agent
+    name: codex
+  proposedAction:
+    command: kubectl scale deployment checkout-api --replicas=6 -n prod
+    verb: scale
+    resource: deployments
+    name: checkout-api
+    namespace: prod
+  risk:
+    level: high
+    reasons:
+      - production namespace
+      - workload replica count change
+  requiredEvidence:
+    - intent
+    - parsed-target
+    - write-auth
+    - server-dry-run
+    - diff
+    - rollback
+    - post-checks
+    - blast-radius
+    - owner-approval
+  evidence:
+    - id: intent
+      ok: true
+      summary: user intent is explicit and scoped to checkout-api capacity
+      actor: platform-reviewer
+      attachedAt: "2026-07-01T00:00:00Z"
+  rollback:
+    required: true
+    command: kubectl scale deployment checkout-api --replicas=3 -n prod
+  ttlSecondsAfterFinished: 86400
+

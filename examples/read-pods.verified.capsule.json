@@ -1,0 +1,85 @@
+{
+  "apiVersion": "kubeactuary.dev/v0alpha1",
+  "kind": "OperationCapsule",
+  "metadata": {
+    "createdAt": "2026-07-01T00:00:00Z",
+    "id": "opcap-example-read-pods"
+  },
+  "spec": {
+    "actor": "ai-agent",
+    "intent": "inspect pod inventory in the default namespace",
+    "kubeContext": null,
+    "manifestPath": null,
+    "postChecks": [
+      "capture command output"
+    ],
+    "proposedCommand": "kubectl get pods -n default",
+    "requiredEvidence": [
+      {
+        "description": "human-readable intent is present",
+        "id": "intent"
+      },
+      {
+        "description": "command or manifest target was parsed",
+        "id": "parsed-target"
+      },
+      {
+        "description": "kubectl auth can-i proves read permission",
+        "id": "read-auth"
+      }
+    ],
+    "risk": {
+      "level": "low",
+      "reasons": [
+        "read-only command"
+      ]
+    },
+    "rollback": {
+      "notes": "Attach rollback evidence before execution.",
+      "provided": false,
+      "required": false
+    },
+    "target": {
+      "allNamespaces": false,
+      "allSelected": false,
+      "modifiesCluster": false,
+      "name": null,
+      "namespace": "default",
+      "raw": "kubectl get pods -n default",
+      "resource": "pods",
+      "scope": "namespace",
+      "tokens": [
+        "kubectl",
+        "get",
+        "pods",
+        "-n",
+        "default"
+      ],
+      "verb": "get"
+    }
+  },
+  "status": {
+    "evidence": {
+      "intent": {
+        "actor": "human-reviewer",
+        "attachedAt": "2026-07-01T00:01:00Z",
+        "ok": true,
+        "summary": "Intent is explicit and read-only."
+      },
+      "parsed-target": {
+        "actor": "kube-actuary",
+        "attachedAt": "2026-07-01T00:01:01Z",
+        "ok": true,
+        "summary": "Parsed as get pods in namespace default."
+      },
+      "read-auth": {
+        "actor": "platform-operator",
+        "attachedAt": "2026-07-01T00:01:02Z",
+        "ok": true,
+        "summary": "kubectl auth can-i get pods -n default returned yes."
+      }
+    },
+    "observations": [],
+    "state": "verified"
+  }
+}

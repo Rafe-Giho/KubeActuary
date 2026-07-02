@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">KubeActuary symbol option C - capsule gate</title>
+  <desc id="desc">An operation capsule passing through a gate with evidence nodes.</desc>
+  <rect width="512" height="512" rx="104" fill="#06131A"/>
+  <path d="M126 158C126 132 147 111 173 111H339C365 111 386 132 386 158V354C386 380 365 401 339 401H173C147 401 126 380 126 354V158Z" stroke="#326CE5" stroke-width="24"/>
+  <path d="M190 184H322C344 184 362 202 362 224C362 246 344 264 322 264H190C168 264 150 246 150 224C150 202 168 184 190 184Z" fill="#0F766E" stroke="#CCFBF1" stroke-width="16"/>
+  <path d="M204 324L238 356L310 286" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="151" cy="111" r="20" fill="#38BDF8"/>
+  <circle cx="361" cy="111" r="20" fill="#38BDF8"/>
+  <circle cx="151" cy="401" r="20" fill="#38BDF8"/>
+  <circle cx="361" cy="401" r="20" fill="#38BDF8"/>
+  <path d="M151 111L190 184M361 111L322 184M151 401L204 324M361 401L310 286" stroke="#38BDF8" stroke-width="10" stroke-linecap="round"/>
+</svg>

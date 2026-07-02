@@ -1,0 +1,190 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: operationcapsules.ops.kubeactuary.dev
+spec:
+  group: ops.kubeactuary.dev
+  scope: Namespaced
+  names:
+    plural: operationcapsules
+    singular: operationcapsule
+    kind: OperationCapsule
+    shortNames:
+      - opcap
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Risk
+          type: string
+          jsonPath: .spec.risk.level
+        - name: Gate
+          type: string
+          jsonPath: .status.gate
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - intent
+                - actor
+                - proposedAction
+                - risk
+                - requiredEvidence
+              properties:
+                intent:
+                  type: string
+                  minLength: 1
+                actor:
+                  type: object
+                  required:
+                    - type
+                    - name
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - human
+                        - ai-agent
+                        - ci
+                        - controller
+                    name:
+                      type: string
+                      minLength: 1
+                proposedAction:
+                  type: object
+                  required:
+                    - verb
+                  properties:
+                    command:
+                      type: string
+                    verb:
+                      type: string
+                    resource:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    manifestRef:
+                      type: string
+                risk:
+                  type: object
+                  required:
+                    - level
+                  properties:
+                    level:
+                      type: string
+                      enum:
+                        - low
+                        - medium
+                        - high
+                        - critical
+                    reasons:
+                      type: array
+                      items:
+                        type: string
+                requiredEvidence:
+                  type: array
+                  items:
+                    type: string
+                evidence:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - ok
+                      - summary
+                      - actor
+                      - attachedAt
+                    properties:
+                      id:
+                        type: string
+                      ok:
+                        type: boolean
+                      summary:
+                        type: string
+                      actor:
+                        type: string
+                      attachedAt:
+                        type: string
+                      sourceRef:
+                        type: string
+                      sourceSha256:
+                        type: string
+                rollback:
+                  type: object
+                  properties:
+                    required:
+                      type: boolean
+                    command:
+                      type: string
+                    manifestRef:
+                      type: string
+                ttlSecondsAfterFinished:
+                  type: integer
+                  minimum: 0
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Drafted
+                    - EvidenceAttached
+                    - GateOpen
+                    - Blocked
+                    - Expired
+                    - Executed
+                gate:
+                  type: string
+                  enum:
+                    - Open
+                    - Closed
+                missingEvidence:
+                  type: array
+                  items:
+                    type: string
+                failedEvidence:
+                  type: array
+                  items:
+                    type: string
+                digest:
+                  type: string
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+

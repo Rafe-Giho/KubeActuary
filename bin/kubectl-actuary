@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""kubectl plugin entrypoint for KubeActuary."""
+
+from pathlib import Path
+import runpy
+
+
+runpy.run_path(str(Path(__file__).with_name("kube-actuary")), run_name="__main__")
+

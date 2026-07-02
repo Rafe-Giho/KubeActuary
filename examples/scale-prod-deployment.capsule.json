@@ -1,0 +1,96 @@
+{
+  "apiVersion": "kubeactuary.dev/v0alpha1",
+  "kind": "OperationCapsule",
+  "metadata": {
+    "createdAt": "2026-07-01T00:00:00Z",
+    "id": "opcap-example-scale-prod"
+  },
+  "spec": {
+    "actor": "ai-agent",
+    "intent": "increase API capacity for checkout traffic",
+    "kubeContext": null,
+    "manifestPath": null,
+    "postChecks": [
+      "affected resources become Ready or Healthy",
+      "no new warning events for affected resources",
+      "rollout status succeeds"
+    ],
+    "proposedCommand": "kubectl scale deployment checkout-api --replicas=6 -n prod",
+    "requiredEvidence": [
+      {
+        "description": "human-readable intent is present",
+        "id": "intent"
+      },
+      {
+        "description": "command or manifest target was parsed",
+        "id": "parsed-target"
+      },
+      {
+        "description": "kubectl auth can-i scale deployment passes for the target scope",
+        "id": "write-auth"
+      },
+      {
+        "description": "server-side dry-run succeeds",
+        "id": "server-dry-run"
+      },
+      {
+        "description": "diff is attached or explicitly unavailable",
+        "id": "diff"
+      },
+      {
+        "description": "rollback command or manifest is attached",
+        "id": "rollback"
+      },
+      {
+        "description": "post-change health checks are declared",
+        "id": "post-checks"
+      },
+      {
+        "description": "affected namespaces/resources are enumerated",
+        "id": "blast-radius"
+      },
+      {
+        "description": "service or platform owner approval is attached",
+        "id": "owner-approval"
+      }
+    ],
+    "risk": {
+      "level": "high",
+      "reasons": [
+        "cluster state may be modified",
+        "namespace 'prod' is sensitive"
+      ]
+    },
+    "rollback": {
+      "notes": "Attach rollback evidence before execution.",
+      "provided": false,
+      "required": true
+    },
+    "target": {
+      "allNamespaces": false,
+      "allSelected": false,
+      "modifiesCluster": true,
+      "name": "checkout-api",
+      "namespace": "prod",
+      "raw": "kubectl scale deployment checkout-api --replicas=6 -n prod",
+      "resource": "deployment",
+      "scope": "namespace",
+      "tokens": [
+        "kubectl",
+        "scale",
+        "deployment",
+        "checkout-api",
+        "--replicas=6",
+        "-n",
+        "prod"
+      ],
+      "verb": "scale"
+    }
+  },
+  "status": {
+    "evidence": {},
+    "observations": [],
+    "state": "drafted"
+  }
+}
+
