@@ -1,5 +1,9 @@
 # KubeActuary
 
+<p align="center">
+  <img src="assets/brand/kubeactuary-symbol.png" alt="KubeActuary symbol" width="180">
+</p>
+
 > AI가 Kubernetes를 조작하기 전에 증거를 들고 오게 만드는 실행 계약 CLI.
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](VERSION)
@@ -232,7 +236,8 @@ examples/
 schemas/
   operation-capsule...json     JSON Schema
 assets/brand/
-  symbol-option-*.svg          심볼 후보
+  kubeactuary-symbol.png       선택된 프로젝트 심볼
+  symbol-option-*.svg          이전 심볼 후보
 tests/
   test_cli.py                  CLI tests
 ```

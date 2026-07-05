@@ -1,8 +1,16 @@
-# Brand Symbol Options
+# Brand Symbol
 
-These are project-local SVG candidates for the first KubeActuary symbol. They
-are intentionally vector-based so the final choice can be reused in README,
-GitHub social previews, docs, stickers, and future UI.
+The selected KubeActuary symbol is the circular badge mark below.
+
+![KubeActuary symbol](../assets/brand/kubeactuary-symbol.png)
+
+It represents KubeActuary as a Kubernetes-native risk-assessment tool: a compact
+cloud-native dial with a verified evidence node. The mark is intentionally simple
+enough for README, GitHub previews, docs, stickers, and future UI.
+
+## Earlier Candidates
+
+These SVG candidates were kept as project-local exploration assets.
 
 ## Option A: Proof Ring
 
@@ -28,9 +36,10 @@ It is more distinctive, but a little less obviously Kubernetes-related.
 Best fit if the project should emphasize the `OperationCapsule` artifact itself.
 It reads as a gate and evidence graph, but is visually more abstract.
 
-## My Recommendation
+## Prior Recommendation
 
-Choose **Option A: Proof Ring** for the first public release.
+Before the final PNG symbol was selected, **Option A: Proof Ring** was the
+recommended vector candidate.
 
 Reason:
 
@@ -39,4 +48,3 @@ Reason:
 - works at small sizes;
 - does not overclaim AI magic;
 - fits the safety-oriented posture of the project.
-

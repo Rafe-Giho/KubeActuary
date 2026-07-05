@@ -1,5 +1,9 @@
 # KubeActuary
 
+<p align="center">
+  <img src="assets/brand/kubeactuary-symbol.png" alt="KubeActuary symbol" width="180">
+</p>
+
 > Evidence-carrying operations for AI-assisted Kubernetes.
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](VERSION)
@@ -230,7 +234,8 @@ examples/
 schemas/
   operation-capsule...json     JSON Schema
 assets/brand/
-  symbol-option-*.svg          proposed symbol marks
+  kubeactuary-symbol.png       selected project symbol
+  symbol-option-*.svg          earlier symbol candidates
 tests/
   test_cli.py                  CLI tests
 ```
