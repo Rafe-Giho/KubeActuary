@@ -407,6 +407,7 @@ scripts/
   verify_admission_policy.py AI identity/annotation admission verifier
   verify_admission_digest_gate.py admission digest/gate tamper verifier
   verify_admission_audit.py  admission audit fixture verifier
+  verify_admission_response.py AdmissionReview response verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -460,6 +461,7 @@ python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
+python3 -B scripts/verify_admission_response.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

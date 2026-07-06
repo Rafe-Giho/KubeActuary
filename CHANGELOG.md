@@ -55,6 +55,7 @@ Evidence collector release:
 - add AI identity selector and required admission annotation allow/deny fixtures;
 - add admission capsule digest and gate tamper fixtures;
 - add admission audit annotation fixtures and incident runbook;
+- add AdmissionReview response builder with audit annotation verifier;
 - add upstream Kubernetes N/N-1/N-2 conformance suite seed;
 - add security policy, threat model, and disclosure verifier;
 - add API freeze contract and additive compatibility verifier;

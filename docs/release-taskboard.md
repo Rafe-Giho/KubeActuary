@@ -52,13 +52,13 @@ Status legend:
 | Controller | DOING | Optional `serve` runtime, Deployment seed, and status patch plan exist; live watch/apply loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
-| Admission/audit | TODO | Contract docs only |
+| Admission/audit | DOING | offline webhook manifest, policy evaluator, response builder, audit fixtures, and runbooks exist; live webhook server smoke remains |
 
 Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (53 checks)
+verification: passed (54 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -158,6 +158,7 @@ operational risk. This remains optional.
 | 0.8.1 | AI identity selector and annotation requirements | DONE | `scripts/verify_admission_policy.py` validates allow/deny fixtures |
 | 0.8.2 | Capsule digest and gate verification | DONE | `scripts/verify_admission_digest_gate.py` validates digest and closed-gate tamper fixtures |
 | 0.8.3 | Audit annotations and incident runbook | DONE | `scripts/verify_admission_audit.py` validates audit fixtures and incident runbook |
+| 0.8.4 | AdmissionReview response builder | DONE | `scripts/verify_admission_response.py` validates response and audit annotations |
 
 ## v0.9.x: Release Candidate
 

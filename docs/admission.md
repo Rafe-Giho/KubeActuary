@@ -37,6 +37,15 @@ Admission responses should include audit annotations for the referenced capsule,
 digest, gate, decision, and reason. Incident handling is documented in
 `docs/admission-incident-runbook.md`.
 
+The offline evaluator can emit a Kubernetes `AdmissionReview response` with
+`auditAnnotations`:
+
+```sh
+python3 -B scripts/evaluate_admission_review.py \
+  tests/fixtures/admission/allow-ai-annotated.json \
+  --response
+```
+
 Verification:
 
 ```sh
@@ -44,6 +53,7 @@ python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
+python3 -B scripts/verify_admission_response.py
 ```
 
 Live kind smoke remains a release-gate item when `kind` is available locally.

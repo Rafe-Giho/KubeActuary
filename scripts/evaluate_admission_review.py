@@ -74,17 +74,51 @@ def decision(review: dict[str, Any]) -> dict[str, Any]:
     return {"uid": uid, "allowed": True, "reason": "annotations-present"}
 
 
+def admission_response(review: dict[str, Any]) -> dict[str, Any]:
+    result = decision(review)
+    admission_request = request(review)
+    found_annotations = annotations(admission_request)
+    allowed = bool(result.get("allowed"))
+    response = {
+        "uid": result.get("uid", ""),
+        "allowed": allowed,
+        "status": {
+            "reason": result.get("reason", "unknown"),
+        },
+        "auditAnnotations": {
+            "kubeactuary.dev/decision": "allow" if allowed else "deny",
+            "kubeactuary.dev/reason": str(result.get("reason", "unknown")),
+        },
+    }
+    capsule = found_annotations.get(CAPSULE_ANNOTATION)
+    digest = found_annotations.get(DIGEST_ANNOTATION)
+    if capsule:
+        response["auditAnnotations"]["kubeactuary.dev/capsule"] = capsule
+    if digest:
+        response["auditAnnotations"]["kubeactuary.dev/capsule-digest"] = digest
+    if result.get("missingAnnotations"):
+        response["status"]["message"] = "missing required KubeActuary annotations"
+        response["auditAnnotations"]["kubeactuary.dev/missing-annotations"] = ",".join(result["missingAnnotations"])
+    return {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "response": response,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Evaluate KubeActuary admission review policy.")
     parser.add_argument("input")
     parser.add_argument("--out", default="-")
+    parser.add_argument("--response", action="store_true", help="emit an AdmissionReview response with audit annotations")
     args = parser.parse_args(argv)
 
     payload = json.loads(Path(args.input).read_text())
     if not isinstance(payload, dict):
         raise SystemExit("AdmissionReview JSON root must be an object")
     result = decision(payload)
-    text = json.dumps(result, indent=2, sort_keys=True) + "\n"
+    output = admission_response(payload) if args.response else result
+    text = json.dumps(output, indent=2, sort_keys=True) + "\n"
     if args.out == "-":
         print(text, end="")
     else:
