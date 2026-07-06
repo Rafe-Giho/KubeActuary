@@ -33,6 +33,8 @@ Evidence collector release:
   k3s;
 - add Helm chart seed with CRD packaging and optional controller RBAC;
 - add Kustomize base and controller RBAC overlays with render verification;
+- add multi-target release archive packager with SHA-256 and install smoke
+  verification;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

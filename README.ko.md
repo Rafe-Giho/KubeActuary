@@ -311,6 +311,7 @@ docs/
   project-assessment.md        현재 성숙도 평가
   release-checklist.md         릴리스 gate 체크리스트
   release-taskboard.md         로컬 v1.0 taskboard
+  release-archives.md          release archive build and verification
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
@@ -345,6 +346,8 @@ scripts/
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_helm_chart.py        offline Helm chart contract check
   verify_kustomize.py         Kustomize render check
+  package_release_archives.py release archive generator
+  verify_release_archives.py  archive checksum and install smoke
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -371,6 +374,7 @@ python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
+python3 -B scripts/verify_release_archives.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

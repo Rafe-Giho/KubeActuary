@@ -109,8 +109,9 @@ Make KubeActuary installable as a Kubernetes tool:
   verification is available; live `helm template` and install smoke remain
   follow-up work.
 - Kustomize base and controller RBAC overlays render with `kubectl kustomize`.
-- Release archives, Krew, SBOM, provenance, and air-gapped install docs remain
-  follow-up work.
+- Multi-target release archives generate SHA-256 sidecars and pass install
+  smoke checks.
+- Krew, SBOM, provenance, and air-gapped install docs remain follow-up work.
 
 ## v0.6: Policy Adapters
 

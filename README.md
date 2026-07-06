@@ -309,6 +309,7 @@ docs/
   project-assessment.md        maturity assessment
   release-checklist.md         release gate checklist
   release-taskboard.md         local v1.0 taskboard
+  release-archives.md          release archive build and verification
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes and managed-service compatibility
@@ -343,6 +344,8 @@ scripts/
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_helm_chart.py        offline Helm chart contract check
   verify_kustomize.py         Kustomize render check
+  package_release_archives.py release archive generator
+  verify_release_archives.py  archive checksum and install smoke
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -369,6 +372,7 @@ python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
+python3 -B scripts/verify_release_archives.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

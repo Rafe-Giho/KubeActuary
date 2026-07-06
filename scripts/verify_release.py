@@ -135,6 +135,16 @@ COMMON_CHECKS = (
         contains=("kustomize: passed", "base: crd", "overlay: controller-namespace", "overlay: controller-cluster"),
     ),
     Check(
+        "release archives",
+        ("python3", "-B", "scripts/verify_release_archives.py"),
+        contains=(
+            "release-archives: passed",
+            "targets: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64",
+            "sha256: verified",
+            "install-smoke: passed",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

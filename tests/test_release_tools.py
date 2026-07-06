@@ -17,6 +17,7 @@ CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budg
 LIGHTWEIGHT_CLUSTER_SMOKE = ROOT / "scripts" / "verify_lightweight_cluster_smoke.py"
 HELM_CHART = ROOT / "scripts" / "verify_helm_chart.py"
 KUSTOMIZE = ROOT / "scripts" / "verify_kustomize.py"
+RELEASE_ARCHIVES = ROOT / "scripts" / "verify_release_archives.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -194,6 +195,21 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("kustomize: passed", result.stdout)
         self.assertIn("overlay: controller-namespace", result.stdout)
         self.assertIn("overlay: controller-cluster", result.stdout)
+
+    def test_verify_release_archives(self):
+        result = subprocess.run(
+            [sys.executable, str(RELEASE_ARCHIVES)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("release-archives: passed", result.stdout)
+        self.assertIn("sha256: verified", result.stdout)
+        self.assertIn("install-smoke: passed", result.stdout)
 
 
 if __name__ == "__main__":
