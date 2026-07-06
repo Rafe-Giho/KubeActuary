@@ -129,6 +129,8 @@ Coverage included:
   closure checks;
 - release evidence status inspection for partial and complete evidence
   directories plus persisted next-task output and file readiness;
+- next-task evidence build from prepared raw files plus idempotent
+  output-exists handling;
 - clean generated-artifact verification for Python cache directories and
   bytecode files;
 - digest stability across status evidence changes;
@@ -246,7 +248,8 @@ Result:
 - external evidence bundle check prints `external-evidence-bundle: passed`;
 - release evidence directory check prints `release-evidence-directory: passed`;
 - release evidence status check prints `release-evidence-status: passed` and
-  verifies persisted next-task output and file readiness;
+  verifies persisted next-task output, file readiness, next-task evidence
+  build, and idempotent output-exists handling;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

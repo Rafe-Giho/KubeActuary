@@ -388,8 +388,10 @@ scripts/
   build_release_evidence_directory.py release evidence directory builder
   verify_release_evidence_directory.py release evidence directory verifier
   inspect_release_evidence_directory.py release evidence directory status and next-task readiness inspector
+  build_next_task_evidence.py local next-task supplemental evidence builder
   verify_release_evidence_status.py release evidence status verifier
   kube-actuary.release-evidence-status.v1 release evidence status schema
+  kube-actuary.next-task-evidence-build.v1 next task evidence build schema
   verify_clean_artifacts.py generated Python cache artifact verifier
   verify_crd_compatibility.py  offline CRD compatibility smoke check
   verify_crd_explain_quality.py offline kubectl explain quality check

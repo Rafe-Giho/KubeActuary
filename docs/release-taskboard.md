@@ -32,6 +32,7 @@ Status legend:
 | External evidence bundle | DONE | `scripts/verify_external_evidence_bundle.py` verifies auditable evidence bundle generation |
 | Release evidence directory | DONE | `scripts/verify_release_evidence_directory.py` verifies repeated evidence directory artifact generation |
 | Release evidence status | DONE | `scripts/verify_release_evidence_status.py` verifies partial evidence directory status inspection plus persisted next-task output and file readiness |
+| Next task evidence builder | DONE | `scripts/build_next_task_evidence.py` and `scripts/verify_release_evidence_status.py` build selected local supplemental evidence from captured raw files |
 | Clean artifact hygiene | DONE | `scripts/verify_clean_artifacts.py` verifies no generated Python cache artifacts remain |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |

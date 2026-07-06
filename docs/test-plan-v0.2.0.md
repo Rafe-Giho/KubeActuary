@@ -32,7 +32,8 @@ Expected:
   queue generation, queue command safety,
   and live evidence directory scaffold generation,
   live evidence schema validation, live evidence manifest generation, live
-  evidence coverage validation, project governance, air-gapped manifest generation, agent help schema
+  evidence coverage validation, next-task evidence build from prepared raw
+  files, project governance, air-gapped manifest generation, agent help schema
   compatibility, local CI and Codex agent runbooks, Kyverno adapter fixtures,
   OPA adapter fixtures, kube-linter adapter fixtures, kube-score adapter
   fixtures, Pluto adapter fixtures, adapter
@@ -148,7 +149,8 @@ Expected:
 - external evidence bundle check prints `external-evidence-bundle: passed`;
 - release evidence directory check prints `release-evidence-directory: passed`;
 - release evidence status check prints `release-evidence-status: passed` and
-  verifies persisted next-task output and file readiness;
+  verifies persisted next-task output, file readiness, next-task evidence build,
+  and idempotent output-exists handling;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -267,6 +269,9 @@ Confirm from code and tests:
 - release evidence status verifier reports partial and complete evidence
   directory coverage plus persisted next-task output and file readiness without
   requiring cluster or cloud access;
+- next-task evidence builder verifier coverage creates supplemental evidence
+  from prepared raw files and skips existing outputs without cluster, cloud, or
+  workload writes;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -382,7 +387,7 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, release taskboard audit, release progress, version worklist, external gate plan, external gate command safety, external gate evidence,
-  external evidence builder, external evidence bundle, release evidence directory, release evidence status,
+  external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller

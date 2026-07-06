@@ -14,6 +14,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 INSPECTOR = ROOT / "scripts" / "inspect_release_evidence_directory.py"
 EVIDENCE_BUILDER = ROOT / "scripts" / "build_external_evidence.py"
+NEXT_TASK_BUILDER = ROOT / "scripts" / "build_next_task_evidence.py"
 PREPARE = ROOT / "scripts" / "prepare_live_evidence_directory.py"
 README = ROOT / "README.md"
 LIVE_VALIDATION = ROOT / "docs" / "live-validation.md"
@@ -23,6 +24,7 @@ from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 LIGHTWEIGHT_PROVIDERS = ("kind", "minikube", "microk8s", "k3s")
 MANAGED_PROVIDERS = ("eks", "gke", "aks")
 SINGLE_REPORT_SCHEMAS = (
@@ -96,6 +98,12 @@ def main() -> int:
         )
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
+        next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
+        next_task_output = partial_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
+        next_task_output_written = next_task_output.is_file()
+        next_task_build_again = run_script(NEXT_TASK_BUILDER, str(partial_dir))
+        partial_after_build = run_script(INSPECTOR, str(partial_dir), "--format", "json")
+        partial_after_build_text = run_script(INSPECTOR, str(partial_dir))
 
         full_dir = tmpdir / "full"
         full_dir.mkdir()
@@ -121,6 +129,16 @@ def main() -> int:
         partial_payload = {}
     else:
         partial_payload = json.loads(partial.stdout)
+    if next_task_build.returncode != 0:
+        errors.append(f"next-task evidence build failed: {next_task_build.stderr.strip() or next_task_build.stdout.strip()}")
+        next_task_build_payload = {}
+    else:
+        next_task_build_payload = json.loads(next_task_build.stdout)
+    if partial_after_build.returncode != 0:
+        errors.append(f"post-build partial status failed: {partial_after_build.stderr.strip() or partial_after_build.stdout.strip()}")
+        partial_after_build_payload = {}
+    else:
+        partial_after_build_payload = json.loads(partial_after_build.stdout)
     if complete.returncode != 0:
         errors.append(f"complete status failed: {complete.stderr.strip() or complete.stdout.strip()}")
         complete_payload = {}
@@ -167,6 +185,34 @@ def main() -> int:
     if "next-task-files: 2/3" not in partial_text.stdout:
         errors.append("partial text status must print next-task file readiness")
 
+    if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
+        errors.append("next-task evidence build schemaVersion mismatch")
+    if next_task_build_payload.get("summary", {}).get("status") != "passed":
+        errors.append("next-task evidence build must pass with prepared raw input")
+    if next_task_build_payload.get("summary", {}).get("buildableCommands") != 1:
+        errors.append("next-task evidence build must find one local builder command")
+    if next_task_build_payload.get("summary", {}).get("built") != 1:
+        errors.append("next-task evidence build must create one supplemental record")
+    if next_task_build_payload.get("summary", {}).get("errors") != 0:
+        errors.append("next-task evidence build must not report errors")
+    if not next_task_output_written:
+        errors.append("next-task evidence build must write supplemental evidence output")
+    if next_task_build_again.returncode != 0:
+        errors.append("repeat next-task evidence build must remain idempotent")
+    if "output-exists" not in next_task_build_again.stdout:
+        errors.append("repeat next-task evidence build must report output-exists")
+    if "skipped: 1" not in next_task_build_again.stdout:
+        errors.append("repeat next-task evidence build must count one skipped output")
+
+    after_summary = partial_after_build_payload.get("summary", {})
+    if after_summary.get("supplementalEvidence") != 1:
+        errors.append("post-build partial status must count one supplemental evidence record")
+    after_next_task_summary = (partial_after_build_payload.get("nextTask") or {}).get("summary", {})
+    if after_next_task_summary.get("existingFiles") != 3 or after_next_task_summary.get("missingFiles") != 0:
+        errors.append("post-build partial status must report complete next-task file readiness")
+    if partial_after_build_text.returncode != 0 or "next-task-files: 3/3" not in partial_after_build_text.stdout:
+        errors.append("post-build partial text status must print complete next-task file readiness")
+
     if complete_payload.get("summary", {}).get("status") != "complete":
         errors.append("full evidence directory must report complete")
     if complete_payload.get("summary", {}).get("liveReports") != 10:
@@ -178,7 +224,13 @@ def main() -> int:
     if complete_payload.get("summary", {}).get("coverageErrors") != 0:
         errors.append("full evidence directory must have no coverage errors")
 
-    for snippet in ("inspect_release_evidence_directory.py", "kube-actuary.release-evidence-status.v1", NEXT_TASK_SCHEMA):
+    for snippet in (
+        "inspect_release_evidence_directory.py",
+        "build_next_task_evidence.py",
+        "kube-actuary.release-evidence-status.v1",
+        NEXT_TASK_SCHEMA,
+        NEXT_TASK_BUILD_SCHEMA,
+    ):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
         if snippet not in LIVE_VALIDATION.read_text():

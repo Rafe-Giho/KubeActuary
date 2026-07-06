@@ -122,6 +122,8 @@ Expected:
 - release evidence status inspector reports partial directory coverage, next
   commands, persisted next-task output, and next-task file readiness without
   requiring complete release closure;
+- next-task evidence builder creates supplemental evidence from prepared raw
+  files without cluster, cloud, or workload writes;
 - clean-artifact verifier proves no generated Python cache directories or
   bytecode files remain in the workspace;
 - controller contract emits status-only patch examples and OperationCapsule-only
@@ -214,6 +216,7 @@ Expected:
 - [ ] external evidence bundle check passes.
 - [ ] release evidence directory check passes.
 - [ ] release evidence status check passes.
+- [ ] next-task evidence builder check passes through release evidence status.
 - [ ] clean artifact check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
