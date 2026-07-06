@@ -90,8 +90,9 @@ Coverage included:
   `kube-actuary.environment-blockers.v1` reports;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
-- version iteration advance workflow with version-scoped and blocker-focused filters and
-  probe-aware before/after evidence-aware history recording;
+- version iteration advance workflow with version-scoped and blocker-focused filters,
+  probe-aware before/after evidence-aware history recording, and post-run
+  blocker ledger recording;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
@@ -328,8 +329,8 @@ Result:
   with version-scoped selection, selector-mode propagation, zero-run blocker
   status, plus blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus latest blocker streaks, selected worklist drilldowns, and CLI
-  Markdown output;
+  reports plus latest blocker streaks, selected worklist drilldowns, post-run
+  blocker ledger recording, and CLI Markdown output;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

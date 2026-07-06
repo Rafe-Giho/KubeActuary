@@ -237,8 +237,8 @@ Expected:
   and verifies version-scoped selection, selector-mode propagation,
   zero-run blocker status, plus selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus latest blocker streaks, selected worklist drilldowns, and CLI
-  Markdown output;
+  reports plus latest blocker streaks, selected worklist drilldowns,
+  post-run blocker ledger recording, and CLI Markdown output;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

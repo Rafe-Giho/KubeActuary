@@ -445,7 +445,7 @@ scripts/
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
   next-version-task-run.json persisted selected runner status report
-  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history, runner status, and blocker streak recorder
+  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history, runner status, blocker streak, and blocker ledger recorder
   verify_version_iteration_advance.py version iteration advance verifier
   kube-actuary.version-iteration-advance.v1 version iteration advance schema
   version-iteration-advance.json persisted advance workflow status report
@@ -638,7 +638,8 @@ version scope to the persisted `.kubeactuary/next-version-task.*` artifacts
 while keeping cluster writes disabled.
 `advance_version_iteration.py --version <version>` carries that same scope
 through live evidence directory preparation, selected-task execution, and
-before/after history snapshots.
+before/after history snapshots, then refreshes the local
+`.kubeactuary/version-blockers.*` blocker ledger.
 
 Validate examples:
 

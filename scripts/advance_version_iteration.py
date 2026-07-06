@@ -17,6 +17,8 @@ sys.path.insert(0, str(ROOT))
 from scripts.inspect_version_history import inspect_history, selected_worklist_commands  # noqa: E402
 from scripts.prepare_live_evidence_directory import prepare_directory  # noqa: E402
 from scripts.record_version_iteration import record_iteration  # noqa: E402
+from scripts.record_version_blockers import build_ledger as build_blocker_ledger  # noqa: E402
+from scripts.record_version_blockers import record_ledger as record_blocker_ledger  # noqa: E402
 from scripts.run_next_version_task import build_result as run_next_task  # noqa: E402
 from scripts.run_next_version_task import record_result as record_next_task_run  # noqa: E402
 from scripts.run_next_version_task import SCHEMA_VERSION as NEXT_TASK_RUN_SCHEMA  # noqa: E402
@@ -93,8 +95,40 @@ def planned_result(
             "run selected next-task evidence commands",
             "refresh next-task artifacts after evidence capture",
             "record after iteration history and diff",
+            "record version blocker ledger",
             "inspect version history status",
         ],
+    }
+
+
+def record_blockers(
+    evidence_dir: Path,
+    history_dir: Path,
+    probe_environment: bool,
+    kubectl: str,
+    version_filters: list[str],
+    capture_status_filters: list[str] | None,
+    missing_tool_filters: list[str] | None,
+    environment_status_filters: list[str] | None,
+    environment_reason_filters: list[str] | None,
+) -> dict[str, Any]:
+    ledger = build_blocker_ledger(
+        version_filters=version_filters,
+        evidence_dir=evidence_dir,
+        history_dir=history_dir,
+        probe_environment=probe_environment,
+        kubectl=kubectl,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
+    )
+    record = record_blocker_ledger(ledger, evidence_dir, None)
+    return {
+        "schemaVersion": ledger.get("schemaVersion"),
+        "status": ledger.get("status"),
+        "summary": ledger.get("summary", {}),
+        "record": record,
     }
 
 
@@ -214,6 +248,17 @@ def run_advance(
             prefer_prepared_queue=True,
         )
         history = inspect_history(history_dir)
+        blocker_ledger = record_blockers(
+            evidence_dir,
+            history_dir,
+            probe_environment,
+            kubectl,
+            version_filters,
+            capture_status_filters,
+            missing_tool_filters,
+            environment_status_filters,
+            environment_reason_filters,
+        )
         return {
             "schemaVersion": SCHEMA_VERSION,
             "mode": "run",
@@ -256,6 +301,7 @@ def run_advance(
             },
             "history": history.get("summary", {}),
             "latestBlockerStreak": history_blocker_streak(history),
+            "blockerLedger": blocker_ledger,
         }
     runner = run_next_task(evidence_dir, run=True)
     runner_record = record_next_task_run(evidence_dir, runner)
@@ -288,6 +334,17 @@ def run_advance(
         prefer_prepared_queue=True,
     )
     history = inspect_history(history_dir)
+    blocker_ledger = record_blockers(
+        evidence_dir,
+        history_dir,
+        probe_environment,
+        kubectl,
+        version_filters,
+        capture_status_filters,
+        missing_tool_filters,
+        environment_status_filters,
+        environment_reason_filters,
+    )
     status = "passed" if runner.get("status") == "passed" and history.get("valid") is True else "failed"
     next_task = json.loads((evidence_dir / ".kubeactuary" / "next-version-task.json").read_text())
     refreshed_selected = next_task.get("selected") or {}
@@ -330,6 +387,7 @@ def run_advance(
         },
         "history": history.get("summary", {}),
         "latestBlockerStreak": history_blocker_streak(history),
+        "blockerLedger": blocker_ledger,
     }
 
 
@@ -378,6 +436,14 @@ def render_text(result: dict[str, Any]) -> str:
         lines.append(f"runner-status: {result['runner']['status'] if result.get('runner') else 'not-run'}")
         if result.get("runnerRecord"):
             lines.append(f"runner-record: {result['runnerRecord'].get('json')}")
+        if result.get("blockerLedger"):
+            ledger = result["blockerLedger"]
+            summary = ledger.get("summary", {})
+            lines.append(f"blocker-ledger: {ledger.get('status')}")
+            lines.append(f"blocker-ledger-items: {summary.get('blockedItems')}")
+            record = ledger.get("record") or {}
+            if record.get("json"):
+                lines.append(f"blocker-ledger-record: {record.get('json')}")
         lines.append(f"history-runs: {result['history'].get('runs')}")
         blocker_streak = result.get("latestBlockerStreak")
         if isinstance(blocker_streak, dict):
@@ -446,6 +512,13 @@ def render_markdown(result: dict[str, Any]) -> str:
         lines.append(f"- runner: `{(result.get('runner') or {}).get('status', 'not-run')}`")
         if result.get("runnerRecord"):
             lines.append(f"- runner record: `{result['runnerRecord'].get('json')}`")
+        if result.get("blockerLedger"):
+            ledger = result["blockerLedger"]
+            summary = ledger.get("summary", {})
+            lines.append(f"- blocker ledger: `{ledger.get('status')}` ({summary.get('blockedItems')} items)")
+            record = ledger.get("record") or {}
+            if record.get("json"):
+                lines.append(f"- blocker ledger record: `{record.get('json')}`")
         next_task = result.get("nextTask") or {}
         lines.append(f"- next task: `{next_task.get('selected')}`")
         if next_task.get("captureStatus"):

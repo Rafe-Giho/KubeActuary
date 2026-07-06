@@ -298,6 +298,20 @@ def main() -> int:
             errors.append("advance runner record must preserve passing runner status")
         if runner_record_payload.get("queueSource") != "prepared-live-validation-queue":
             errors.append("advance runner record must preserve prepared queue source")
+        blocker_ledger = payload.get("blockerLedger") or {}
+        blocker_ledger_record = blocker_ledger.get("record") or {}
+        blocker_ledger_json = Path(blocker_ledger_record.get("json", ""))
+        blocker_ledger_md = Path(blocker_ledger_record.get("markdown", ""))
+        if blocker_ledger.get("schemaVersion") != "kube-actuary.version-blockers.v1":
+            errors.append("advance must include blocker ledger schema")
+        if not blocker_ledger_json.is_file() or not blocker_ledger_md.is_file():
+            errors.append("advance must record blocker ledger JSON and Markdown")
+        else:
+            blocker_ledger_payload = json.loads(blocker_ledger_json.read_text())
+            if blocker_ledger_payload.get("schemaVersion") != "kube-actuary.version-blockers.v1":
+                errors.append("advance blocker ledger JSON schemaVersion mismatch")
+            if "# KubeActuary Version Blockers" not in blocker_ledger_md.read_text():
+                errors.append("advance blocker ledger Markdown title missing")
         if payload.get("before", {}).get("runId") != "test-advance-before":
             errors.append("advance must record before history run")
         if payload.get("after", {}).get("runId") != "test-advance-after":
@@ -361,6 +375,15 @@ def main() -> int:
             errors.append("blocked-only advance run should record the selected blocked task")
         if blocked_only_payload.get("runner", {}).get("summary", {}).get("ran") != 0:
             errors.append("blocked-only advance run must not execute blocked evidence commands")
+        blocked_only_ledger = blocked_only_payload.get("blockerLedger") or {}
+        blocked_only_ledger_record = blocked_only_ledger.get("record") or {}
+        blocked_only_ledger_json = Path(blocked_only_ledger_record.get("json", ""))
+        if blocked_only_ledger.get("status") != "blocked":
+            errors.append("blocked-only advance run should record blocked ledger status")
+        if blocked_only_ledger.get("summary", {}).get("blockedItems", 0) < 1:
+            errors.append("blocked-only advance run should summarize blocker ledger items")
+        if not blocked_only_ledger_json.is_file():
+            errors.append("blocked-only advance run must write blocker ledger metadata")
         blocked_only_runner = Path((blocked_only_payload.get("runnerRecord") or {}).get("json", ""))
         if not blocked_only_runner.is_file():
             errors.append("blocked-only advance run must write a runner record")
@@ -413,6 +436,22 @@ def main() -> int:
             errors.append("probe-blocked advance next-task must preserve environment status")
         if blocked_payload.get("nextTask", {}).get("nextStep") != blocked_next_step:
             errors.append("probe-blocked advance next-task must preserve the blocker next step")
+        blocked_ledger = blocked_payload.get("blockerLedger") or {}
+        blocked_ledger_record = blocked_ledger.get("record") or {}
+        blocked_ledger_json = Path(blocked_ledger_record.get("json", ""))
+        blocked_ledger_md = Path(blocked_ledger_record.get("markdown", ""))
+        if blocked_ledger.get("status") != "blocked":
+            errors.append("probe-blocked advance must record blocked ledger status")
+        if blocked_ledger.get("summary", {}).get("blockedItems") != 1:
+            errors.append("probe-blocked advance must keep filtered blocker ledger scope")
+        if not blocked_ledger_json.is_file() or not blocked_ledger_md.is_file():
+            errors.append("probe-blocked advance must write blocker ledger metadata")
+        else:
+            blocked_ledger_payload = json.loads(blocked_ledger_json.read_text())
+            if blocked_ledger_payload.get("filters", {}).get("versions") != ["0.4.3"]:
+                errors.append("probe-blocked blocker ledger must preserve version filters")
+            if blocked_ledger_payload.get("filters", {}).get("captureStatuses") != ["blocked-by-environment"]:
+                errors.append("probe-blocked blocker ledger must preserve capture-status filters")
         blocked_streak = blocked_payload.get("latestBlockerStreak") or {}
         blocked_streak_signature = blocked_streak.get("signature") or {}
         if blocked_streak.get("streak") != 2 or blocked_streak.get("status") != "repeated":
@@ -506,6 +545,7 @@ def main() -> int:
             "kube-actuary.version-iteration-advance.v1",
             "next-version-task-run.json",
             "version-iteration-advance.json",
+            "version-blockers.json",
             "--missing-tool",
             "--runnable-only",
             "--blocked-only",
@@ -525,6 +565,7 @@ def main() -> int:
     print("evidence: raw,supplemental")
     print("runner-record: metadata")
     print("advance-record: metadata")
+    print("blocker-ledger: metadata")
     return 0
 
 

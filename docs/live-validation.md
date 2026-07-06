@@ -383,7 +383,10 @@ selected runner status as `.kubeactuary/next-version-task-run.json` and
 `.kubeactuary/next-version-task-run.md`, plus the advance workflow status as
 `.kubeactuary/version-iteration-advance.json` and
 `.kubeactuary/version-iteration-advance.md`. The advance report preserves the
-same queue source used by the selected next-task artifact:
+same queue source used by the selected next-task artifact. Each run also
+refreshes `.kubeactuary/version-blockers.json` and
+`.kubeactuary/version-blockers.md` from the post-run prepared queue, so the
+local blocker ledger matches the latest iteration state:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
@@ -415,7 +418,9 @@ status, so stale failed runner records do not remain the latest local state.
 The advance report also preserves the selected environment blocker status,
 next step, and selected next-task worklist drilldown. Probe-blocked runs record
 both `before` and `blocked` history snapshots, making the blocked snapshot the
-latest version-iteration history entry without running evidence commands.
+latest version-iteration history entry without running evidence commands. They
+also keep the filtered blocker ledger scoped to the selected version and
+blocker class.
 History status also prints the latest next-task worklist drilldown.
 The scaffold also writes
 `.kubeactuary/environment-probe.json` with schema

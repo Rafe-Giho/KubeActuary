@@ -447,7 +447,7 @@ scripts/
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
   next-version-task-run.json persisted selected runner status report
-  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history, runner status, and blocker streak recorder
+  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history, runner status, blocker streak, and blocker ledger recorder
   verify_version_iteration_advance.py version iteration advance verifier
   kube-actuary.version-iteration-advance.v1 version iteration advance schema
   version-iteration-advance.json persisted advance workflow status report
@@ -639,7 +639,8 @@ scope를 `.kubeactuary/next-version-task.*` artifact에 적용하면서 cluster
 write는 계속 비활성화합니다.
 `advance_version_iteration.py --version <version>`은 그 scope를 live
 evidence 디렉터리 준비, 선택 task 실행, before/after history snapshot까지
-그대로 전달합니다.
+그대로 전달한 뒤 로컬 `.kubeactuary/version-blockers.*` blocker ledger를
+갱신합니다.
 
 예제 검증:
 
