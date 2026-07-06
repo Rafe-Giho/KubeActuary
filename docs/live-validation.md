@@ -15,6 +15,7 @@ python3 -B scripts/verify_live_evidence_coverage.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
+python3 -B scripts/verify_external_evidence_bundle.py
 ```
 
 Expected:
@@ -107,7 +108,11 @@ python3 -B scripts/build_external_evidence.py --kind kubectl-explain --source <k
 python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source <kubectl-top-output.txt> --output <external-evidence.json>
 python3 -B scripts/build_external_evidence.py --kind controller-live-loop --source <controller-loop-output.json> --output <external-evidence.json>
 python3 -B scripts/evaluate_external_gate_evidence.py /tmp/kubeactuary-live-evidence-manifest.json --evidence <external-evidence.json>
+python3 -B scripts/build_external_evidence_bundle.py /tmp/kubeactuary-live-evidence-manifest.json --evidence <external-evidence.json> --output <bundle.json>
 ```
+
+Evidence bundles use schema `kube-actuary.external-evidence-bundle.v1` and
+record input file SHA-256 digests plus the external gate evaluation result.
 
 Supported evidence schemas:
 

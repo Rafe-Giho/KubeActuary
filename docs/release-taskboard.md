@@ -26,6 +26,7 @@ Status legend:
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
 | External evidence builder | DONE | `scripts/verify_external_evidence_builder.py` verifies supplemental evidence record generation |
+| External evidence bundle | DONE | `scripts/verify_external_evidence_bundle.py` verifies auditable evidence bundle generation |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |
 | CRD seed | DONE | YAML parse, CRD field contract tests, and `render-crd` status mapping tests |
@@ -69,7 +70,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (66 checks)
+verification: passed (67 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

@@ -365,6 +365,9 @@ scripts/
   build_external_evidence.py supplemental external evidence builder
   verify_external_evidence_builder.py supplemental evidence builder verifier
   kube-actuary.external-evidence.v1 supplemental evidence schema
+  build_external_evidence_bundle.py external evidence bundle builder
+  verify_external_evidence_bundle.py external evidence bundle verifier
+  kube-actuary.external-evidence-bundle.v1 external evidence bundle schema
   verify_crd_compatibility.py  offline CRD compatibility smoke check
   verify_crd_explain_quality.py offline kubectl explain quality check
   verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
@@ -451,6 +454,7 @@ python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
+python3 -B scripts/verify_external_evidence_bundle.py
 python3 -B bin/kube-actuary doctor
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py

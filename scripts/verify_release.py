@@ -95,6 +95,11 @@ COMMON_CHECKS = (
         contains=("external-evidence-builder: passed", "kinds: 3"),
     ),
     Check(
+        "external evidence bundle",
+        ("python3", "-B", "scripts/verify_external_evidence_bundle.py"),
+        contains=("external-evidence-bundle: passed", "closure: complete"),
+    ),
+    Check(
         "crd compatibility smoke",
         ("python3", "-B", "scripts/verify_crd_compatibility.py"),
         contains=("crd-compatibility: passed", "upstream-minors: 1.36, 1.35, 1.34"),
