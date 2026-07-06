@@ -80,6 +80,11 @@ COMMON_CHECKS = (
         contains=("release-taskboard: passed", "release-checks:"),
     ),
     Check(
+        "external gate plan",
+        ("python3", "-B", "scripts/verify_external_gate_plan.py"),
+        contains=("external-gate-plan: passed", "verify-gates: 16", "doing: 0"),
+    ),
+    Check(
         "crd compatibility smoke",
         ("python3", "-B", "scripts/verify_crd_compatibility.py"),
         contains=("crd-compatibility: passed", "upstream-minors: 1.36, 1.35, 1.34"),

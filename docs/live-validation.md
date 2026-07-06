@@ -12,6 +12,7 @@ python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
+python3 -B scripts/verify_external_gate_plan.py
 ```
 
 Expected:
@@ -23,6 +24,13 @@ cluster-writes: disabled
 ```
 
 ## Open Live Gates
+
+Generate the current external gate plan from the release taskboard:
+
+```sh
+python3 -B scripts/generate_external_gate_plan.py --format markdown
+python3 -B scripts/generate_external_gate_plan.py --format json --output /tmp/kubeactuary-external-gates.json
+```
 
 | Gate | Current local evidence | Required live evidence |
 | --- | --- | --- |

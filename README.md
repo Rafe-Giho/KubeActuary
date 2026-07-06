@@ -358,6 +358,8 @@ schemas/
 scripts/
   generate_release_notes.py    release notes dry-run generator
   verify_release_taskboard.py  local release taskboard audit
+  generate_external_gate_plan.py external verification gate plan generator
+  verify_external_gate_plan.py external verification gate plan verifier
   verify_crd_compatibility.py  offline CRD compatibility smoke check
   verify_crd_explain_quality.py offline kubectl explain quality check
   verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
@@ -441,6 +443,7 @@ No dependency install is required for the current CLI.
 python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
+python3 -B scripts/verify_external_gate_plan.py
 python3 -B bin/kube-actuary doctor
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
