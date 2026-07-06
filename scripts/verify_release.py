@@ -234,6 +234,11 @@ COMMON_CHECKS = (
         contains=("live-evidence-manifest: passed", "reports: 5"),
     ),
     Check(
+        "live evidence coverage",
+        ("python3", "-B", "scripts/verify_live_evidence_coverage.py"),
+        contains=("live-evidence-coverage: passed", "required-providers: 7"),
+    ),
+    Check(
         "project governance",
         ("python3", "-B", "scripts/verify_project_governance.py"),
         contains=("project-governance: passed", "license: MIT", "contributing: present"),

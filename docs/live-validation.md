@@ -11,6 +11,7 @@ python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
+python3 -B scripts/verify_live_evidence_coverage.py
 ```
 
 Expected:
@@ -71,6 +72,17 @@ The manifest uses schema `kube-actuary.live-evidence-manifest.v1`, records each
 report SHA-256, and maps captured reports to release gates such as
 `lightweight-cluster-smoke`, `helm-smoke`, `krew-smoke`,
 `admission-kind-smoke`, and `managed-kubernetes-smoke`.
+
+Check release-gate coverage from a manifest:
+
+```sh
+python3 -B scripts/check_live_evidence_coverage.py /tmp/kubeactuary-live-evidence-manifest.json
+```
+
+The coverage check requires passing `mode: run` reports for kind, minikube,
+MicroK8s, and k3s; EKS, GKE, and AKS; plus Helm, Krew, and admission smoke
+reports. The verifier prints `required-providers: 7` when this local coverage
+contract is satisfied.
 
 Supported evidence schemas:
 

@@ -35,6 +35,7 @@ DOCS_FREEZE = ROOT / "scripts" / "verify_docs_freeze.py"
 LIVE_VALIDATION_READINESS = ROOT / "scripts" / "verify_live_validation_readiness.py"
 LIVE_EVIDENCE_SCHEMA = ROOT / "scripts" / "verify_live_evidence_schema.py"
 LIVE_EVIDENCE_MANIFEST = ROOT / "scripts" / "verify_live_evidence_manifest.py"
+LIVE_EVIDENCE_COVERAGE = ROOT / "scripts" / "verify_live_evidence_coverage.py"
 PROJECT_GOVERNANCE = ROOT / "scripts" / "verify_project_governance.py"
 AIRGAP_BUNDLE = ROOT / "scripts" / "verify_airgap_bundle.py"
 KYVERNO_ADAPTER = ROOT / "scripts" / "verify_kyverno_adapter.py"
@@ -485,6 +486,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("live-evidence-manifest: passed", result.stdout)
         self.assertIn("reports: 5", result.stdout)
+
+    def test_verify_live_evidence_coverage(self):
+        result = subprocess.run(
+            [sys.executable, str(LIVE_EVIDENCE_COVERAGE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("live-evidence-coverage: passed", result.stdout)
+        self.assertIn("required-providers: 7", result.stdout)
 
     def test_verify_project_governance(self):
         result = subprocess.run(

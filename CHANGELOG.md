@@ -71,6 +71,7 @@ Evidence collector release:
 - add live validation readiness ledger for external evidence gates;
 - add live evidence JSON validator for captured smoke reports;
 - add live evidence manifest builder for captured smoke reports;
+- add live evidence coverage checks for release-gate provider evidence;
 - add contribution policy, NOTICE, and project governance verifier;
 - add v0.2 tests, docs, and examples.
 
