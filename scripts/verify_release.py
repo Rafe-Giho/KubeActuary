@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -82,7 +83,7 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 75"),
+        contains=("release-progress: passed", "verify: 16", "checks: 76"),
     ),
     Check(
         "version worklist",
@@ -123,6 +124,11 @@ COMMON_CHECKS = (
         "release evidence status",
         ("python3", "-B", "scripts/verify_release_evidence_status.py"),
         contains=("release-evidence-status: passed", "complete: ok"),
+    ),
+    Check(
+        "clean artifacts",
+        ("python3", "-B", "scripts/verify_clean_artifacts.py"),
+        contains=("clean-artifacts: passed", "python-cache-dirs: 0", "python-bytecode-files: 0"),
     ),
     Check(
         "crd compatibility smoke",
@@ -468,9 +474,12 @@ SUITES: dict[str, tuple[Check, ...]] = {
 
 
 def run_check(check: Check, verbose: bool) -> bool:
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     result = subprocess.run(
         check.command,
         cwd=ROOT,
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

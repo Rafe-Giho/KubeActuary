@@ -48,6 +48,7 @@ def run_fake_smoke(tmpdir: Path) -> tuple[subprocess.CompletedProcess[str], dict
     result = subprocess.run(
         [
             sys.executable,
+            "-B",
             str(SMOKE),
             "--kubectl",
             str(kubectl),

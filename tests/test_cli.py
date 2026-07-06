@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -9,12 +10,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "bin" / "kube-actuary"
+os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 
 
 class KubeActuaryCliTests(unittest.TestCase):
     def run_cli(self, *args):
         return subprocess.run(
-            [sys.executable, str(CLI), *args],
+            [sys.executable, "-B", str(CLI), *args],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

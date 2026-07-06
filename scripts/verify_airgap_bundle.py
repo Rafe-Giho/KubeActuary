@@ -24,7 +24,7 @@ TARGETS = ("linux-amd64", "linux-arm64", "darwin-amd64", "darwin-arm64")
 
 def run_python(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(path), *args],
+        [sys.executable, "-B", str(path), *args],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

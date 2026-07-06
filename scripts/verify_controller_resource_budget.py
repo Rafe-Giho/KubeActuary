@@ -18,7 +18,7 @@ DOC = ROOT / "docs" / "controller.md"
 
 def run(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(CONTROLLER), *args],
+        [sys.executable, "-B", str(CONTROLLER), *args],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -58,7 +58,7 @@ def main() -> int:
         sample = Path(tmpdir) / "kubectl-top.txt"
         sample.write_text("POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n")
         passed = subprocess.run(
-            [sys.executable, str(MEASURE), "--sample", str(sample)],
+            [sys.executable, "-B", str(MEASURE), "--sample", str(sample)],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,
@@ -67,7 +67,7 @@ def main() -> int:
         )
         sample.write_text("POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 55m 65Mi\n")
         failed = subprocess.run(
-            [sys.executable, str(MEASURE), "--sample", str(sample)],
+            [sys.executable, "-B", str(MEASURE), "--sample", str(sample)],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,

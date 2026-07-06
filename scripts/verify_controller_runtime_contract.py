@@ -17,7 +17,7 @@ WATCH_RESOURCE = "operationcapsules.ops.kubeactuary.dev"
 
 def run_controller(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(CONTROLLER), *args],
+        [sys.executable, "-B", str(CONTROLLER), *args],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

@@ -32,6 +32,7 @@ Status legend:
 | External evidence bundle | DONE | `scripts/verify_external_evidence_bundle.py` verifies auditable evidence bundle generation |
 | Release evidence directory | DONE | `scripts/verify_release_evidence_directory.py` verifies repeated evidence directory artifact generation |
 | Release evidence status | DONE | `scripts/verify_release_evidence_status.py` verifies partial evidence directory status inspection |
+| Clean artifact hygiene | DONE | `scripts/verify_clean_artifacts.py` verifies no generated Python cache artifacts remain |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |
 | CRD seed | DONE | YAML parse, CRD field contract tests, and `render-crd` status mapping tests |
@@ -78,7 +79,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (75 checks)
+verification: passed (76 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -98,6 +99,7 @@ adding in-cluster components.
 | 0.2.2 | Add release checklist and generated release notes template | DONE | `scripts/generate_release_notes.py --version 0.2.0 --output -` |
 | 0.2.3 | Add release taskboard audit | DONE | `scripts/verify_release_taskboard.py` checks status rows and release check count |
 | 0.2.3 | Add structured help schema version and compatibility test | DONE | `help agents --format json` schemaVersion and required field tests |
+| 0.2.3 | Add clean generated-artifact verification | DONE | `scripts/verify_clean_artifacts.py` checks Python cache directories and bytecode files |
 
 ## v0.3.x: CRD API Contract
 

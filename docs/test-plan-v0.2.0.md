@@ -18,6 +18,7 @@ Expected:
   release progress reporting, version worklist generation, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
+  clean generated-artifact verification,
   human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller deployment seed, controller status
   patch plan, controller read-only sync, controller status apply dry-run,
@@ -40,7 +41,7 @@ Expected:
   optional admission webhook prototype, admission identity/annotation policy
   fixtures, admission digest/gate tamper fixtures, admission audit fixtures,
   admission response fixtures, local admission server smoke, and full manifest gate behavior;
-- no `__pycache__` directories are left behind when using `-B`.
+- no `__pycache__` directories or Python bytecode files are left behind.
 
 ## CLI Smoke Tests
 
@@ -71,6 +72,7 @@ python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
 python3 -B scripts/verify_release_evidence_directory.py
 python3 -B scripts/verify_release_evidence_status.py
+python3 -B scripts/verify_clean_artifacts.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py

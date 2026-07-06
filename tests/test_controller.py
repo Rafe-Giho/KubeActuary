@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -8,12 +9,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTROLLER = ROOT / "bin" / "kube-actuary-controller"
+os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 
 
 class ControllerReconcileTests(unittest.TestCase):
     def run_controller(self, *args):
         return subprocess.run(
-            [sys.executable, str(CONTROLLER), *args],
+            [sys.executable, "-B", str(CONTROLLER), *args],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,

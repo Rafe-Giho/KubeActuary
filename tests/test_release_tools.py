@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -7,6 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 RELEASE_PROGRESS = ROOT / "scripts" / "verify_release_progress.py"
@@ -18,6 +20,7 @@ EXTERNAL_EVIDENCE_BUILDER = ROOT / "scripts" / "verify_external_evidence_builder
 EXTERNAL_EVIDENCE_BUNDLE = ROOT / "scripts" / "verify_external_evidence_bundle.py"
 RELEASE_EVIDENCE_DIRECTORY = ROOT / "scripts" / "verify_release_evidence_directory.py"
 RELEASE_EVIDENCE_STATUS = ROOT / "scripts" / "verify_release_evidence_status.py"
+CLEAN_ARTIFACTS = ROOT / "scripts" / "verify_clean_artifacts.py"
 AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
@@ -125,7 +128,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 75", result.stdout)
+        self.assertIn("checks: 76", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(
@@ -240,6 +243,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-evidence-status: passed", result.stdout)
         self.assertIn("complete: ok", result.stdout)
+
+    def test_verify_clean_artifacts(self):
+        result = subprocess.run(
+            [sys.executable, str(CLEAN_ARTIFACTS)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("clean-artifacts: passed", result.stdout)
+        self.assertIn("python-cache-dirs: 0", result.stdout)
 
     def test_verify_agent_help_contract(self):
         result = subprocess.run(

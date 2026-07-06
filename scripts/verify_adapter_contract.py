@@ -28,7 +28,7 @@ CASES = (
 
 def run_adapter(script: str, fixture: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(ROOT / script), str(ROOT / fixture)],
+        [sys.executable, "-B", str(ROOT / script), str(ROOT / fixture)],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

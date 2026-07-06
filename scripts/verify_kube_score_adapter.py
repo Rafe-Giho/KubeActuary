@@ -18,7 +18,7 @@ DOC = ROOT / "docs" / "policy-adapters.md"
 
 def run_adapter(path: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(ADAPTER), str(path)],
+        [sys.executable, "-B", str(ADAPTER), str(path)],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

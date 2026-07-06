@@ -84,7 +84,7 @@ def main() -> int:
         require(snippet in values, f"Helm values missing: {snippet}", errors)
 
     serve = subprocess.run(
-        [sys.executable, str(CONTROLLER), "serve", "--print-config"],
+        [sys.executable, "-B", str(CONTROLLER), "serve", "--print-config"],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,

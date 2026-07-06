@@ -18,7 +18,7 @@ PROVIDERS = ("eks", "gke", "aks")
 
 def run_plan(provider: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(SMOKE), "--provider", provider],
+        [sys.executable, "-B", str(SMOKE), "--provider", provider],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -56,6 +56,7 @@ def run_fake_smoke(provider: str, tmpdir: Path) -> tuple[subprocess.CompletedPro
     result = subprocess.run(
         [
             sys.executable,
+            "-B",
             str(SMOKE),
             "--provider",
             provider,

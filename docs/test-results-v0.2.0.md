@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (75 checks)
-Ran 109 tests
+verification: passed (76 checks)
+Ran 110 tests
 OK
 ```
 
@@ -127,6 +127,8 @@ Coverage included:
   closure checks;
 - release evidence status inspection for partial and complete evidence
   directories;
+- clean generated-artifact verification for Python cache directories and
+  bytecode files;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -160,6 +162,7 @@ python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
 python3 -B scripts/verify_release_evidence_directory.py
 python3 -B scripts/verify_release_evidence_status.py
+python3 -B scripts/verify_clean_artifacts.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -240,6 +243,7 @@ Result:
 - external evidence bundle check prints `external-evidence-bundle: passed`;
 - release evidence directory check prints `release-evidence-directory: passed`;
 - release evidence status check prints `release-evidence-status: passed`;
+- clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -342,12 +346,12 @@ Result:
 ### Cache Check
 
 ```sh
-find . -name __pycache__ -type d -print
+python3 -B scripts/verify_clean_artifacts.py
 ```
 
 Result:
 
-- no `__pycache__` directories found.
+- no `__pycache__` directories or Python bytecode files found.
 
 ## Release Judgment
 

@@ -33,7 +33,7 @@ REQUIRED_MEMBERS = (
 
 def run_python(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(path), *args],
+        [sys.executable, "-B", str(path), *args],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -77,7 +77,7 @@ def install_smoke(archive: Path, target: str, tmpdir: Path, errors: list[str]) -
     )
     for path, arg, expected in checks:
         result = subprocess.run(
-            [sys.executable, str(path), arg],
+            [sys.executable, "-B", str(path), arg],
             cwd=root,
             text=True,
             stdout=subprocess.PIPE,
