@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (44 checks)
-Ran 73 tests
+verification: passed (45 checks)
+Ran 74 tests
 OK
 ```
 
@@ -47,6 +47,7 @@ Coverage included:
   and runbook identity;
 - offline kubectl explain quality check validates OpenAPI descriptions and live
   explain command examples;
+- upstream N/N-1/N-2 conformance suite verification;
 - pure controller reconcile model computes status-only patches;
 - controller watch contract stays scoped to OperationCapsule resources;
 - controller RBAC grants OperationCapsule read/watch and status-only write
@@ -99,6 +100,7 @@ python3 -B bin/kube-actuary doctor --kubectl /definitely/missing/kubectl
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -141,6 +143,7 @@ Result:
 - release notes dry-run prints verification and rollback sections;
 - CRD compatibility smoke prints `crd-compatibility: passed`;
 - CRD explain quality check prints `crd-explain-quality: passed`;
+- conformance suite prints `conformance-suite: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

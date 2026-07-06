@@ -307,6 +307,7 @@ deploy/kustomize/
 docs/
   admission.md                optional admission prototype and safety defaults
   admission-incident-runbook.md admission audit incident runbook
+  conformance.md              upstream N/N-1/N-2 conformance suite
   collectors.md                evidence collector contract
   landscape.md                 ecosystem research
   paradigm.md                  operating model
@@ -352,6 +353,7 @@ scripts/
   measure_controller_resources.py kubectl top budget measurement helper
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness
   verify_lightweight_cluster_smoke.py offline smoke harness check
+  verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier
   verify_helm_chart.py        offline Helm chart contract check
   verify_kustomize.py         Kustomize render check
   package_release_archives.py release archive generator
@@ -402,6 +404,7 @@ python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B bin/kube-actuary doctor
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py

@@ -17,8 +17,8 @@ Expected:
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller resource budget, lightweight cluster
-  smoke harness, Helm chart contract, Kustomize rendering, release archives, and
-  Krew manifest generation, SBOM/provenance generation, air-gapped manifest
+  smoke harness, upstream conformance suite, Helm chart contract, Kustomize
+  rendering, release archives, Krew manifest generation, SBOM/provenance generation, air-gapped manifest
   generation, agent help schema compatibility, local CI and Codex agent
   runbooks, Kyverno adapter fixtures, OPA adapter fixtures, kube-linter adapter
   fixtures, kube-score adapter fixtures, Pluto adapter fixtures, adapter
@@ -46,6 +46,7 @@ python3 -B bin/kube-actuary help agents --format json
 python3 -B bin/kube-actuary digest examples/apply-configmap.preflight.capsule.json
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -86,6 +87,7 @@ Expected:
 - doctor prints local runtime checks and warns, without failing, when kubectl is
   absent;
 - release notes dry-run prints verification and rollback sections;
+- conformance suite check prints `conformance-suite: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -159,6 +161,8 @@ Confirm from code and tests:
   and condition mappings;
 - offline CRD compatibility smoke checks upstream N/N-1/N-2 and managed-source
   notes;
+- conformance suite verifies the upstream `1.36`, `1.35`, and `1.34` local
+  matrix against CRD compatibility, upgrade fixtures, and explain quality;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -227,8 +231,8 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
-  upgrade fixtures, controller contract, controller RBAC, controller runtime,
-  controller resource budget, lightweight cluster smoke, digest, CRD render,
+  upgrade fixtures, conformance suite, controller contract, controller RBAC,
+  controller runtime, controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   air-gapped bundle, agent help contract, agent examples, Kyverno adapter, OPA
   adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter

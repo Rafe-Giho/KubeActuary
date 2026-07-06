@@ -12,6 +12,7 @@ AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
 CRD_UPGRADE_FIXTURES = ROOT / "scripts" / "verify_crd_upgrade_fixtures.py"
 CRD_EXPLAIN_QUALITY = ROOT / "scripts" / "verify_crd_explain_quality.py"
+CONFORMANCE_SUITE = ROOT / "scripts" / "verify_conformance_suite.py"
 CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
 CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
@@ -136,6 +137,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("crd-explain-quality: passed", result.stdout)
         self.assertIn("commands: 7", result.stdout)
+
+    def test_verify_conformance_suite(self):
+        result = subprocess.run(
+            [sys.executable, str(CONFORMANCE_SUITE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("conformance-suite: passed", result.stdout)
+        self.assertIn("upstream-minors: 1.36, 1.35, 1.34", result.stdout)
 
     def test_verify_controller_contract(self):
         result = subprocess.run(

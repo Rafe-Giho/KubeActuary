@@ -21,6 +21,7 @@ Run:
 python3 -B scripts/verify_release.py --version current
 python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -58,6 +59,7 @@ Expected:
 - release notes render without errors;
 - CRD upgrade and rollback fixtures verify offline;
 - CRD explain descriptions and example commands verify offline;
+- conformance suite verifies upstream N/N-1/N-2 local matrix;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
@@ -103,6 +105,7 @@ Expected:
 - [ ] controller runtime contract check passes.
 - [ ] controller resource budget check passes.
 - [ ] lightweight cluster smoke plan check passes.
+- [ ] upstream N/N-1/N-2 conformance suite passes.
 - [ ] live kind/minikube/MicroK8s/k3s evidence is attached before claiming
       matrix support.
 - [ ] Helm chart check passes; run `helm template` when Helm is available.

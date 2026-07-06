@@ -90,6 +90,11 @@ COMMON_CHECKS = (
         contains=("crd-explain-quality: passed", "commands: 7"),
     ),
     Check(
+        "conformance suite",
+        ("python3", "-B", "scripts/verify_conformance_suite.py"),
+        contains=("conformance-suite: passed", "upstream-minors: 1.36, 1.35, 1.34"),
+    ),
+    Check(
         "controller contract",
         ("python3", "-B", "scripts/verify_controller_contract.py"),
         contains=("controller-contract: passed", "patch-scope: status"),

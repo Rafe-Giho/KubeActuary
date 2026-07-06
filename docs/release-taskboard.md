@@ -54,7 +54,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (44 checks)
+verification: passed (45 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -158,7 +158,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.9.0 | Conformance suite for upstream supported Kubernetes minors | TODO | N/N-1/N-2 matrix |
+| 0.9.0 | Conformance suite for upstream supported Kubernetes minors | DONE | `scripts/verify_conformance_suite.py` validates N/N-1/N-2 matrix |
 | 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | TODO | provider run evidence |
 | 0.9.1 | Security policy, threat model, disclosure process | TODO | `SECURITY.md` review |
 | 0.9.2 | API freeze and upgrade compatibility gate | TODO | no breaking schema diff |

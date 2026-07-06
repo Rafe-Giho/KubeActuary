@@ -1,0 +1,23 @@
+{
+  "source": "https://kubernetes.io/releases/version-skew-policy/",
+  "sourceSnapshot": "2026-07-06",
+  "tracks": [
+    {
+      "minor": "1.36",
+      "track": "N"
+    },
+    {
+      "minor": "1.35",
+      "track": "N-1"
+    },
+    {
+      "minor": "1.34",
+      "track": "N-2"
+    }
+  ],
+  "upstreamMinors": [
+    "1.36",
+    "1.35",
+    "1.34"
+  ]
+}
