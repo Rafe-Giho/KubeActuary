@@ -224,6 +224,11 @@ COMMON_CHECKS = (
         contains=("admission-policy: passed", "allow-fixtures: 2", "deny-fixtures: 2"),
     ),
     Check(
+        "admission digest gate",
+        ("python3", "-B", "scripts/verify_admission_digest_gate.py"),
+        contains=("admission-digest-gate: passed", "allow-fixtures: 1", "tamper-fixtures: 2"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

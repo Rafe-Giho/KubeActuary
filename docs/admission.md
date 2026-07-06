@@ -29,14 +29,16 @@ Required annotations for selected write requests:
 - `kubeactuary.dev/capsule`
 - `kubeactuary.dev/capsule-digest`
 
-The v0.8.1 policy check only verifies selector and annotation presence. Digest
-and gate tamper checks are handled by the later v0.8.2 fixture set.
+The v0.8.1 policy check verifies selector and annotation presence. The v0.8.2
+tamper fixtures verify that the annotation digest matches the referenced
+capsule and that the referenced capsule gate is open.
 
 Verification:
 
 ```sh
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
+python3 -B scripts/verify_admission_digest_gate.py
 ```
 
 Live kind smoke remains a release-gate item when `kind` is available locally.

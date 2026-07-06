@@ -50,6 +50,7 @@ Evidence collector release:
 - add explicit disabled-execute verifier for CLI and MCP surfaces;
 - add optional admission webhook prototype manifest with offline verifier;
 - add AI identity selector and required admission annotation allow/deny fixtures;
+- add admission capsule digest and gate tamper fixtures;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

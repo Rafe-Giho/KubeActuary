@@ -24,8 +24,8 @@ Expected:
   fixtures, kube-score adapter fixtures, Pluto adapter fixtures, adapter
   contract severity normalization, MCP safe-tool contract verification, and
   disabled-execute surface verification, optional admission webhook prototype,
-  admission identity/annotation policy fixtures, and full manifest gate
-  behavior;
+  admission identity/annotation policy fixtures, admission digest/gate tamper
+  fixtures, and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -70,6 +70,7 @@ python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
+python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -108,6 +109,7 @@ Expected:
 - disabled-execute check prints `execute-disabled: passed`;
 - admission webhook check prints `admission-webhook: passed`;
 - admission policy check prints `admission-policy: passed`;
+- admission digest/gate check prints `admission-digest-gate: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -204,6 +206,8 @@ Confirm from code and tests:
   opt-in namespace selection, and bounded timeout;
 - admission policy verifier allows non-AI identities, requires capsule and
   digest annotations for selected AI writers, and denies missing annotations;
+- admission digest/gate verifier rejects tampered digests and referenced
+  capsules with closed gates;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -225,4 +229,5 @@ Expected:
   air-gapped bundle, agent help contract, agent examples, Kyverno adapter, OPA
   adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, disabled-execute check, admission webhook, admission
-  policy, gate behavior, JSON/YAML parsing, and `git diff --check`.
+  policy, admission digest/gate, gate behavior, JSON/YAML parsing, and
+  `git diff --check`.

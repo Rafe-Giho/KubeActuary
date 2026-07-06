@@ -381,6 +381,7 @@ scripts/
   verify_admission_webhook.py optional admission prototype verifier
   evaluate_admission_review.py offline admission policy evaluator
   verify_admission_policy.py AI identity/annotation admission verifier
+  verify_admission_digest_gate.py admission digest/gate tamper verifier
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -423,6 +424,7 @@ python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
+python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

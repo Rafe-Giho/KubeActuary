@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (42 checks)
-Ran 71 tests
+verification: passed (43 checks)
+Ran 72 tests
 OK
 ```
 
@@ -66,6 +66,7 @@ Coverage included:
 - disabled execute surface verification;
 - optional admission webhook prototype verification;
 - AI identity selector and admission annotation allow/deny verification;
+- admission digest and gate tamper fixture verification;
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
@@ -121,6 +122,7 @@ python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
+python3 -B scripts/verify_admission_digest_gate.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -161,6 +163,7 @@ Result:
 - disabled-execute check prints `execute-disabled: passed`;
 - admission webhook check prints `admission-webhook: passed`;
 - admission policy check prints `admission-policy: passed`;
+- admission digest/gate check prints `admission-digest-gate: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

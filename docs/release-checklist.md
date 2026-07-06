@@ -45,6 +45,7 @@ python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
+python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -82,6 +83,7 @@ Expected:
 - disabled-execute verifier proves CLI and MCP surfaces do not expose execute;
 - admission webhook prototype verifies optional defaults and `failurePolicy: Ignore`;
 - admission policy verifies AI identity selection and required annotations;
+- admission digest/gate verifier rejects digest tampering and closed gates;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -120,6 +122,7 @@ Expected:
 - [ ] disabled-execute surface check passes.
 - [ ] admission webhook prototype check passes; run live kind smoke when kind is available.
 - [ ] admission policy allow/deny fixture check passes.
+- [ ] admission digest/gate tamper fixture check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 
