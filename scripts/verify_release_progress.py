@@ -557,6 +557,9 @@ def main() -> int:
             errors.append("history progress must include latest advance status")
         if history_status.get("latestAdvance", {}).get("nextTaskConsistency", {}).get("status") != "matched":
             errors.append("history progress must include latest advance consistency")
+        blocker_streak = history_status.get("latestBlockerStreak", {})
+        if blocker_streak.get("streak") != 1 or blocker_streak.get("status") != "single":
+            errors.append("history progress must include latest blocker streak")
     elif history_recorded.returncode == 0 and with_history.returncode == 0:
         errors.append("history progress must include versionHistoryStatus")
     if with_history_text.returncode != 0:
@@ -568,6 +571,8 @@ def main() -> int:
             "history-latest-run-id: progress-history",
             "history-latest-advance-status: failed",
             "history-latest-advance-next-task-consistency: matched",
+            "history-latest-blocker-streak: 1",
+            "history-latest-blocker-status: single",
             "history-next: python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_text.stdout:
@@ -583,6 +588,7 @@ def main() -> int:
             "latest run: `progress-history`",
             "latest advance: `failed`",
             "latest advance next task consistency: `matched`",
+            "latest blocker streak: `1` (single)",
             "history next: `python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_markdown.stdout:

@@ -365,7 +365,7 @@ scripts/
   prepare_version_iteration.py local version iteration pack generator with evidence readiness
   compare_version_iterations.py local version iteration diff generator
   record_version_iteration.py local version iteration history recorder with evidence readiness
-  inspect_version_history.py local version iteration history inspector with evidence status
+  inspect_version_history.py local version iteration history inspector with evidence status and blocker streaks
   select_next_version_task.py local next version task selector with evidence skip support
   verify_version_worklist.py version worklist verifier
   kube-actuary.version-worklist.v1 version worklist schema

@@ -122,8 +122,8 @@ Coverage included:
 - release taskboard status and check-count audit;
 - release progress report generation for versioned task tracking,
   text output, tool-ready next actions, selected evidence-directory runtime
-  status, runner failure reason, optional version-history status, and
-  `not-prepared` evidence directory guidance;
+  status, runner failure reason, optional version-history status, latest
+  blocker streaks, and `not-prepared` evidence directory guidance;
 - version worklist generation for version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording, history
   status inspection, evidence-aware worklist readiness,
@@ -261,7 +261,8 @@ Result:
   shows every action blocker plus filtered worklist commands, selected
   next-task file/command details, every runnable tool-ready action and evidence
   next command, persisted queue-source status, and version-iteration advance
-  run/history metadata plus `--history-dir` status/consistency without recommending environment-blocked capture
+  run/history metadata plus `--history-dir` status/consistency and latest
+  blocker streaks without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
@@ -274,7 +275,8 @@ Result:
   blocker drilldown commands, environment-reason drilldowns, blocker-focused
   filters, plus missing-tool and next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,
-  iteration history queue-source, blocker drilldown, latest filters, latest
+  iteration history queue-source, blocker drilldown, latest blocker streak,
+  latest filters, latest
   next-task details, latest next-task evidence file details, latest next-task
   worklist drilldowns, latest advance/runner status, latest advance/next-task
   consistency, latest artifact paths, latest aggregate/per-version diff

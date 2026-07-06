@@ -482,6 +482,29 @@ def main() -> int:
             "--probe-environment",
             env=probe_env,
         )
+        repeated_history_dir = tmpdir / "repeated-history"
+        repeated_first_record = run_record(
+            str(repeated_history_dir),
+            "--run-id",
+            "blocked-one",
+            "--created-at",
+            "2026-07-06T00:01:10+00:00",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            env=probe_env,
+        )
+        repeated_second_record = run_record(
+            str(repeated_history_dir),
+            "--run-id",
+            "blocked-two",
+            "--created-at",
+            "2026-07-06T00:01:20+00:00",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            env=probe_env,
+        )
         evidence_history_dir = tmpdir / "evidence-history"
         evidence_history_before = run_record(
             str(evidence_history_dir),
@@ -555,6 +578,12 @@ def main() -> int:
             if history_status_record_md.is_file()
             else ""
         )
+        repeated_history_status = run_inspect_history(str(repeated_history_dir), "--format", "json")
+        repeated_history_status_payload = (
+            json.loads(repeated_history_status.stdout) if repeated_history_status.returncode == 0 else {}
+        )
+        repeated_history_status_text = run_inspect_history(str(repeated_history_dir))
+        repeated_history_status_markdown = run_inspect_history(str(repeated_history_dir), "--format", "markdown")
         evidence_history_index_path = evidence_history_dir / "index.json"
         evidence_history_index = (
             json.loads(evidence_history_index_path.read_text()) if evidence_history_index_path.is_file() else {}
@@ -930,6 +959,41 @@ def main() -> int:
         for command in latest_history_next_task.get("worklistCommands", [])
     ):
         errors.append("version iteration history status should preserve latest next-task worklist drilldown")
+    if repeated_first_record.returncode != 0:
+        errors.append(
+            "repeated blocker history first record failed: "
+            f"{repeated_first_record.stderr.strip() or repeated_first_record.stdout.strip()}"
+        )
+    if repeated_second_record.returncode != 0:
+        errors.append(
+            "repeated blocker history second record failed: "
+            f"{repeated_second_record.stderr.strip() or repeated_second_record.stdout.strip()}"
+        )
+    repeated_blocker = repeated_history_status_payload.get("latestBlockerStreak") or {}
+    repeated_signature = repeated_blocker.get("signature") or {}
+    if repeated_blocker.get("streak") != 2 or repeated_blocker.get("status") != "repeated":
+        errors.append("version iteration history status should report repeated latest blocker streak")
+    if repeated_blocker.get("firstRunId") != "blocked-one" or repeated_blocker.get("latestRunId") != "blocked-two":
+        errors.append("version iteration history status should preserve repeated blocker run ids")
+    if repeated_signature.get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+        errors.append("version iteration history status should preserve repeated blocker task id")
+    if repeated_signature.get("environmentReason") != "command-failed":
+        errors.append("version iteration history status should preserve repeated blocker reason")
+    for snippet in (
+        "latest-blocker-streak: 2",
+        "latest-blocker-status: repeated",
+        "latest-blocker-first-run-id: blocked-one",
+        "latest-blocker-latest-run-id: blocked-two",
+    ):
+        if snippet not in repeated_history_status_text.stdout:
+            errors.append(f"version iteration history text should show repeated blocker detail: {snippet}")
+    for snippet in (
+        "## Latest Blocker Streak",
+        "`repeated` streak=2 latest=`blocked-two`",
+        "environment reason: `command-failed`",
+    ):
+        if snippet not in repeated_history_status_markdown.stdout:
+            errors.append(f"version iteration history Markdown should show repeated blocker detail: {snippet}")
     if "environment-blocker: cluster-unavailable (1 items)" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment blocker summary")
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:

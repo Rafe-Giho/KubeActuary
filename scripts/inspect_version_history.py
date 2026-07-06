@@ -50,6 +50,7 @@ FILTER_KEYS = (
     "kubectl",
 )
 NEXT_TASK_STATUS_PRIORITY = ("tool-ready", "blocked-by-environment", "missing-tools", "not-external-gate")
+BLOCKER_CAPTURE_STATUSES = ("blocked-by-environment", "missing-tools")
 
 
 def shell_join(args: list[str]) -> str:
@@ -360,6 +361,49 @@ def latest_advance_next_task_consistency(
     }
 
 
+def blocker_signature(run: dict[str, Any]) -> dict[str, Any] | None:
+    next_task = run.get("nextTask")
+    if not isinstance(next_task, dict):
+        return None
+    capture_status = next_task.get("captureStatus")
+    if capture_status not in BLOCKER_CAPTURE_STATUSES:
+        return None
+    missing_tools = sorted(str(tool) for tool in list_value(next_task.get("missingTools")))
+    return {
+        "id": next_task.get("id"),
+        "version": next_task.get("version"),
+        "kind": next_task.get("kind"),
+        "captureStatus": capture_status,
+        "environmentStatus": next_task.get("environmentStatus"),
+        "environmentReason": next_task.get("environmentReason"),
+        "missingTools": missing_tools,
+        "nextStep": next_task.get("nextStep"),
+    }
+
+
+def latest_blocker_streak(inspected_runs: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if not inspected_runs:
+        return None
+    signature = blocker_signature(inspected_runs[-1])
+    if signature is None:
+        return None
+    matching: list[dict[str, Any]] = []
+    for run in reversed(inspected_runs):
+        if blocker_signature(run) != signature:
+            break
+        matching.append(run)
+    matching.reverse()
+    run_ids = [run.get("runId") for run in matching]
+    return {
+        "status": "repeated" if len(matching) > 1 else "single",
+        "streak": len(matching),
+        "firstRunId": run_ids[0] if run_ids else None,
+        "latestRunId": run_ids[-1] if run_ids else None,
+        "runIds": run_ids,
+        "signature": signature,
+    }
+
+
 def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
     commands = [
         shell_join(
@@ -476,6 +520,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
             latest_next_task,
             latest_advance,
         )
+    blocker_streak = latest_blocker_streak(inspected_runs)
     next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -504,6 +549,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestVersionDiffs": latest_version_diffs,
         "latestArtifacts": latest_artifacts,
         "latestAdvance": latest_advance,
+        "latestBlockerStreak": blocker_streak,
         "nextCommands": next_commands,
         "runs": inspected_runs,
     }
@@ -575,6 +621,23 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"latest-next-task-command: {command}")
         for command in list_value(latest_next_task.get("worklistCommands")):
             lines.append(f"latest-next-task-worklist: {command}")
+    latest_blocker = status.get("latestBlockerStreak")
+    if isinstance(latest_blocker, dict):
+        signature = latest_blocker.get("signature", {})
+        if not isinstance(signature, dict):
+            signature = {}
+        lines.append(f"latest-blocker-streak: {latest_blocker.get('streak')}")
+        lines.append(f"latest-blocker-status: {latest_blocker.get('status')}")
+        lines.append(f"latest-blocker-first-run-id: {latest_blocker.get('firstRunId')}")
+        lines.append(f"latest-blocker-latest-run-id: {latest_blocker.get('latestRunId')}")
+        lines.append(f"latest-blocker-id: {signature.get('id')}")
+        lines.append(f"latest-blocker-capture-status: {signature.get('captureStatus')}")
+        if signature.get("environmentStatus"):
+            lines.append(f"latest-blocker-environment-status: {signature.get('environmentStatus')}")
+        if signature.get("environmentReason"):
+            lines.append(f"latest-blocker-environment-reason: {signature.get('environmentReason')}")
+        if signature.get("missingTools"):
+            lines.append(f"latest-blocker-missing-tools: {', '.join(str(tool) for tool in signature.get('missingTools', []))}")
     latest_advance = status.get("latestAdvance")
     if isinstance(latest_advance, dict):
         lines.append(f"latest-advance-status: {latest_advance.get('status')}")
@@ -750,6 +813,33 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"  - `{command}`")
         for command in list_value(latest_next_task.get("worklistCommands")):
             lines.append(f"  - worklist: `{command}`")
+    else:
+        lines.append("- none")
+    latest_blocker = status.get("latestBlockerStreak")
+    lines.extend(
+        [
+            "",
+            "## Latest Blocker Streak",
+            "",
+        ]
+    )
+    if isinstance(latest_blocker, dict):
+        signature = latest_blocker.get("signature", {})
+        if not isinstance(signature, dict):
+            signature = {}
+        lines.append(
+            f"- `{latest_blocker.get('status')}` streak={latest_blocker.get('streak')} "
+            f"latest=`{latest_blocker.get('latestRunId')}`"
+        )
+        lines.append(f"- first run: `{latest_blocker.get('firstRunId')}`")
+        lines.append(f"- blocked task: `{signature.get('id')}`")
+        lines.append(f"- capture status: `{signature.get('captureStatus')}`")
+        if signature.get("environmentStatus"):
+            lines.append(f"- environment: `{signature.get('environmentStatus')}`")
+        if signature.get("environmentReason"):
+            lines.append(f"- environment reason: `{signature.get('environmentReason')}`")
+        if signature.get("missingTools"):
+            lines.append(f"- missing tools: `{', '.join(str(tool) for tool in signature.get('missingTools', []))}`")
     else:
         lines.append("- none")
     lines.extend(

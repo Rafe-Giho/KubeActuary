@@ -532,6 +532,7 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
     summary = history_status.get("summary", {})
     latest_advance = history_status.get("latestAdvance")
     latest_next_task = history_status.get("latestNextTask")
+    latest_blocker = history_status.get("latestBlockerStreak")
     lines.extend(
         [
             "",
@@ -554,6 +555,17 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
             lines.append(f"- latest next task environment: `{latest_next_task.get('environmentStatus')}`")
         if latest_next_task.get("environmentReason"):
             lines.append(f"- latest next task environment reason: `{latest_next_task.get('environmentReason')}`")
+    if isinstance(latest_blocker, dict):
+        signature = latest_blocker.get("signature", {})
+        if not isinstance(signature, dict):
+            signature = {}
+        lines.append(
+            f"- latest blocker streak: `{latest_blocker.get('streak')}` "
+            f"({latest_blocker.get('status')})"
+        )
+        lines.append(f"- latest blocker task: `{signature.get('id')}`")
+        if signature.get("environmentReason"):
+            lines.append(f"- latest blocker reason: `{signature.get('environmentReason')}`")
     if isinstance(latest_advance, dict):
         lines.append(f"- latest advance: `{latest_advance.get('status')}`")
         if latest_advance.get("runId"):
@@ -589,6 +601,16 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
             lines.append(f"history-latest-next-task-environment: {latest_next_task.get('environmentStatus')}")
         if latest_next_task.get("environmentReason"):
             lines.append(f"history-latest-next-task-environment-reason: {latest_next_task.get('environmentReason')}")
+    latest_blocker = history_status.get("latestBlockerStreak")
+    if isinstance(latest_blocker, dict):
+        signature = latest_blocker.get("signature", {})
+        if not isinstance(signature, dict):
+            signature = {}
+        lines.append(f"history-latest-blocker-streak: {latest_blocker.get('streak')}")
+        lines.append(f"history-latest-blocker-status: {latest_blocker.get('status')}")
+        lines.append(f"history-latest-blocker-id: {signature.get('id')}")
+        if signature.get("environmentReason"):
+            lines.append(f"history-latest-blocker-reason: {signature.get('environmentReason')}")
     latest_advance = history_status.get("latestAdvance")
     if isinstance(latest_advance, dict):
         lines.append(f"history-latest-advance-status: {latest_advance.get('status')}")
