@@ -312,6 +312,7 @@ docs/
   release-checklist.md         릴리스 gate 체크리스트
   release-taskboard.md         로컬 v1.0 taskboard
   release-archives.md          release archive build and verification
+  krew.md                      Krew manifest generation and verification
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
@@ -348,6 +349,8 @@ scripts/
   verify_kustomize.py         Kustomize render check
   package_release_archives.py release archive generator
   verify_release_archives.py  archive checksum and install smoke
+  generate_krew_manifest.py   Krew manifest generator
+  verify_krew_manifest.py     offline Krew manifest check
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -375,6 +378,7 @@ python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -413,13 +417,14 @@ check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 
 - offline verification이 포함된 CRD upgrade/rollback fixture
 - kubectl explain description과 offline quality check
 - 순수 저부하 controller reconcile 모델과 watch boundary 계약
+- Helm, Kustomize, release archive, Krew manifest 검증 경로
 
 이후:
 
 - 저부하 controller
 - CRD status condition mapping
 - optional MCP server
-- Krew packaging
+- real Krew install validation
 - AI-originated write용 optional admission webhook
 - Kyverno, OPA, kube-linter, kube-score, Pluto adapter
 

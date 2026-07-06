@@ -21,6 +21,8 @@ What is real:
 - local capsule JSON can be rendered as a Kubernetes `OperationCapsule` CRD
   object;
 - a CRD seed exists;
+- Helm, Kustomize, release archive, and Krew manifest generation paths exist
+  with offline verifiers;
 - tests cover the main local workflow.
 
 What is not real yet:
@@ -29,8 +31,7 @@ What is not real yet:
 - no admission webhook;
 - no direct Kubernetes write execution;
 - no policy adapters;
-- no release packaging;
-- no Krew manifest;
+- no live Helm/Krew install validation;
 - no MCP server.
 
 ## Self-Evaluation
@@ -39,11 +40,11 @@ What is not real yet:
 | --- | ---: | --- |
 | Idea clarity | 8/10 | The evidence-carrying operation capsule model is clear and differentiated. |
 | Local CLI utility | 8/10 | The local proposal/evidence/gate workflow has the core v0.2 collectors. |
-| Kubernetes-native path | 6/10 | CRD seed and render flow exist; controller is not implemented yet. |
+| Kubernetes-native path | 7/10 | CRD, render flow, controller contracts, RBAC, and packaging paths exist; live controller is not deployed. |
 | Safety model | 8/10 | No direct write execution, model-free default, and evidence gate are explicit. |
 | Documentation | 7/10 | README and design docs are now usable; contributor/release docs are still missing. |
 | Test coverage | 7/10 | Core CLI and collector paths are tested; schema and CRD semantic validation can improve. |
-| Release readiness | 6/10 | v0.2.0 can be a useful local/CI alpha, not a production-ready controller. |
+| Release readiness | 7/10 | v0.2.0 has repeatable local release checks and packaging seeds, but live install validation remains. |
 
 Overall: KubeActuary is good enough for a v0.2.0 alpha if the goal is a
 local-first evidence collector CLI and spec seed. It is not yet a cluster
@@ -53,9 +54,9 @@ automation product.
 
 Priority order:
 
-1. Add CRD status condition mapping.
+1. Add live install validation for Helm, Krew, and lightweight clusters.
 2. Add a minimal read-only controller that watches only `OperationCapsule`.
-3. Add Krew packaging.
+3. Add SBOM and provenance generation.
 4. Add MCP server wrapper for safe tools.
 5. Add optional admission webhook for AI-originated write identities.
 6. Add policy adapters for Kyverno, OPA, kube-linter, kube-score, and Pluto.

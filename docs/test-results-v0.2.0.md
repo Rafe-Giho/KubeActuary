@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (27 checks)
-Ran 56 tests
+verification: passed (28 checks)
+Ran 57 tests
 OK
 ```
 
@@ -58,6 +58,7 @@ Coverage included:
 - Helm chart seed for CRD packaging and optional controller RBAC;
 - Kustomize base and controller RBAC overlays;
 - multi-target release archives with SHA-256 sidecars and install smoke;
+- Krew manifest generator with archive digest validation;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -91,6 +92,7 @@ python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/verify_krew_manifest.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -116,6 +118,7 @@ Result:
 - Helm chart check prints `helm-chart: passed`;
 - Kustomize check prints `kustomize: passed`;
 - release archive check prints `release-archives: passed`;
+- Krew manifest check prints `krew-manifest: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

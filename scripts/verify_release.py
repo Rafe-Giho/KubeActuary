@@ -145,6 +145,15 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "krew manifest",
+        ("python3", "-B", "scripts/verify_krew_manifest.py"),
+        contains=(
+            "krew-manifest: passed",
+            "plugin: actuary",
+            "platforms: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

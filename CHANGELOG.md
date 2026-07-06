@@ -35,6 +35,7 @@ Evidence collector release:
 - add Kustomize base and controller RBAC overlays with render verification;
 - add multi-target release archive packager with SHA-256 and install smoke
   verification;
+- add Krew manifest generator and offline manifest verifier;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

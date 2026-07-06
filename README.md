@@ -310,6 +310,7 @@ docs/
   release-checklist.md         release gate checklist
   release-taskboard.md         local v1.0 taskboard
   release-archives.md          release archive build and verification
+  krew.md                      Krew manifest generation and verification
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes and managed-service compatibility
@@ -346,6 +347,8 @@ scripts/
   verify_kustomize.py         Kustomize render check
   package_release_archives.py release archive generator
   verify_release_archives.py  archive checksum and install smoke
+  generate_krew_manifest.py   Krew manifest generator
+  verify_krew_manifest.py     offline Krew manifest check
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -373,6 +376,7 @@ python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -412,13 +416,14 @@ Current v0.2.0:
 - CRD upgrade and rollback fixtures with offline verification.
 - kubectl explain descriptions and offline quality checks.
 - pure low-overhead controller reconcile model and watch boundary contract.
+- Helm, Kustomize, release archive, and Krew manifest verification paths.
 
 Later:
 
 - minimal low-overhead controller;
 - CRD status condition mapping;
 - optional MCP server;
-- Krew packaging;
+- real Krew install validation;
 - optional admission webhook for AI-originated writes;
 - policy adapters for Kyverno, OPA, kube-linter, kube-score, and Pluto.
 
