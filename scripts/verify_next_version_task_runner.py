@@ -70,6 +70,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
+        blocked_dir = tmpdir / "blocked"
         recorded_dir = tmpdir / "recorded"
         failing_dir = tmpdir / "failing"
         unprepared_dir = tmpdir / "unprepared"
@@ -91,6 +92,69 @@ def main() -> int:
             errors.append("runner plan must report plan status")
         if raw.exists() or supplemental.exists():
             errors.append("runner plan must not write evidence files")
+
+        blocked_metadata = blocked_dir / ".kubeactuary"
+        blocked_metadata.mkdir(parents=True)
+        blocked_raw = blocked_dir / "raw" / "blocked-kubectl-top.txt"
+        blocked_supplemental = blocked_dir / "supplemental" / "blocked-external.json"
+        blocked_next_step = "start or select a disposable cluster, then rerun the probe"
+        (blocked_metadata / "next-version-task.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.next-version-task.v1",
+                    "selected": {
+                        "id": "blocked-controller-resource-budget",
+                        "version": "Current Baseline",
+                        "item": "Controller resource budget",
+                        "kind": "controller-resource-budget",
+                        "captureStatus": "blocked-by-environment",
+                        "environmentStatus": "cluster-unavailable",
+                        "nextStep": blocked_next_step,
+                        "resolvedCommands": [
+                            (
+                                "python3 -B scripts/capture_controller_resource_budget.py "
+                                f"--output {blocked_raw.as_posix()} --run"
+                            ),
+                            (
+                                "python3 -B scripts/build_external_evidence.py "
+                                f"--kind controller-resource-budget --source {blocked_raw.as_posix()} "
+                                f"--output {blocked_supplemental.as_posix()}"
+                            ),
+                        ],
+                    },
+                }
+            )
+            + "\n"
+        )
+        blocked = run_script(RUNNER, str(blocked_dir), "--run", "--format", "json")
+        blocked_text = run_script(RUNNER, str(blocked_dir), "--run")
+        blocked_record = run_script(RUNNER, str(blocked_dir), "--run", "--record", "--format", "json")
+        blocked_record_json = blocked_dir / ".kubeactuary" / "next-version-task-run.json"
+        blocked_record_md = blocked_dir / ".kubeactuary" / "next-version-task-run.md"
+        if blocked.returncode != 0:
+            errors.append(f"blocked runner should not execute or fail: {blocked.stderr.strip() or blocked.stdout.strip()}")
+            blocked_payload = {}
+        else:
+            blocked_payload = json.loads(blocked.stdout)
+        blocked_summary = blocked_payload.get("summary", {})
+        if blocked_payload.get("status") != "blocked-by-environment" or blocked_summary.get("ran") != 0:
+            errors.append("blocked runner must report blocked-by-environment with zero executed commands")
+        if blocked_raw.exists() or blocked_supplemental.exists():
+            errors.append("blocked runner must not create raw or supplemental evidence files")
+        if blocked_payload.get("blocker", {}).get("message") != blocked_next_step:
+            errors.append("blocked runner must preserve the selected blocker next step")
+        if f"blocker: {blocked_next_step}" not in blocked_text.stdout:
+            errors.append("blocked runner text output must print the blocker summary")
+        if blocked_record.returncode != 0:
+            errors.append("blocked runner --record should return zero while preserving blocked status")
+        if not blocked_record_json.is_file() or not blocked_record_md.is_file():
+            errors.append("blocked runner --record must persist zero-run reports")
+        else:
+            blocked_record_payload = json.loads(blocked_record_json.read_text())
+            if blocked_record_payload.get("summary", {}).get("ran") != 0:
+                errors.append("blocked runner recorded JSON must preserve zero-run summary")
+            if blocked_next_step not in blocked_record_md.read_text():
+                errors.append("blocked runner recorded Markdown must preserve blocker summary")
 
         run_env = fake_tool_env(tmpdir / "tools")
         failing_env = fake_failing_tool_env(tmpdir / "failing-tools")
@@ -207,6 +271,7 @@ def main() -> int:
     print("mode: plan,run")
     print("cluster-writes: disabled-or-server-side-dry-run-only")
     print("evidence: raw,supplemental")
+    print("blocked-run: zero")
     print("record: metadata")
     return 0
 

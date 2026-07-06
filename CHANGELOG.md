@@ -68,6 +68,8 @@ Evidence collector release:
   missing from an evidence directory;
 - add selected next-version task runner failure summaries to text, JSON, and
   recorded Markdown output;
+- keep selected next-version task runner execution at zero runs when the
+  prepared task is blocked by environment or missing tools;
 - add opt-in next-version task runner recording under prepared evidence
   directories;
 - add version iteration advance workflow for selected-task execution plus

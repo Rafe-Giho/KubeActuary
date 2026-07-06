@@ -585,6 +585,11 @@ python3 -B scripts/run_admission_kind_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
+The selected next-task runner records `blocked-by-environment` or
+`missing-tools` as a zero-run status when the prepared task is not `tool-ready`;
+it does not reattempt live capture commands until the evidence directory is
+refreshed.
+
 Validate examples:
 
 ```sh

@@ -277,7 +277,8 @@ Result:
   idempotent output-exists handling plus
   `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
-  and verifies `.kubeactuary/next-version-task-run.{json,md}` recording;
+  and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
+  zero-run reporting for non-`tool-ready` selected tasks;
 - version iteration advance check prints `version-iteration-advance: passed`
   and verifies persisted runner and advance status reports;
 - clean artifact check prints `clean-artifacts: passed`;

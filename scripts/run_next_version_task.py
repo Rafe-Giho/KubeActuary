@@ -24,6 +24,8 @@ NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_PATH = ".kubeactuary/next-version-task.json"
 RUN_REPORT_JSON = ".kubeactuary/next-version-task-run.json"
 RUN_REPORT_MD = ".kubeactuary/next-version-task-run.md"
+RUNNABLE_CAPTURE_STATUS = "tool-ready"
+NON_ERROR_RUN_STATUSES = {"plan", "passed", "blocked-by-environment"}
 
 
 def load_next_task(evidence_dir: Path) -> dict[str, Any]:
@@ -144,6 +146,32 @@ def failure_summary(records: list[dict[str, Any]], validations: list[dict[str, A
     return None
 
 
+def blocked_run_summary(selected: dict[str, Any]) -> dict[str, Any] | None:
+    capture_status = selected.get("captureStatus")
+    if capture_status == RUNNABLE_CAPTURE_STATUS:
+        return None
+    if not capture_status:
+        capture_status = "not-ready"
+    missing_tools = selected.get("missingTools") or []
+    next_step = selected.get("nextStep")
+    environment_status = selected.get("environmentStatus")
+    if missing_tools:
+        message = f"missing tools: {', '.join(str(tool) for tool in missing_tools)}"
+    elif next_step:
+        message = str(next_step)
+    elif environment_status:
+        message = f"environment status: {environment_status}"
+    else:
+        message = f"capture status is {capture_status}"
+    return {
+        "captureStatus": capture_status,
+        "environmentStatus": environment_status,
+        "missingTools": missing_tools,
+        "nextStep": next_step,
+        "message": message,
+    }
+
+
 def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     task = load_next_task(evidence_dir)
     selected = task["selected"]
@@ -153,7 +181,8 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     if run and validation_errors:
         raise ValueError("; ".join(validation_errors))
-    if run:
+    blocker = blocked_run_summary(selected) if run else None
+    if run and blocker is None:
         for command in commands:
             record = run_command(command)
             records.append(record)
@@ -162,6 +191,8 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     status = "failed" if any(record.get("ok") is False for record in records) or validation_errors else "passed"
     if not run:
         status = "plan" if not validation_errors else "failed"
+    elif blocker is not None:
+        status = str(blocker["captureStatus"])
     failure = failure_summary(records, validations)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -179,6 +210,9 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
                 "item": selected.get("item"),
                 "kind": selected.get("kind"),
                 "captureStatus": selected.get("captureStatus"),
+                "environmentStatus": selected.get("environmentStatus"),
+                "missingTools": selected.get("missingTools", []),
+                "nextStep": selected.get("nextStep"),
             },
         },
         "summary": {
@@ -191,6 +225,7 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
         "validations": validations,
         "records": records,
         "failure": failure,
+        "blocker": blocker,
     }
 
 
@@ -217,6 +252,9 @@ def render_text(result: dict[str, Any]) -> str:
     failure = result.get("failure")
     if isinstance(failure, dict) and failure.get("message"):
         lines.append(f"failure: {failure.get('message')}")
+    blocker = result.get("blocker")
+    if isinstance(blocker, dict) and blocker.get("message"):
+        lines.append(f"blocker: {blocker.get('message')}")
     return "\n".join(lines) + "\n"
 
 
@@ -266,6 +304,9 @@ def render_markdown(result: dict[str, Any]) -> str:
     failure = result.get("failure")
     if isinstance(failure, dict) and failure.get("message"):
         lines.extend(["", "## Failure", "", f"- `{failure.get('message')}`"])
+    blocker = result.get("blocker")
+    if isinstance(blocker, dict) and blocker.get("message"):
+        lines.extend(["", "## Blocker", "", f"- `{blocker.get('message')}`"])
     return "\n".join(lines) + "\n"
 
 
@@ -306,7 +347,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"next-version-task-run: wrote {args.output}")
     if recorded:
         print(f"next-version-task-run: recorded {recorded['json']}", file=sys.stderr)
-    return 0 if result["status"] in {"plan", "passed"} else 1
+    return 0 if result["status"] in NON_ERROR_RUN_STATUSES else 1
 
 
 if __name__ == "__main__":

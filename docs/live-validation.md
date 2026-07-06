@@ -236,7 +236,10 @@ into local supplemental evidence records.
 The selected next-task runner validates the persisted
 `kube-actuary.next-version-task.v1` commands before execution. Without `--run`
 it prints a plan only; with `--run` it executes the selected commands and
-reports schema `kube-actuary.next-version-task-run.v1`. Add `--record` to
+reports schema `kube-actuary.next-version-task-run.v1`. If the selected task is
+not `tool-ready`, `--run` records a zero-run status such as
+`blocked-by-environment` or `missing-tools` instead of executing capture
+commands. Add `--record` to
 persist the runner report as `.kubeactuary/next-version-task-run.json` and
 `.kubeactuary/next-version-task-run.md`:
 
@@ -256,7 +259,9 @@ status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
 When the probe classifies the selected task as environment-blocked, status and
 progress output print the selected blocker next step before more capture
-commands.
+commands. Direct selected-task runner invocations use the same zero-run
+behavior, so a prepared environment-blocked task does not reattempt live
+capture until the evidence directory is refreshed after cluster access changes.
 
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema

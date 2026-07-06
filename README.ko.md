@@ -587,6 +587,10 @@ python3 -B scripts/run_admission_kind_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
+선택된 next-task runner는 준비된 task가 `tool-ready`가 아니면
+`blocked-by-environment` 또는 `missing-tools`를 zero-run 상태로 기록하고,
+evidence 디렉터리를 갱신하기 전에는 live capture 명령을 재시도하지 않습니다.
+
 예제 검증:
 
 ```sh
