@@ -32,6 +32,7 @@ def iteration_record(version: dict[str, Any], worklist: dict[str, Any]) -> dict[
         "sourceWorklistQueueSource": worklist.get("queueSource"),
         "source": worklist.get("source"),
         "releaseSuite": worklist.get("releaseSuite"),
+        "filters": worklist.get("filters", {}),
         "version": version.get("version"),
         "status": version.get("status"),
         "summary": version.get("summary", {}),
@@ -113,9 +114,21 @@ def render_index(worklist: dict[str, Any]) -> str:
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         f"- evidence files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
         "",
-        "## Versions",
-        "",
     ]
+    filters = worklist.get("filters", {})
+    active_filters = [
+        ("versions", filters.get("versions") or []),
+        ("capture-statuses", filters.get("captureStatuses") or []),
+        ("missing-tools", filters.get("missingTools") or []),
+        ("environment-statuses", filters.get("environmentStatuses") or []),
+    ]
+    active_filters = [(name, values) for name, values in active_filters if values]
+    if active_filters:
+        lines.extend(["## Filters", ""])
+        for name, values in active_filters:
+            lines.append(f"- {name}: `{', '.join(values)}`")
+        lines.append("")
+    lines.extend(["## Versions", ""])
     for version in worklist["versions"]:
         name = str(version["version"])
         lines.append(f"- [{name}](versions/{slug(name)}.md) `{version['status']}`")
@@ -133,6 +146,9 @@ def prepare_iteration_pack(
     probe_environment: bool,
     kubectl: str,
     evidence_dir: Path | None = None,
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     worklist = build_worklist(
         version_filters=version_filters,
@@ -140,6 +156,9 @@ def prepare_iteration_pack(
         probe_environment=probe_environment,
         kubectl=kubectl,
         evidence_dir=evidence_dir,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     versions_dir = output_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)
@@ -160,6 +179,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output_dir", help="directory to write the iteration pack")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -173,6 +195,9 @@ def main(argv: list[str] | None = None) -> int:
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
+            capture_status_filters=args.capture_status,
+            missing_tool_filters=args.missing_tool,
+            environment_status_filters=args.environment_status,
         )
     except ValueError as exc:
         print("version-iteration: failed")

@@ -130,6 +130,21 @@ def work_item_blockers(open_items: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def item_matches_filters(
+    item: dict[str, Any],
+    capture_statuses: set[str],
+    missing_tools: set[str],
+    environment_statuses: set[str],
+) -> bool:
+    if capture_statuses and item.get("captureStatus") not in capture_statuses:
+        return False
+    if missing_tools and not missing_tools.intersection(item.get("missingTools", [])):
+        return False
+    if environment_statuses and item.get("environmentStatus") not in environment_statuses:
+        return False
+    return True
+
+
 def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[str, Any]:
     if queue_item is None:
         return {
@@ -202,16 +217,27 @@ def build_worklist(
     probe_environment: bool = False,
     kubectl: str = "kubectl",
     evidence_dir: Path | None = None,
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     progress = build_progress()
     queue, queue_source = worklist_queue(evidence_dir, probe_environment, kubectl)
     queue_by_key = queue_lookup(queue)
+    capture_statuses = set(capture_status_filters or [])
+    missing_tools = set(missing_tool_filters or [])
+    environment_statuses = set(environment_status_filters or [])
     versions: list[dict[str, Any]] = []
     for group in progress.get("versions", []):
         version = str(group.get("version"))
         open_items = [
             work_item(item, queue_by_key.get((version, str(item.get("item")))))
             for item in group.get("openItems", [])
+        ]
+        open_items = [
+            item
+            for item in open_items
+            if item_matches_filters(item, capture_statuses, missing_tools, environment_statuses)
         ]
         capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
         blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
@@ -257,6 +283,16 @@ def build_worklist(
         "source": progress.get("source"),
         "queueSource": queue_source,
         "releaseSuite": progress.get("releaseSuite"),
+        "filters": {
+            "versions": list(version_filters or []),
+            "openOnly": open_only,
+            "captureStatuses": list(capture_status_filters or []),
+            "missingTools": list(missing_tool_filters or []),
+            "environmentStatuses": list(environment_status_filters or []),
+            "probeEnvironment": probe_environment,
+            "kubectl": kubectl,
+            "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+        },
         "summary": summarize_versions(versions),
         "blockers": work_item_blockers(
             [
@@ -296,6 +332,19 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         "",
     ]
+    filters = worklist.get("filters", {})
+    active_filters = [
+        ("versions", filters.get("versions") or []),
+        ("capture-statuses", filters.get("captureStatuses") or []),
+        ("missing-tools", filters.get("missingTools") or []),
+        ("environment-statuses", filters.get("environmentStatuses") or []),
+    ]
+    active_filters = [(name, values) for name, values in active_filters if values]
+    if active_filters:
+        lines.extend(["## Filters", ""])
+        for name, values in active_filters:
+            lines.append(f"- {name}: `{', '.join(values)}`")
+        lines.append("")
     blockers = worklist.get("blockers", {})
     missing_tool_blockers = blockers.get("missingTools") or []
     environment_blockers = blockers.get("environment") or []
@@ -354,6 +403,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -366,6 +418,9 @@ def main(argv: list[str] | None = None) -> int:
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
+            capture_status_filters=args.capture_status,
+            missing_tool_filters=args.missing_tool,
+            environment_status_filters=args.environment_status,
         )
     except ValueError as exc:
         print("version-worklist: failed", file=sys.stderr)

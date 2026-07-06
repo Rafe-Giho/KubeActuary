@@ -163,11 +163,15 @@ def main() -> int:
     single_version_result = run_generator("--format", "json", "--version", "0.4.3")
     multi_version_result = run_generator("--format", "json", "--version", "0.3.3", "--version", "0.4.3")
     open_only_result = run_generator("--format", "json", "--open-only")
+    filtered_missing_status_result = run_generator("--format", "json", "--open-only", "--capture-status", "missing-tools")
+    filtered_kind_result = run_generator("--format", "json", "--open-only", "--missing-tool", "kind")
+    filtered_kind_markdown = run_generator("--format", "markdown", "--open-only", "--missing-tool", "kind")
     invalid_version_result = run_generator("--version", "9.9.9")
     next_task_result = run_select("--format", "json")
     next_task_markdown = run_select("--format", "markdown")
     next_task_version = run_select("--format", "json", "--version", "0.4.3")
     next_task_missing = run_select("--format", "json", "--version", "0.4.4")
+    next_task_kind = run_select("--format", "json", "--missing-tool", "kind")
     next_task_paths = run_select("--format", "json", "--evidence-dir", "evidence/live")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
@@ -192,6 +196,24 @@ def main() -> int:
             "--open-only",
             "--evidence-dir",
             str(prepared_queue_dir),
+        )
+        prepared_environment_filter_result = run_generator(
+            "--format",
+            "json",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+            "--environment-status",
+            "cluster-unavailable",
+        )
+        prepared_capture_filter_result = run_generator(
+            "--format",
+            "json",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+            "--capture-status",
+            "tool-ready",
         )
         prepared_queue_next_task = run_select(
             "--format",
@@ -348,6 +370,20 @@ def main() -> int:
         iteration_payload = json.loads(iteration_payload_path.read_text()) if iteration_payload_path.is_file() else {}
         iteration_markdown_path = iteration_dir / "versions" / "0-4-3.md"
         iteration_markdown_text = iteration_markdown_path.read_text() if iteration_markdown_path.is_file() else ""
+        filtered_iteration_dir = tmpdir / "filtered-iteration"
+        filtered_iteration_result = run_prepare(
+            str(filtered_iteration_dir),
+            "--open-only",
+            "--missing-tool",
+            "kind",
+        )
+        filtered_iteration_worklist_path = filtered_iteration_dir / "worklist.json"
+        filtered_iteration_worklist = (
+            json.loads(filtered_iteration_worklist_path.read_text()) if filtered_iteration_worklist_path.is_file() else {}
+        )
+        filtered_iteration_readme = (
+            filtered_iteration_dir / "README.md"
+        ).read_text() if (filtered_iteration_dir / "README.md").is_file() else ""
         probe_iteration_dir = tmpdir / "probe-iteration"
         probe_iteration_result = run_prepare(
             str(probe_iteration_dir),
@@ -461,19 +497,48 @@ def main() -> int:
         prepared_history_status_payload = (
             json.loads(prepared_history_status.stdout) if prepared_history_status.returncode == 0 else {}
         )
+        filtered_history_dir = tmpdir / "filtered-history"
+        filtered_history_record = run_record(
+            str(filtered_history_dir),
+            "--run-id",
+            "kind-filter",
+            "--created-at",
+            "2026-07-06T00:05:00+00:00",
+            "--open-only",
+            "--missing-tool",
+            "kind",
+        )
+        filtered_history_index_path = filtered_history_dir / "index.json"
+        filtered_history_index = (
+            json.loads(filtered_history_index_path.read_text()) if filtered_history_index_path.is_file() else {}
+        )
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
     multi_version = parse_worklist("multi-version worklist", multi_version_result, errors)
     open_only = parse_worklist("open-only worklist", open_only_result, errors)
+    filtered_missing_status = parse_worklist("capture-status filtered worklist", filtered_missing_status_result, errors)
+    filtered_kind = parse_worklist("missing-tool filtered worklist", filtered_kind_result, errors)
     probe_worklist = parse_worklist("probe worklist", probe_result, errors)
     if prepared_queue.returncode != 0:
         errors.append(f"prepared live queue failed: {prepared_queue.stderr.strip() or prepared_queue.stdout.strip()}")
         prepared_queue_worklist = {}
         prepared_queue_next = {}
+        prepared_environment_filter = {}
+        prepared_capture_filter = {}
     else:
         prepared_queue_worklist = parse_worklist("prepared queue worklist", prepared_queue_worklist_result, errors)
         prepared_queue_next = parse_worklist("prepared queue next task", prepared_queue_next_task, errors)
+        prepared_environment_filter = parse_worklist(
+            "prepared environment filtered worklist",
+            prepared_environment_filter_result,
+            errors,
+        )
+        prepared_capture_filter = parse_worklist(
+            "prepared capture-status filtered worklist",
+            prepared_capture_filter_result,
+            errors,
+        )
         if (
             prepared_queue_worklist_markdown.returncode != 0
             or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_worklist_markdown.stdout
@@ -510,6 +575,7 @@ def main() -> int:
     next_task = parse_worklist("next task", next_task_result, errors)
     next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
+    next_task_kind_payload = parse_worklist("missing-tool filtered next task", next_task_kind, errors)
     next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
     evidence_worklist = parse_worklist("evidence-aware worklist", evidence_worklist_result, errors)
@@ -518,6 +584,8 @@ def main() -> int:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# KubeActuary Version Worklist" not in markdown_result.stdout:
         errors.append("markdown worklist missing heading")
+    if filtered_kind_markdown.returncode != 0 or "missing-tools: `kind`" not in filtered_kind_markdown.stdout:
+        errors.append("missing-tool filtered worklist markdown must show active filter")
     if written.returncode != 0 or not output_written:
         errors.append("worklist generator must write requested output file")
     if next_task_markdown.returncode != 0 or "# KubeActuary Next Version Task" not in next_task_markdown.stdout:
@@ -530,6 +598,11 @@ def main() -> int:
         errors.append("skip-complete next task text must report selected evidence file readiness")
     if iteration_result.returncode != 0:
         errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
+    if filtered_iteration_result.returncode != 0:
+        errors.append(
+            f"filtered version iteration pack failed: "
+            f"{filtered_iteration_result.stderr.strip() or filtered_iteration_result.stdout.strip()}"
+        )
     if evidence_iteration_result.returncode != 0:
         errors.append(
             f"evidence-aware version iteration failed: "
@@ -546,6 +619,12 @@ def main() -> int:
         errors.append("version iteration should preserve open item count")
     if iteration_markdown_text and "Resource budget target" not in iteration_markdown_text:
         errors.append("version iteration markdown must include the target open item")
+    if filtered_iteration_worklist.get("summary", {}).get("openItems") != 5:
+        errors.append("filtered version iteration should keep five kind-blocked items")
+    if filtered_iteration_worklist.get("filters", {}).get("missingTools") != ["kind"]:
+        errors.append("filtered version iteration should preserve missing-tool filters")
+    if "missing-tools: `kind`" not in filtered_iteration_readme:
+        errors.append("filtered version iteration README should show active filter")
     if evidence_iteration_payload.get("evidenceDir") != str(completed_evidence_dir):
         errors.append("evidence-aware iteration should record the evidence directory")
     evidence_iteration_summary = evidence_iteration_payload.get("summary", {})
@@ -650,6 +729,11 @@ def main() -> int:
             f"prepared queue history failed: "
             f"{prepared_history_record.stderr.strip() or prepared_history_record.stdout.strip()}"
         )
+    if filtered_history_record.returncode != 0:
+        errors.append(
+            f"filtered history failed: "
+            f"{filtered_history_record.stderr.strip() or filtered_history_record.stdout.strip()}"
+        )
     prepared_runs = prepared_history_index.get("runs", [])
     prepared_run = prepared_runs[-1] if prepared_runs else {}
     if prepared_run.get("queueSource") != "prepared-live-validation-queue":
@@ -659,6 +743,12 @@ def main() -> int:
     prepared_history_summary = prepared_history_status_payload.get("summary", {})
     if prepared_history_summary.get("latestQueueSource") != "prepared-live-validation-queue":
         errors.append("prepared queue history status should report latest queue source")
+    filtered_history_runs = filtered_history_index.get("runs", [])
+    filtered_history_run = filtered_history_runs[-1] if filtered_history_runs else {}
+    if filtered_history_run.get("summary", {}).get("openItems") != 5:
+        errors.append("filtered history should keep five kind-blocked items")
+    if filtered_history_run.get("filters", {}).get("missingTools") != ["kind"]:
+        errors.append("filtered history should preserve missing-tool filters")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")
@@ -727,6 +817,23 @@ def main() -> int:
     if any(version.get("status") == "complete" for version in open_versions):
         errors.append("open-only filter must not include complete versions")
 
+    filtered_missing_summary = filtered_missing_status.get("summary", {})
+    if filtered_missing_summary.get("openItems") != 12 or filtered_missing_summary.get("blockedByTools") != 12:
+        errors.append("capture-status filter should keep the twelve missing-tool items")
+    if filtered_missing_status.get("filters", {}).get("captureStatuses") != ["missing-tools"]:
+        errors.append("capture-status filter should be recorded in the worklist")
+    filtered_kind_summary = filtered_kind.get("summary", {})
+    if filtered_kind_summary.get("openItems") != 5:
+        errors.append("missing-tool filter should keep five kind-blocked items")
+    filtered_kind_items = [
+        item
+        for version in filtered_kind.get("versions", [])
+        for item in version.get("openItems", [])
+        if isinstance(item, dict)
+    ]
+    if not filtered_kind_items or any("kind" not in item.get("missingTools", []) for item in filtered_kind_items):
+        errors.append("missing-tool filter should only keep items blocked on kind")
+
     evidence_summary = evidence_worklist.get("summary", {})
     evidence_versions = {
         version.get("version"): version
@@ -790,6 +897,14 @@ def main() -> int:
     prepared_blockers = prepared_queue_worklist.get("blockers", {})
     if prepared_blockers.get("environment") != [{"status": "cluster-unavailable", "items": 14}]:
         errors.append("prepared evidence-dir worklist must preserve environment blocker summary")
+    prepared_environment_summary = prepared_environment_filter.get("summary", {})
+    if prepared_environment_summary.get("openItems") != 14 or prepared_environment_summary.get("blockedByEnvironment") != 14:
+        errors.append("prepared environment-status filter should keep fourteen cluster-unavailable items")
+    if prepared_environment_filter.get("filters", {}).get("environmentStatuses") != ["cluster-unavailable"]:
+        errors.append("prepared environment-status filter should be recorded")
+    prepared_capture_summary = prepared_capture_filter.get("summary", {})
+    if prepared_capture_summary.get("openItems") != 2 or prepared_capture_summary.get("captureReady") != 2:
+        errors.append("prepared capture-status filter should keep two tool-ready items")
     if prepared_selected.get("captureStatus") != "tool-ready" or prepared_selected.get("kind") != "krew":
         errors.append("prepared evidence-dir selector should use persisted queue ordering and choose a Krew item")
 
@@ -845,6 +960,13 @@ def main() -> int:
         errors.append("tool-blocked next task should select the 0.4.4 missing-tools item")
     if "kind" not in blocked_selected.get("missingTools", []):
         errors.append("tool-blocked next task should preserve missing tools")
+    kind_selected = next_task_kind_payload.get("selected") or {}
+    if kind_selected.get("id") != "02-lightweight-cluster-smoke":
+        errors.append("missing-tool filtered next task should select the first kind-blocked item")
+    if next_task_kind_payload.get("summary", {}).get("candidateItems") != 5:
+        errors.append("missing-tool filtered next task should search five candidate items")
+    if next_task_kind_payload.get("filters", {}).get("missingTools") != ["kind"]:
+        errors.append("missing-tool filtered next task should preserve missing-tool filter")
     probe_selected = probe_next_task_payload.get("selected") or {}
     if probe_next_task_payload.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
         errors.append("probe next task must report unavailable cluster access")

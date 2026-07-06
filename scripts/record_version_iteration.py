@@ -96,6 +96,9 @@ def record_iteration(
     probe_environment: bool,
     kubectl: str,
     evidence_dir: Path | None = None,
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     history_dir.mkdir(parents=True, exist_ok=True)
     index = load_index(history_dir)
@@ -111,6 +114,9 @@ def record_iteration(
         probe_environment=probe_environment,
         kubectl=kubectl,
         evidence_dir=evidence_dir,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
 
     previous = latest_run(index)
@@ -136,6 +142,9 @@ def record_iteration(
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+            "captureStatuses": list(capture_status_filters or []),
+            "missingTools": list(missing_tool_filters or []),
+            "environmentStatuses": list(environment_status_filters or []),
         },
         "queueSource": worklist.get("queueSource", "generated"),
         "summary": worklist["summary"],
@@ -156,6 +165,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--created-at", help="stable creation timestamp for tests")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -173,6 +185,9 @@ def main(argv: list[str] | None = None) -> int:
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
+            capture_status_filters=args.capture_status,
+            missing_tool_filters=args.missing_tool,
+            environment_status_filters=args.environment_status,
         )
     except ValueError as exc:
         print("version-iteration-history: failed")

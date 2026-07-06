@@ -102,6 +102,9 @@ def build_selection(
     evidence_dir: Path | None = None,
     skip_complete_evidence: bool = False,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     if skip_complete_evidence and evidence_dir is None:
         raise ValueError("--skip-complete-evidence requires --evidence-dir")
@@ -111,6 +114,9 @@ def build_selection(
         probe_environment=probe_environment,
         kubectl=kubectl,
         evidence_dir=evidence_dir,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     items = candidates(worklist)
     selectable_items = [materialize_item(item, evidence_dir) for item in items] if evidence_dir is not None else items
@@ -137,6 +143,9 @@ def build_selection(
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
             "skipCompleteEvidence": skip_complete_evidence,
+            "captureStatuses": list(capture_status_filters or []),
+            "missingTools": list(missing_tool_filters or []),
+            "environmentStatuses": list(environment_status_filters or []),
         },
         "statusPriority": list(priority),
         "summary": {
@@ -244,6 +253,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--include-complete", action="store_true", help="include complete versions in the search scope")
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
     parser.add_argument(
         "--skip-complete-evidence",
         action="store_true",
@@ -261,6 +273,9 @@ def main(argv: list[str] | None = None) -> int:
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
             skip_complete_evidence=args.skip_complete_evidence,
+            capture_status_filters=args.capture_status,
+            missing_tool_filters=args.missing_tool,
+            environment_status_filters=args.environment_status,
         )
     except ValueError as exc:
         print("next-version-task: failed", file=sys.stderr)

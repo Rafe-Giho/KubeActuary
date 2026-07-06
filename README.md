@@ -500,9 +500,12 @@ python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
+python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind
+python3 -B scripts/select_next_version_task.py --missing-tool kind
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
 python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --version 0.4.3
+python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-kind-iteration --open-only --missing-tool kind
 python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --open-only --evidence-dir evidence/live
 python3 -B scripts/compare_version_iterations.py /tmp/kubeactuary-before /tmp/kubeactuary-after --format markdown
 python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --probe-environment

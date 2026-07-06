@@ -82,7 +82,10 @@ reuse visible during repeated local verification. Worklist Markdown also prints
 missing tools and next steps per item so blocked local loops remain actionable.
 It also summarizes repeated missing-tool and environment blockers across the
 whole worklist and per version, so repeated validation can focus on the shared
-blocker before re-running evidence commands.
+blocker before re-running evidence commands. Use `--capture-status`,
+`--missing-tool`, and `--environment-status` on worklist, next-task,
+iteration-pack, and iteration-history commands to keep a local loop focused on
+one blocker class.
 Version iteration packs preserve the same queue source in their index and
 per-version files. Version iteration history records and status output keep
 that source so run-to-run comparisons remain traceable. Persisted next-task
