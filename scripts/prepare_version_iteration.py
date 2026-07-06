@@ -29,6 +29,7 @@ def iteration_record(version: dict[str, Any], worklist: dict[str, Any]) -> dict[
     record = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
+        "sourceWorklistQueueSource": worklist.get("queueSource"),
         "source": worklist.get("source"),
         "releaseSuite": worklist.get("releaseSuite"),
         "version": version.get("version"),
@@ -53,6 +54,7 @@ def render_iteration(record: dict[str, Any]) -> str:
         "",
         f"Schema: `{record['schemaVersion']}`",
         f"Source: `{record['source']}`",
+        f"Queue source: `{record.get('sourceWorklistQueueSource') or 'generated'}`",
         f"Status: `{record['status']}`",
         "",
         "## Summary",
@@ -99,6 +101,7 @@ def render_index(worklist: dict[str, Any]) -> str:
         f"Schema: `{SCHEMA_VERSION}`",
         f"Worklist schema: `{worklist['schemaVersion']}`",
         f"Source: `{worklist['source']}`",
+        f"Queue source: `{worklist.get('queueSource', 'generated')}`",
         "",
         "## Summary",
         "",

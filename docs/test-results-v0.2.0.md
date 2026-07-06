@@ -262,6 +262,7 @@ Result:
   prepared live validation queue reuse,
   queue-source visibility,
   worklist missing-tool and next-step visibility,
+  iteration pack queue-source preservation,
   next-task selection,
   evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;

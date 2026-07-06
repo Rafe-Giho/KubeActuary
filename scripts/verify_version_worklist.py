@@ -205,6 +205,23 @@ def main() -> int:
             "--evidence-dir",
             str(prepared_queue_dir),
         )
+        prepared_queue_iteration_dir = tmpdir / "prepared-queue-iteration"
+        prepared_queue_iteration = run_prepare(
+            str(prepared_queue_iteration_dir),
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
+        prepared_queue_iteration_readme = (
+            prepared_queue_iteration_dir / "README.md"
+        ).read_text() if (prepared_queue_iteration_dir / "README.md").is_file() else ""
+        prepared_queue_iteration_path = prepared_queue_iteration_dir / "versions" / "current-baseline.json"
+        prepared_queue_iteration_payload = (
+            json.loads(prepared_queue_iteration_path.read_text()) if prepared_queue_iteration_path.is_file() else {}
+        )
+        prepared_queue_iteration_markdown = (
+            prepared_queue_iteration_dir / "versions" / "current-baseline.md"
+        ).read_text() if (prepared_queue_iteration_dir / "versions" / "current-baseline.md").is_file() else ""
         manual_queue_dir = tmpdir / "manual-prepared-queue"
         (manual_queue_dir / ".kubeactuary").mkdir(parents=True)
         (manual_queue_dir / ".kubeactuary" / "live-validation-queue.json").write_text(
@@ -457,6 +474,17 @@ def main() -> int:
             or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_next_markdown.stdout
         ):
             errors.append("prepared queue next-task Markdown must show prepared queue source")
+        if prepared_queue_iteration.returncode != 0:
+            errors.append(
+                "prepared queue iteration failed: "
+                f"{prepared_queue_iteration.stderr.strip() or prepared_queue_iteration.stdout.strip()}"
+            )
+        if "Queue source: `prepared-live-validation-queue`" not in prepared_queue_iteration_readme:
+            errors.append("prepared queue iteration index must show prepared queue source")
+        if prepared_queue_iteration_payload.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
+            errors.append("prepared queue iteration JSON must preserve queue source")
+        if "Queue source: `prepared-live-validation-queue`" not in prepared_queue_iteration_markdown:
+            errors.append("prepared queue iteration Markdown must show prepared queue source")
     next_task = parse_worklist("next task", next_task_result, errors)
     next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
