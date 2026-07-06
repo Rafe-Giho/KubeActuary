@@ -193,6 +193,7 @@ Expected:
   queue-source preservation and zero-run reporting for non-`tool-ready`
   selected tasks;
 - version iteration advance check prints `version-iteration-advance: passed`
+  and verifies selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
   reports;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;

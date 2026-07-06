@@ -229,6 +229,11 @@ def main() -> int:
             errors.append("probe-blocked advance must persist capture-status filters")
         if blocked_payload.get("nextTask", {}).get("captureStatus") != "blocked-by-environment":
             errors.append("probe-blocked advance next-task must preserve filtered capture status")
+        blocked_next_step = "start or select a disposable cluster, then rerun the probe"
+        if blocked_payload.get("nextTask", {}).get("environmentStatus") != "cluster-unavailable":
+            errors.append("probe-blocked advance next-task must preserve environment status")
+        if blocked_payload.get("nextTask", {}).get("nextStep") != blocked_next_step:
+            errors.append("probe-blocked advance next-task must preserve the blocker next step")
         if blocked_payload.get("after", {}).get("runId") != "blocked-advance-blocked":
             errors.append("probe-blocked advance must record a blocked follow-up history snapshot")
         blocked_diff = blocked_payload.get("after", {}).get("diffSummary", {})
@@ -251,12 +256,20 @@ def main() -> int:
                 errors.append("probe-blocked runner record must preserve zero executed commands")
         blocked_advance_record = blocked_payload.get("advanceRecord") or {}
         blocked_advance_json = Path(blocked_advance_record.get("json", ""))
-        if not blocked_advance_json.is_file():
+        blocked_advance_md = Path(blocked_advance_record.get("markdown", ""))
+        if not blocked_advance_json.is_file() or not blocked_advance_md.is_file():
             errors.append("probe-blocked advance must record its blocked status")
         else:
             blocked_advance_payload = json.loads(blocked_advance_json.read_text())
+            blocked_advance_md_text = blocked_advance_md.read_text()
             if blocked_advance_payload.get("status") != "blocked-by-environment":
                 errors.append("probe-blocked advance record must preserve blocked status")
+            if blocked_advance_payload.get("nextTask", {}).get("environmentStatus") != "cluster-unavailable":
+                errors.append("probe-blocked advance record must preserve environment status")
+            if "next task environment: `cluster-unavailable`" not in blocked_advance_md_text:
+                errors.append("probe-blocked advance Markdown must show environment status")
+            if f"next task next step: {blocked_next_step}" not in blocked_advance_md_text:
+                errors.append("probe-blocked advance Markdown must show the blocker next step")
         if blocked_payload.get("history", {}).get("runs") != 2:
             errors.append("probe-blocked advance must record before and blocked history runs")
         if blocked_payload.get("history", {}).get("latestRunId") != "blocked-advance-blocked":

@@ -73,6 +73,9 @@ def planned_result(
             "item": selected.get("item"),
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "missingTools": selected.get("missingTools", []),
+            "nextStep": selected.get("nextStep"),
             "commands": selected.get("resolvedCommands", selected.get("commands", [])),
         },
         "plannedSteps": [
@@ -213,6 +216,8 @@ def run_advance(
                 "selected": selected.get("id"),
                 "captureStatus": selected.get("captureStatus"),
                 "environmentStatus": selected.get("environmentStatus"),
+                "missingTools": selected.get("missingTools", []),
+                "nextStep": selected.get("nextStep"),
                 "skippedCompleteEvidence": prepared_next_task.get("summary", {}).get(
                     "skippedCompleteEvidence",
                     0,
@@ -248,6 +253,7 @@ def run_advance(
     history = inspect_history(history_dir)
     status = "passed" if runner.get("status") == "passed" and history.get("valid") is True else "failed"
     next_task = json.loads((evidence_dir / ".kubeactuary" / "next-version-task.json").read_text())
+    refreshed_selected = next_task.get("selected") or {}
     return {
         "schemaVersion": SCHEMA_VERSION,
         "mode": "run",
@@ -276,7 +282,11 @@ def run_advance(
         "nextTask": {
             "schemaVersion": next_task.get("schemaVersion"),
             "queueSource": queue_source,
-            "selected": (next_task.get("selected") or {}).get("id"),
+            "selected": refreshed_selected.get("id"),
+            "captureStatus": refreshed_selected.get("captureStatus"),
+            "environmentStatus": refreshed_selected.get("environmentStatus"),
+            "missingTools": refreshed_selected.get("missingTools", []),
+            "nextStep": refreshed_selected.get("nextStep"),
             "skippedCompleteEvidence": next_task.get("summary", {}).get("skippedCompleteEvidence", 0),
         },
         "history": history.get("summary", {}),
@@ -296,6 +306,16 @@ def render_text(result: dict[str, Any]) -> str:
     if result["mode"] == "plan":
         selected = result.get("selected", {})
         lines.append(f"selected: {selected.get('id')}")
+        if selected.get("captureStatus"):
+            lines.append(f"selected-status: {selected.get('captureStatus')}")
+        if selected.get("environmentStatus"):
+            lines.append(f"selected-environment: {selected.get('environmentStatus')}")
+        missing_tools = selected.get("missingTools") or []
+        if missing_tools:
+            tools = ", ".join(str(tool) for tool in missing_tools)
+            lines.append(f"selected-missing-tools: {tools}")
+        if selected.get("nextStep"):
+            lines.append(f"selected-next-step: {selected.get('nextStep')}")
         for command in selected.get("commands", []):
             lines.append(f"command: {command}")
         for step in result.get("plannedSteps", []):
@@ -312,6 +332,14 @@ def render_text(result: dict[str, Any]) -> str:
         lines.append(f"next-task: {result['nextTask'].get('selected')}")
         if result["nextTask"].get("captureStatus"):
             lines.append(f"next-task-status: {result['nextTask'].get('captureStatus')}")
+        if result["nextTask"].get("environmentStatus"):
+            lines.append(f"next-task-environment: {result['nextTask'].get('environmentStatus')}")
+        missing_tools = result["nextTask"].get("missingTools") or []
+        if missing_tools:
+            tools = ", ".join(str(tool) for tool in missing_tools)
+            lines.append(f"next-task-missing-tools: {tools}")
+        if result["nextTask"].get("nextStep"):
+            lines.append(f"next-task-next-step: {result['nextTask'].get('nextStep')}")
         lines.append(f"skipped-complete-evidence: {result['nextTask'].get('skippedCompleteEvidence')}")
         if result.get("advanceRecord"):
             lines.append(f"advance-record: {result['advanceRecord'].get('json')}")
@@ -345,10 +373,28 @@ def render_markdown(result: dict[str, Any]) -> str:
         lines.append(f"- next task: `{next_task.get('selected')}`")
         if next_task.get("captureStatus"):
             lines.append(f"- next task status: `{next_task.get('captureStatus')}`")
+        if next_task.get("environmentStatus"):
+            lines.append(f"- next task environment: `{next_task.get('environmentStatus')}`")
+        missing_tools = next_task.get("missingTools") or []
+        if missing_tools:
+            tools = ", ".join(str(tool) for tool in missing_tools)
+            lines.append(f"- next task missing tools: `{tools}`")
+        if next_task.get("nextStep"):
+            lines.append(f"- next task next step: {next_task.get('nextStep')}")
         lines.append(f"- history runs: {result.get('history', {}).get('runs')}")
     else:
         selected = result.get("selected") or {}
         lines.append(f"- selected: `{selected.get('id')}`")
+        if selected.get("captureStatus"):
+            lines.append(f"- selected status: `{selected.get('captureStatus')}`")
+        if selected.get("environmentStatus"):
+            lines.append(f"- selected environment: `{selected.get('environmentStatus')}`")
+        missing_tools = selected.get("missingTools") or []
+        if missing_tools:
+            tools = ", ".join(str(tool) for tool in missing_tools)
+            lines.append(f"- selected missing tools: `{tools}`")
+        if selected.get("nextStep"):
+            lines.append(f"- selected next step: {selected.get('nextStep')}")
         for step in result.get("plannedSteps", []):
             lines.append(f"- planned step: {step}")
     return "\n".join(lines) + "\n"

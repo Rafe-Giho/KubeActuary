@@ -47,6 +47,7 @@ Evidence collector release:
 - preserve prepared queue source in version iteration packs;
 - preserve prepared queue source in version iteration history records and status;
 - preserve prepared queue source in next-task runner and advance reports;
+- preserve environment blocker status and next steps in advance reports;
 - surface runner and advance queue source in release evidence status/progress;
 - infer prepared queue source for older evidence status records when a live
   validation queue is present;

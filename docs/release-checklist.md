@@ -193,7 +193,8 @@ Expected:
   blocking with blocker-focused filters, before/after evidence-aware history
   recording, and
   `.kubeactuary/next-version-task-run.json` runner status plus
-  `.kubeactuary/version-iteration-advance.json` workflow status output;
+  `.kubeactuary/version-iteration-advance.json` workflow status output,
+  including selected blocker status and next-step metadata;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records
