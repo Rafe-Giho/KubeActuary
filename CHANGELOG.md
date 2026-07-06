@@ -16,6 +16,7 @@ Evidence collector release:
 - version the structured help contract with compatibility fields;
 - add local release taskboard and repeatable release verification script;
 - add release taskboard audit for status and verification-count drift;
+- add versioned release progress reports for local task tracking;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate evidence evaluation against captured smoke manifests and
   supplemental evidence;

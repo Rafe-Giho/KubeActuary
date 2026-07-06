@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
+RELEASE_PROGRESS = ROOT / "scripts" / "verify_release_progress.py"
 EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
 EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
 EXTERNAL_EVIDENCE_BUILDER = ROOT / "scripts" / "verify_external_evidence_builder.py"
@@ -106,6 +107,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-taskboard: passed", result.stdout)
         self.assertIn("release-checks:", result.stdout)
+
+    def test_verify_release_progress(self):
+        result = subprocess.run(
+            [sys.executable, str(RELEASE_PROGRESS)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("release-progress: passed", result.stdout)
+        self.assertIn("checks: 70", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(

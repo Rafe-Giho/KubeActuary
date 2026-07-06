@@ -23,6 +23,7 @@ Status legend:
 | GitHub Actions CI | DONE | workflow YAML parse and release verification command |
 | Release checklist and notes | DONE | release checklist doc plus generated notes dry-run |
 | Release taskboard audit | DONE | `scripts/verify_release_taskboard.py` verifies statuses, remaining evidence notes, and release check count |
+| Release progress | DONE | `scripts/verify_release_progress.py` verifies versioned release progress reporting |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
 | External evidence builder | DONE | `scripts/verify_external_evidence_builder.py` verifies supplemental evidence record generation |
@@ -72,7 +73,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (69 checks)
+verification: passed (70 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

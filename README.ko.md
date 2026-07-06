@@ -360,6 +360,9 @@ schemas/
 scripts/
   generate_release_notes.py    release notes dry-run 생성기
   verify_release_taskboard.py  local release taskboard audit
+  generate_release_progress.py versioned release progress report generator
+  verify_release_progress.py   release progress verifier
+  kube-actuary.release-progress.v1 release progress schema
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   evaluate_external_gate_evidence.py external gate evidence evaluator
@@ -458,6 +461,7 @@ tests/
 python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
+python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py

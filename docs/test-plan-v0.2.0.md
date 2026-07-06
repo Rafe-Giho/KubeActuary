@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  external gate plan generation, external gate evidence evaluation,
+  release progress reporting, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
   human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
@@ -60,6 +60,7 @@ python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
+python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
@@ -128,6 +129,7 @@ Expected:
 - release notes dry-run prints verification and rollback sections;
 - conformance suite check prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
+- release progress check prints `release-progress: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate evidence check prints `external-gate-evidence: passed`;
 - external evidence builder check prints `external-evidence-builder: passed`;
@@ -228,6 +230,8 @@ Confirm from code and tests:
   matrix against CRD compatibility, upgrade fixtures, and explain quality;
 - release taskboard audit verifies status rows, remaining evidence notes, and
   the release suite check count;
+- release progress verifier checks versioned task status, external gates, live
+  readiness, and optional evidence directory status;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
@@ -343,7 +347,7 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, release taskboard audit, external gate plan, external gate evidence,
+  release notes dry-run, release taskboard audit, release progress, external gate plan, external gate evidence,
   external evidence builder, external evidence bundle, release evidence directory, release evidence status,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,

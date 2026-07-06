@@ -23,6 +23,7 @@ python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
+python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
@@ -89,6 +90,8 @@ Expected:
 - conformance suite verifies upstream N/N-1/N-2 local matrix;
 - release taskboard audit verifies status rows, remaining evidence notes, and
   release check count;
+- release progress report verifies versioned task status, external gates, live
+  readiness, and optional evidence directory status;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
 - external gate evidence evaluation maps captured smoke manifests and
@@ -174,6 +177,7 @@ Expected:
 - [ ] CRD rollback fixture YAML parses.
 - [ ] controller dry-run contract check passes.
 - [ ] release taskboard audit check passes.
+- [ ] release progress check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate evidence evaluation check passes.
 - [ ] external evidence builder check passes.

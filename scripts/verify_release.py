@@ -80,6 +80,11 @@ COMMON_CHECKS = (
         contains=("release-taskboard: passed", "release-checks:"),
     ),
     Check(
+        "release progress",
+        ("python3", "-B", "scripts/verify_release_progress.py"),
+        contains=("release-progress: passed", "verify: 16", "checks: 70"),
+    ),
+    Check(
         "external gate plan",
         ("python3", "-B", "scripts/verify_external_gate_plan.py"),
         contains=("external-gate-plan: passed", "verify-gates: 16", "doing: 0"),
