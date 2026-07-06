@@ -1,0 +1,175 @@
+{
+  "apiVersion": "kubeactuary.dev/v0alpha1",
+  "kind": "OperationCapsule",
+  "metadata": {
+    "createdAt": "2026-07-05T00:00:00Z",
+    "id": "opcap-example-apply-configmap-preflight"
+  },
+  "spec": {
+    "actor": "ci",
+    "intent": "apply the KubeActuary demo ConfigMap after collecting preflight evidence",
+    "kubeContext": null,
+    "manifestPath": "examples/configmap-demo.yaml",
+    "postChecks": [
+      "affected resources become Ready or Healthy",
+      "no new warning events for affected resources",
+      "rollout status succeeds"
+    ],
+    "proposedCommand": null,
+    "requiredEvidence": [
+      {
+        "description": "human-readable intent is present",
+        "id": "intent"
+      },
+      {
+        "description": "command or manifest target was parsed",
+        "id": "parsed-target"
+      },
+      {
+        "description": "kubectl auth can-i manifest resource passes for the target scope",
+        "id": "write-auth"
+      },
+      {
+        "description": "server-side dry-run succeeds",
+        "id": "server-dry-run"
+      },
+      {
+        "description": "diff is attached or explicitly unavailable",
+        "id": "diff"
+      },
+      {
+        "description": "rollback command or manifest is attached",
+        "id": "rollback"
+      },
+      {
+        "description": "post-change health checks are declared",
+        "id": "post-checks"
+      }
+    ],
+    "risk": {
+      "level": "medium",
+      "reasons": [
+        "cluster state may be modified"
+      ]
+    },
+    "rollback": {
+      "manifestPath": "examples/configmap-demo.rollback.yaml",
+      "manifestSha256": "737d9a274835e16c83272b8c9f74c84ca874bb02aa5896bf9dadf732e391c3d5",
+      "notes": "Rollback manifest restores the demo ConfigMap data.",
+      "provided": true,
+      "required": true
+    },
+    "target": {
+      "allNamespaces": false,
+      "allSelected": false,
+      "modifiesCluster": true,
+      "name": null,
+      "namespace": "default",
+      "raw": null,
+      "resource": null,
+      "scope": "unknown",
+      "verb": "manifest"
+    }
+  },
+  "status": {
+    "evidence": {
+      "diff": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:03:00Z",
+        "collector": "kubectl-diff",
+        "command": [
+          "kubectl",
+          "diff",
+          "-f",
+          "examples/configmap-demo.yaml",
+          "-n",
+          "default"
+        ],
+        "diffFound": true,
+        "exitCode": 1,
+        "ok": true,
+        "source": "examples/configmap-demo.yaml",
+        "sourceSha256": "02af31116e02017e9cc424dcec396a78275e83f6b5ea14805bf21f2c1c35e754",
+        "stderr": "",
+        "stdout": "configmap/kubeactuary-demo configured",
+        "summary": "kubectl diff returned 1 with diff output"
+      },
+      "intent": {
+        "actor": "reviewer",
+        "attachedAt": "2026-07-05T00:01:00Z",
+        "ok": true,
+        "summary": "intent reviewed"
+      },
+      "parsed-target": {
+        "actor": "reviewer",
+        "attachedAt": "2026-07-05T00:01:30Z",
+        "ok": true,
+        "summary": "manifest target reviewed"
+      },
+      "post-checks": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:05:00Z",
+        "checks": [
+          "affected resources become Ready or Healthy",
+          "no new warning events for affected resources",
+          "rollout status succeeds"
+        ],
+        "collector": "health-plan",
+        "ok": true,
+        "summary": "3 post-change health check(s) declared"
+      },
+      "rollback": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:04:00Z",
+        "collector": "rollback-plan",
+        "ok": true,
+        "rollbackType": "manifest",
+        "source": "examples/configmap-demo.rollback.yaml",
+        "sourceSha256": "737d9a274835e16c83272b8c9f74c84ca874bb02aa5896bf9dadf732e391c3d5",
+        "summary": "rollback manifest attached"
+      },
+      "server-dry-run": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:02:00Z",
+        "collector": "kubectl-server-dry-run",
+        "command": [
+          "kubectl",
+          "apply",
+          "--dry-run=server",
+          "-f",
+          "examples/configmap-demo.yaml",
+          "-n",
+          "default"
+        ],
+        "exitCode": 0,
+        "ok": true,
+        "source": "examples/configmap-demo.yaml",
+        "sourceSha256": "02af31116e02017e9cc424dcec396a78275e83f6b5ea14805bf21f2c1c35e754",
+        "stderr": "",
+        "stdout": "configmap/kubeactuary-demo configured (server dry run)",
+        "summary": "kubectl apply --dry-run=server returned 0"
+      },
+      "write-auth": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:02:30Z",
+        "collector": "kubectl-auth-can-i",
+        "command": [
+          "kubectl",
+          "auth",
+          "can-i",
+          "manifest",
+          "resource",
+          "-n",
+          "default"
+        ],
+        "exitCode": 0,
+        "ok": true,
+        "stderr": "",
+        "stdout": "yes",
+        "summary": "kubectl auth can-i manifest resource returned 0 with stdout: yes"
+      }
+    },
+    "observations": [],
+    "state": "verified"
+  }
+}

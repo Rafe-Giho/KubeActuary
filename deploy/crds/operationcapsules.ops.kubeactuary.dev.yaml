@@ -33,11 +33,13 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
+          description: OperationCapsule records a proposed Kubernetes operation, required evidence, and gate status.
           required:
             - spec
           properties:
             spec:
               type: object
+              description: Desired operation contract and evidence requirements.
               required:
                 - intent
                 - actor
@@ -47,15 +49,18 @@ spec:
               properties:
                 intent:
                   type: string
+                  description: Human-readable reason for the proposed operation.
                   minLength: 1
                 actor:
                   type: object
+                  description: Principal that drafted or owns the operation capsule.
                   required:
                     - type
                     - name
                   properties:
                     type:
                       type: string
+                      description: Actor category for audit and ownership.
                       enum:
                         - human
                         - ai-agent
@@ -63,31 +68,41 @@ spec:
                         - controller
                     name:
                       type: string
+                      description: Stable actor name or service identity.
                       minLength: 1
                 proposedAction:
                   type: object
+                  description: Proposed Kubernetes action. KubeActuary records this action but does not execute it.
                   required:
                     - verb
                   properties:
                     command:
                       type: string
+                      description: Original proposed kubectl command, when the capsule came from an imperative command.
                     verb:
                       type: string
+                      description: Kubernetes verb or manifest action classification.
                     resource:
                       type: string
+                      description: Target resource kind or plural name, when known.
                     name:
                       type: string
+                      description: Target object name, when known.
                     namespace:
                       type: string
+                      description: Target namespace for namespaced operations.
                     manifestRef:
                       type: string
+                      description: Local or Git-tracked manifest path associated with the proposed action.
                 risk:
                   type: object
+                  description: Local blast-radius classification for the proposed action.
                   required:
                     - level
                   properties:
                     level:
                       type: string
+                      description: Risk level inferred from target scope, verb, and namespace sensitivity.
                       enum:
                         - low
                         - medium
@@ -95,14 +110,17 @@ spec:
                         - critical
                     reasons:
                       type: array
+                      description: Human-readable reasons for the selected risk level.
                       items:
                         type: string
                 requiredEvidence:
                   type: array
+                  description: Evidence identifiers that must be attached successfully before the gate opens.
                   items:
                     type: string
                 evidence:
                   type: array
+                  description: Embedded evidence summaries attached by collectors, reviewers, or external tools.
                   items:
                     type: object
                     required:
@@ -114,35 +132,78 @@ spec:
                     properties:
                       id:
                         type: string
+                        description: Evidence identifier matching or extending requiredEvidence.
                       ok:
                         type: boolean
+                        description: Whether this evidence record supports opening the gate.
                       summary:
                         type: string
+                        description: Short human-readable evidence result.
                       actor:
                         type: string
+                        description: Actor that attached the evidence.
                       attachedAt:
                         type: string
+                        description: Timestamp when the evidence was attached.
                       sourceRef:
                         type: string
+                        description: Path or reference for the source artifact used as evidence.
                       sourceSha256:
                         type: string
+                        description: SHA-256 digest of the source artifact when available.
+                      collector:
+                        type: string
+                        description: Collector or tool that produced the evidence.
+                      reason:
+                        type: string
+                        description: Stable machine-readable reason for collector success, failure, or inapplicability.
+                      exitCode:
+                        type: integer
+                        description: Exit code from a safe collector command.
+                      inapplicable:
+                        type: boolean
+                        description: Whether the evidence records an intentionally unavailable collector path.
+                      diffFound:
+                        type: boolean
+                        description: Whether kubectl diff found a proposed change.
+                      rollbackType:
+                        type: string
+                        description: Rollback evidence type, such as command or manifest.
+                postChecks:
+                  type: array
+                  description: Planned post-change checks to run after an external executor applies the operation.
+                  items:
+                    type: string
                 rollback:
                   type: object
+                  description: Explicit rollback plan or manifest reference for the operation.
                   properties:
                     required:
                       type: boolean
+                      description: Whether rollback evidence is required for this operation.
+                    provided:
+                      type: boolean
+                      description: Whether explicit rollback evidence has been provided.
                     command:
                       type: string
+                      description: Explicit rollback command for a human or external executor.
                     manifestRef:
                       type: string
+                      description: Manifest path for rollback evidence.
+                    manifestSha256:
+                      type: string
+                      description: SHA-256 digest of the rollback manifest.
                 ttlSecondsAfterFinished:
                   type: integer
+                  description: Optional retention hint for a future controller after terminal status.
                   minimum: 0
             status:
               type: object
+              description: Derived gate state, missing evidence, failed evidence, digest, and conditions.
               properties:
                 phase:
                   type: string
+                  description: High-level lifecycle phase derived from evidence and gate state.
                   enum:
                     - Drafted
                     - EvidenceAttached
@@ -152,21 +213,27 @@ spec:
                     - Executed
                 gate:
                   type: string
+                  description: Open when all required evidence exists and no required evidence failed.
                   enum:
                     - Open
                     - Closed
                 missingEvidence:
                   type: array
+                  description: Required evidence identifiers that have not been attached.
                   items:
                     type: string
                 failedEvidence:
                   type: array
+                  description: Required evidence identifiers attached with ok=false.
                   items:
                     type: string
                 digest:
                   type: string
+                  description: SHA-256 digest of capsule identity and spec for audit references.
+                  pattern: ^sha256:[a-f0-9]{64}$
                 conditions:
                   type: array
+                  description: Kubernetes-style status conditions derived from the evidence gate.
                   items:
                     type: object
                     required:
@@ -175,16 +242,26 @@ spec:
                     properties:
                       type:
                         type: string
+                        description: Condition type for evidence completeness, gate state, blocked state, rollback readiness, or expiry.
+                        enum:
+                          - EvidenceComplete
+                          - GateOpen
+                          - Blocked
+                          - RollbackReady
+                          - Expired
                       status:
                         type: string
+                        description: Kubernetes condition status.
                         enum:
                           - "True"
                           - "False"
                           - Unknown
                       reason:
                         type: string
+                        description: Stable machine-readable reason for the condition status.
                       message:
                         type: string
+                        description: Human-readable explanation of the condition.
                       lastTransitionTime:
                         type: string
-
+                        description: Optional time when this condition last changed.

@@ -8,6 +8,8 @@ import getpass
 import hashlib
 import json
 import os
+import re
+import shutil
 import shlex
 import subprocess
 import sys
@@ -16,7 +18,36 @@ from pathlib import Path
 from typing import Any
 
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
+HELP_SCHEMA_VERSION = "kube-actuary.help.v1"
+HELP_COMPATIBILITY = {
+    "schemaVersion": HELP_SCHEMA_VERSION,
+    "introducedIn": "0.2.3",
+    "backwardCompatibleUntil": "1.0.0",
+    "requiredTopLevelFields": [
+        "schemaVersion",
+        "compatibility",
+        "name",
+        "version",
+        "summary",
+        "selectedTopic",
+        "usage",
+        "topics",
+        "workflow",
+        "safety",
+        "commands",
+        "evidence",
+        "agentContract",
+    ],
+    "requiredCommandFields": [
+        "name",
+        "summary",
+        "clusterAccess",
+        "clusterWrites",
+        "capsuleWrites",
+        "examples",
+    ],
+}
 
 READ_VERBS = {
     "api-resources",
@@ -74,6 +105,186 @@ CLUSTER_SCOPED_RESOURCES = {
 }
 
 SENSITIVE_NAMESPACES = {"prod", "production", "kube-system", "kube-public", "kube-node-lease"}
+
+HELP_TOPICS = ("overview", "workflow", "commands", "evidence", "safety", "agents", "all")
+VALID_RISK_LEVELS = {"low", "medium", "high", "critical"}
+VALID_STATES = {"drafted", "evidence-attached", "verified", "blocked", "executed"}
+VALID_TARGET_SCOPES = {"namespace", "cluster", "unknown"}
+
+
+COMMAND_HELP: list[dict[str, Any]] = [
+    {
+        "name": "draft",
+        "summary": "Create an OperationCapsule draft from a command or manifest.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "examples": [
+            'python3 bin/kube-actuary draft --intent "inspect pods" --command "kubectl get pods -n default"',
+            'python3 bin/kube-actuary draft --intent "apply demo config" --manifest examples/configmap-demo.yaml',
+        ],
+    },
+    {
+        "name": "inspect",
+        "summary": "Print capsule target, risk, state, and evidence status.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary inspect capsule.json"],
+    },
+    {
+        "name": "validate",
+        "summary": "Validate capsule JSON structure without contacting the cluster.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": [
+            "python3 bin/kube-actuary validate capsule.json",
+            "python3 bin/kube-actuary validate capsule.json --format json",
+        ],
+    },
+    {
+        "name": "doctor",
+        "summary": "Check local runtime dependencies and kubectl version hints.",
+        "clusterAccess": "kubectl version --client=true -o json",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": [
+            "python3 bin/kube-actuary doctor",
+            "python3 bin/kube-actuary doctor --kubectl /path/to/kubectl --server-version v1.30.0",
+        ],
+    },
+    {
+        "name": "attach-evidence",
+        "summary": "Attach manual or external evidence to a capsule.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "examples": [
+            'python3 bin/kube-actuary attach-evidence capsule.json --id owner-approval --summary "approved" --actor reviewer --out capsule.approved.json'
+        ],
+    },
+    {
+        "name": "collect auth",
+        "summary": "Attach kubectl auth can-i evidence without running the proposed operation.",
+        "clusterAccess": "kubectl auth can-i",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "evidence": ["read-auth", "write-auth"],
+        "examples": ["python3 bin/kube-actuary collect auth capsule.json --out capsule.with-auth.json"],
+    },
+    {
+        "name": "collect dry-run",
+        "summary": "Attach server-side dry-run evidence for a manifest-based operation.",
+        "clusterAccess": "kubectl apply --dry-run=server -f <manifest>",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "evidence": ["server-dry-run"],
+        "examples": [
+            "python3 bin/kube-actuary collect dry-run capsule.json --manifest manifest.yaml --out capsule.with-dry-run.json"
+        ],
+    },
+    {
+        "name": "collect diff",
+        "summary": "Attach kubectl diff evidence for a manifest-based operation.",
+        "clusterAccess": "kubectl diff -f <manifest>",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "evidence": ["diff"],
+        "examples": ["python3 bin/kube-actuary collect diff capsule.json --manifest manifest.yaml --out capsule.with-diff.json"],
+    },
+    {
+        "name": "collect rollback",
+        "summary": "Attach an explicit rollback command or rollback manifest hash.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "evidence": ["rollback"],
+        "examples": [
+            'python3 bin/kube-actuary collect rollback capsule.json --command "kubectl rollout undo deployment app -n default"',
+            "python3 bin/kube-actuary collect rollback capsule.json --manifest rollback.yaml",
+        ],
+    },
+    {
+        "name": "collect health-plan",
+        "summary": "Attach the declared post-change check plan without polling the cluster.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": True,
+        "evidence": ["post-checks"],
+        "examples": ["python3 bin/kube-actuary collect health-plan capsule.json --out capsule.with-health.json"],
+    },
+    {
+        "name": "verify",
+        "summary": "Return success only when all required evidence is present and successful.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary verify capsule.json"],
+    },
+    {
+        "name": "gate",
+        "summary": "Print open or closed. Open means the capsule is an execution candidate, not an executor.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary gate capsule.json"],
+    },
+    {
+        "name": "render-crd",
+        "summary": "Render a local capsule as an OperationCapsule CRD object.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary render-crd capsule.json --name my-op --namespace default"],
+    },
+    {
+        "name": "digest",
+        "summary": "Print a deterministic SHA-256 digest over capsule identity and spec.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary digest capsule.json"],
+    },
+    {
+        "name": "demo",
+        "summary": "Print a sample high-risk capsule.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": ["python3 bin/kube-actuary demo"],
+    },
+    {
+        "name": "help",
+        "summary": "Print human-readable help or agent-readable JSON help.",
+        "clusterAccess": "none",
+        "clusterWrites": False,
+        "capsuleWrites": False,
+        "examples": [
+            "python3 bin/kube-actuary help workflow",
+            "python3 bin/kube-actuary help agents --format json",
+        ],
+    },
+]
+
+WORKFLOW_HELP = [
+    "Draft a capsule from intent plus a kubectl command or manifest.",
+    "Inspect the parsed target, risk, and required evidence.",
+    "Collect safe evidence. Collectors may run auth, diff, dry-run, or local hash checks; they do not execute proposed writes.",
+    "Attach human approval, blast-radius, or external policy evidence when required.",
+    "Run verify or gate. Gate opens only when every required evidence item is present and successful.",
+    "Hand the verified capsule to a human, CI, GitOps, or a future bounded executor.",
+]
+
+SAFETY_HELP = [
+    "KubeActuary does not execute the proposed Kubernetes write.",
+    "collect auth runs kubectl auth can-i.",
+    "collect dry-run runs kubectl apply --dry-run=server -f <manifest>.",
+    "collect diff runs kubectl diff -f <manifest> and treats exit 0 and 1 as valid evidence.",
+    "doctor runs kubectl version --client=true -o json for local client diagnostics only.",
+    "collect rollback, collect health-plan, validate, digest, verify, gate, inspect, and render-crd do not call kubectl.",
+    "When no manifest is available, dry-run and diff attach failed inapplicable evidence instead of running imperative writes.",
+]
 
 
 def dns_label(value: str) -> str:
@@ -359,6 +570,317 @@ def sha256_file(path: str) -> str:
     return digest.hexdigest()
 
 
+def capsule_spec_digest(capsule: dict[str, Any]) -> str:
+    metadata = capsule.get("metadata", {})
+    payload = {
+        "apiVersion": capsule.get("apiVersion"),
+        "kind": capsule.get("kind"),
+        "metadata": {
+            "id": metadata.get("id"),
+        },
+        "spec": capsule.get("spec", {}),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def shell_join(command: list[str]) -> str:
+    return " ".join(shlex.quote(part) for part in command)
+
+
+def evidence_required(capsule: dict[str, Any], evidence_id: str) -> bool:
+    return evidence_id in {item.get("id") for item in capsule.get("spec", {}).get("requiredEvidence", [])}
+
+
+def attach_collector_evidence(capsule: dict[str, Any], evidence_id: str, evidence: dict[str, Any]) -> None:
+    attach_evidence_record(capsule, evidence_id, evidence, allow_extra=not evidence_required(capsule, evidence_id))
+
+
+def manifest_path(capsule: dict[str, Any], override: str | None) -> str | None:
+    return override or capsule.get("spec", {}).get("manifestPath")
+
+
+def scoped_kubectl_command(base: list[str], spec: dict[str, Any], target: dict[str, Any]) -> list[str]:
+    command = list(base)
+    context = spec.get("kubeContext")
+    namespace = target.get("namespace")
+    if context:
+        command.extend(["--context", context])
+    if namespace and target.get("scope") != "cluster":
+        command.extend(["-n", namespace])
+    return command
+
+
+def source_fields(path: str) -> dict[str, str]:
+    if not Path(path).is_file():
+        return {"source": path}
+    return {"source": path, "sourceSha256": sha256_file(path)}
+
+
+def collector_summary(reason: str, message: str) -> str:
+    return f"{reason}: {message}"
+
+
+def inapplicable_manifest_evidence(args: argparse.Namespace, collector: str, reason: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "summary": collector_summary("inapplicable", reason),
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+        "collector": collector,
+        "reason": "manifest-required",
+        "inapplicable": True,
+    }
+
+
+def help_payload(selected_topic: str) -> dict[str, Any]:
+    return {
+        "schemaVersion": HELP_SCHEMA_VERSION,
+        "compatibility": HELP_COMPATIBILITY,
+        "name": "kube-actuary",
+        "version": VERSION,
+        "summary": "Evidence-carrying operations for AI-assisted Kubernetes.",
+        "selectedTopic": selected_topic,
+        "usage": [
+            "kube-actuary <command> [flags]",
+            "kubectl actuary <command> [flags]",
+            "kube-actuary help [topic] [--format text|json]",
+        ],
+        "topics": list(HELP_TOPICS),
+        "workflow": WORKFLOW_HELP,
+        "safety": SAFETY_HELP,
+        "commands": COMMAND_HELP,
+        "evidence": [
+            {"id": "intent", "requiredFor": "all capsules", "description": "human-readable intent is present"},
+            {"id": "parsed-target", "requiredFor": "all capsules", "description": "command or manifest target was parsed"},
+            {"id": "read-auth", "requiredFor": "read-only capsules", "description": "kubectl auth can-i proves read permission"},
+            {"id": "write-auth", "requiredFor": "mutating capsules", "description": "kubectl auth can-i proves write permission"},
+            {"id": "server-dry-run", "requiredFor": "mutating capsules", "description": "server-side dry-run succeeds"},
+            {"id": "diff", "requiredFor": "mutating capsules", "description": "diff is attached or explicitly unavailable"},
+            {"id": "rollback", "requiredFor": "mutating capsules", "description": "rollback command or manifest is attached"},
+            {"id": "post-checks", "requiredFor": "mutating capsules", "description": "post-change health checks are declared"},
+            {"id": "blast-radius", "requiredFor": "high or critical risk", "description": "affected resources are enumerated"},
+            {"id": "owner-approval", "requiredFor": "high or critical risk", "description": "owner approval is attached"},
+            {"id": "second-approval", "requiredFor": "critical risk", "description": "independent second approval is attached"},
+            {"id": "maintenance-window", "requiredFor": "critical risk", "description": "approved execution window is attached"},
+        ],
+        "agentContract": {
+            "defaultOutput": "Most commands print text. draft and evidence commands can write JSON capsules with --out.",
+            "structuredHelp": "Use kube-actuary help agents --format json.",
+            "safeClusterCommands": [
+                "kubectl version --client=true -o json",
+                "kubectl auth can-i ...",
+                "kubectl apply --dry-run=server -f <manifest>",
+                "kubectl diff -f <manifest>",
+            ],
+            "neverExecutes": [
+                "the capsule spec.proposedCommand",
+                "kubectl scale",
+                "kubectl delete",
+                "kubectl apply without --dry-run=server",
+                "interactive kubectl exec/attach/port-forward/proxy/debug",
+            ],
+            "exitCodes": {
+                "verify": {"0": "all required evidence is present and successful", "1": "missing or failed evidence"},
+                "validate": {"0": "capsule structure is valid", "1": "capsule structure is invalid"},
+                "doctor": {"0": "local checks passed or produced warnings", "1": "a required local check failed"},
+                "gate": {"0": "gate is open", "1": "gate is closed"},
+                "collect": {"0": "evidence was attached, even when the evidence itself is failed or inapplicable"},
+            },
+        },
+    }
+
+
+def command_line(command: dict[str, Any]) -> str:
+    return f"  {command['name'] + ':':<22} {command['summary']}"
+
+
+def format_bullets(lines: list[str]) -> list[str]:
+    return [f"  {line}" for line in lines]
+
+
+def command_group(names: set[str]) -> list[dict[str, Any]]:
+    return [command for command in COMMAND_HELP if command["name"] in names]
+
+
+def render_overview_help() -> str:
+    core = command_group({"draft", "inspect", "validate", "doctor", "attach-evidence", "verify", "gate", "render-crd", "digest"})
+    collectors = command_group({"collect auth", "collect dry-run", "collect diff", "collect rollback", "collect health-plan"})
+    additional = command_group({"demo", "help"})
+    lines = [
+        "Evidence-carrying operations for AI-assisted Kubernetes.",
+        "",
+        "USAGE",
+        "  kube-actuary <command> [flags]",
+        "  kubectl actuary <command> [flags]",
+        "",
+        "CORE COMMANDS",
+        *[command_line(command) for command in core],
+        "",
+        "COLLECTOR COMMANDS",
+        *[command_line(command) for command in collectors],
+        "",
+        "ADDITIONAL COMMANDS",
+        *[command_line(command) for command in additional],
+        "",
+        "HELP TOPICS",
+        "  workflow:              End-to-end capsule flow",
+        "  commands:              Full command reference",
+        "  evidence:              Required evidence ids and meanings",
+        "  safety:                What the CLI may and may not execute",
+        "  agents:                Machine-readable usage contract",
+        "  all:                   Full help bundle",
+        "",
+        "FLAGS",
+        "  --help                 Show argparse help for a command",
+        "  --version              Show kube-actuary version",
+        "",
+        "EXAMPLES",
+        '  kube-actuary draft --intent "inspect pods" --command "kubectl get pods -n default"',
+        "  kube-actuary collect auth capsule.json --out capsule.with-auth.json",
+        "  kube-actuary gate capsule.with-evidence.json",
+        "  kube-actuary help agents --format json",
+        "",
+        "SAFETY MODEL",
+        "  The CLI collects evidence and opens/closes a gate. It does not execute proposed writes.",
+        "",
+        "LEARN MORE",
+        "  Use `kube-actuary <command> --help` for command flags.",
+        "  Use `kube-actuary help <topic>` for workflow, evidence, safety, or agent guidance.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_workflow_help() -> str:
+    lines = [
+        "WORKFLOW",
+        *[f"  {index}. {step}" for index, step in enumerate(WORKFLOW_HELP, start=1)],
+        "",
+        "TYPICAL COMMAND PATH",
+        "  draft -> inspect -> collect/attach evidence -> verify -> gate -> external execution path",
+        "",
+        "EXAMPLES",
+        "  kube-actuary draft --intent \"apply demo config\" --manifest examples/configmap-demo.yaml --out capsule.json",
+        "  kube-actuary collect auth capsule.json --out capsule.auth.json",
+        "  kube-actuary collect dry-run capsule.auth.json --out capsule.dry-run.json",
+        "  kube-actuary collect diff capsule.dry-run.json --out capsule.diff.json",
+        "  kube-actuary collect rollback capsule.diff.json --manifest rollback.yaml --out capsule.rollback.json",
+        "  kube-actuary collect health-plan capsule.rollback.json --out capsule.ready.json",
+        "  kube-actuary gate capsule.ready.json",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_commands_help() -> str:
+    lines = ["COMMANDS"]
+    lines.extend(command_line(command) for command in COMMAND_HELP)
+    lines.extend(
+        [
+            "",
+            "COMMAND DETAILS",
+        ]
+    )
+    for command in COMMAND_HELP:
+        lines.append(f"  {command['name']}")
+        lines.append(f"    cluster access: {command['clusterAccess']}")
+        lines.append(f"    cluster writes: {str(command['clusterWrites']).lower()}")
+        lines.append(f"    capsule writes: {str(command['capsuleWrites']).lower()}")
+        if command.get("evidence"):
+            lines.append(f"    evidence: {', '.join(command['evidence'])}")
+    return "\n".join(lines) + "\n"
+
+
+def render_evidence_help() -> str:
+    payload = help_payload("evidence")
+    lines = [
+        "EVIDENCE IDS",
+        *[
+            f"  {item['id'] + ':':<22} {item['description']} ({item['requiredFor']})"
+            for item in payload["evidence"]
+        ],
+        "",
+        "GATE RULE",
+        "  gate opens only when every spec.requiredEvidence id is attached and ok=true.",
+        "  failed required evidence blocks the gate.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_safety_help() -> str:
+    lines = [
+        "SAFETY MODEL",
+        *format_bullets(SAFETY_HELP),
+        "",
+        "SAFE CLUSTER CALLS",
+        "  kubectl version --client=true -o json",
+        "  kubectl auth can-i ...",
+        "  kubectl apply --dry-run=server -f <manifest>",
+        "  kubectl diff -f <manifest>",
+        "",
+        "NEVER EXECUTED BY KUBEACTUARY",
+        "  spec.proposedCommand",
+        "  kubectl scale/delete/apply without server dry-run",
+        "  interactive exec/attach/port-forward/proxy/debug",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_agents_help() -> str:
+    payload = help_payload("agents")
+    contract = payload["agentContract"]
+    lines = [
+        "AGENT CONTRACT",
+        f"  schema version: {payload['schemaVersion']}",
+        f"  structured help: {contract['structuredHelp']}",
+        f"  default output: {contract['defaultOutput']}",
+        "",
+        "RECOMMENDED AGENT FLOW",
+        "  1. Run `kube-actuary help agents --format json` once and cache the contract.",
+        "  2. Draft a capsule instead of executing kubectl writes.",
+        "  3. Collect or attach required evidence.",
+        "  4. Treat `gate` exit 0 as an execution candidate, not execution permission by itself.",
+        "",
+        "JSON CONTRACT FIELDS",
+        "  commands[].clusterWrites says whether the command writes to the cluster.",
+        "  commands[].clusterAccess says which cluster call, if any, the command may run.",
+        "  compatibility.requiredCommandFields lists fields agents can rely on.",
+        "  agentContract.neverExecutes lists operations the CLI refuses to run.",
+        "  agentContract.exitCodes lists stable success/failure meanings.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_help_text(topic: str) -> str:
+    if topic == "all":
+        return "\n\n".join(
+            [
+                render_overview_help().rstrip(),
+                render_workflow_help().rstrip(),
+                render_commands_help().rstrip(),
+                render_evidence_help().rstrip(),
+                render_safety_help().rstrip(),
+                render_agents_help().rstrip(),
+            ]
+        ) + "\n"
+    renderers = {
+        "overview": render_overview_help,
+        "workflow": render_workflow_help,
+        "commands": render_commands_help,
+        "evidence": render_evidence_help,
+        "safety": render_safety_help,
+        "agents": render_agents_help,
+    }
+    return renderers[topic]()
+
+
+def help_command(args: argparse.Namespace) -> int:
+    if args.format == "json":
+        write_json(help_payload(args.topic), "-")
+        return 0
+    write_text(render_help_text(args.topic), "-")
+    return 0
+
+
 def attach_evidence_record(
     capsule: dict[str, Any],
     evidence_id: str,
@@ -458,28 +980,27 @@ def capsule_to_crd(capsule: dict[str, Any], args: argparse.Namespace) -> dict[st
             "reasons": risk.get("reasons", []),
         },
         "requiredEvidence": [item.get("id") for item in spec.get("requiredEvidence", []) if item.get("id")],
+        "postChecks": spec.get("postChecks", []),
     }
 
     if evidence:
         crd_spec["evidence"] = [
-            {
-                "id": evidence_id,
-                "ok": bool(record.get("ok")),
-                "summary": record.get("summary", ""),
-                "actor": record.get("actor", ""),
-                "attachedAt": record.get("attachedAt", ""),
-                **({"sourceRef": record["source"]} if record.get("source") else {}),
-                **({"sourceSha256": record["sourceSha256"]} if record.get("sourceSha256") else {}),
-            }
+            crd_evidence_record(evidence_id, record)
             for evidence_id, record in sorted(evidence.items())
         ]
 
     rollback = spec.get("rollback", {})
     crd_spec["rollback"] = {
         "required": bool(rollback.get("required")),
+        "provided": bool(rollback.get("provided")),
     }
-    if args.rollback_command:
-        crd_spec["rollback"]["command"] = args.rollback_command
+    rollback_command = args.rollback_command or rollback.get("command")
+    if rollback_command:
+        crd_spec["rollback"]["command"] = rollback_command
+    if rollback.get("manifestPath"):
+        crd_spec["rollback"]["manifestRef"] = rollback["manifestPath"]
+    if rollback.get("manifestSha256"):
+        crd_spec["rollback"]["manifestSha256"] = rollback["manifestSha256"]
     if args.ttl_seconds_after_finished is not None:
         crd_spec["ttlSecondsAfterFinished"] = args.ttl_seconds_after_finished
 
@@ -494,10 +1015,430 @@ def capsule_to_crd(capsule: dict[str, Any], args: argparse.Namespace) -> dict[st
             },
             "annotations": {
                 "kubeactuary.dev/capsule-id": metadata.get("id", ""),
+                "kubeactuary.dev/capsule-digest": f"sha256:{capsule_spec_digest(capsule)}",
             },
         },
         "spec": crd_spec,
+        "status": capsule_crd_status(capsule),
     }
+
+
+def crd_evidence_record(evidence_id: str, record: dict[str, Any]) -> dict[str, Any]:
+    rendered = {
+        "id": evidence_id,
+        "ok": bool(record.get("ok")),
+        "summary": record.get("summary", ""),
+        "actor": record.get("actor", ""),
+        "attachedAt": record.get("attachedAt", ""),
+    }
+    if record.get("source"):
+        rendered["sourceRef"] = record["source"]
+    if record.get("sourceSha256"):
+        rendered["sourceSha256"] = record["sourceSha256"]
+    for field in ("collector", "exitCode", "inapplicable", "diffFound", "rollbackType", "reason"):
+        if field in record:
+            rendered[field] = record[field]
+    return rendered
+
+
+def crd_condition(condition_type: str, status: bool, reason: str, message: str) -> dict[str, Any]:
+    return {
+        "type": condition_type,
+        "status": "True" if status else "False",
+        "reason": reason,
+        "message": message,
+    }
+
+
+def capsule_crd_status(capsule: dict[str, Any]) -> dict[str, Any]:
+    missing, failed = evidence_gaps(capsule)
+    spec = capsule.get("spec", {})
+    rollback = spec.get("rollback", {})
+    digest = f"sha256:{capsule_spec_digest(capsule)}"
+    evidence_complete = not missing and not failed
+    blocked = bool(failed)
+    gate_open = evidence_complete and not blocked
+    rollback_required = bool(rollback.get("required"))
+    rollback_ready = (not rollback_required) or bool(rollback.get("provided"))
+    expired = False
+
+    if gate_open:
+        phase = "GateOpen"
+    elif blocked:
+        phase = "Blocked"
+    elif missing:
+        phase = "EvidenceAttached"
+    else:
+        phase = "Drafted"
+
+    conditions = [
+        crd_condition(
+            "EvidenceComplete",
+            evidence_complete,
+            "AllEvidencePresent" if evidence_complete else "EvidenceMissingOrFailed",
+            "all required evidence is present and successful"
+            if evidence_complete
+            else "required evidence is missing or failed",
+        ),
+        crd_condition(
+            "GateOpen",
+            gate_open,
+            "GateOpen" if gate_open else "GateClosed",
+            "capsule is an execution candidate" if gate_open else "capsule is not an execution candidate",
+        ),
+        crd_condition(
+            "Blocked",
+            blocked,
+            "FailedEvidencePresent" if blocked else "NoFailedEvidence",
+            "one or more required evidence records failed" if blocked else "no failed required evidence",
+        ),
+        crd_condition(
+            "RollbackReady",
+            rollback_ready,
+            "RollbackProvided" if rollback_ready else "RollbackMissing",
+            "rollback evidence is available or not required"
+            if rollback_ready
+            else "rollback evidence is required but missing",
+        ),
+        crd_condition(
+            "Expired",
+            expired,
+            "NotExpired",
+            "no expiry policy has elapsed",
+        ),
+    ]
+
+    return {
+        "phase": phase,
+        "gate": "Open" if gate_open else "Closed",
+        "missingEvidence": missing,
+        "failedEvidence": failed,
+        "digest": digest,
+        "conditions": conditions,
+    }
+
+
+def add_validation_error(errors: list[dict[str, str]], path: str, message: str) -> None:
+    errors.append({"path": path, "message": message})
+
+
+def object_at(errors: list[dict[str, str]], value: Any, path: str) -> dict[str, Any] | None:
+    if isinstance(value, dict):
+        return value
+    add_validation_error(errors, path, "must be an object")
+    return None
+
+
+def list_at(errors: list[dict[str, str]], value: Any, path: str) -> list[Any] | None:
+    if isinstance(value, list):
+        return value
+    add_validation_error(errors, path, "must be a list")
+    return None
+
+
+def require_key(errors: list[dict[str, str]], document: dict[str, Any], key: str, path: str) -> Any:
+    if key not in document:
+        add_validation_error(errors, f"{path}.{key}" if path else key, "is required")
+        return None
+    return document[key]
+
+
+def require_string(
+    errors: list[dict[str, str]],
+    value: Any,
+    path: str,
+    *,
+    non_empty: bool = False,
+) -> None:
+    if not isinstance(value, str):
+        add_validation_error(errors, path, "must be a string")
+        return
+    if non_empty and not value.strip():
+        add_validation_error(errors, path, "must not be empty")
+
+
+def require_optional_string(errors: list[dict[str, str]], value: Any, path: str) -> None:
+    if value is not None and not isinstance(value, str):
+        add_validation_error(errors, path, "must be null or a string")
+
+
+def require_bool(errors: list[dict[str, str]], value: Any, path: str) -> None:
+    if not isinstance(value, bool):
+        add_validation_error(errors, path, "must be a boolean")
+
+
+def require_string_enum(errors: list[dict[str, str]], value: Any, path: str, allowed: set[str]) -> None:
+    require_string(errors, value, path, non_empty=True)
+    if isinstance(value, str) and value not in allowed:
+        add_validation_error(errors, path, f"must be one of {', '.join(sorted(allowed))}")
+
+
+def validate_string_list(errors: list[dict[str, str]], value: Any, path: str) -> None:
+    items = list_at(errors, value, path)
+    if items is None:
+        return
+    for index, item in enumerate(items):
+        require_string(errors, item, f"{path}[{index}]", non_empty=True)
+
+
+def validate_required_evidence(errors: list[dict[str, str]], value: Any) -> None:
+    items = list_at(errors, value, "spec.requiredEvidence")
+    if items is None:
+        return
+
+    seen: set[str] = set()
+    for index, item in enumerate(items):
+        path = f"spec.requiredEvidence[{index}]"
+        record = object_at(errors, item, path)
+        if record is None:
+            continue
+        evidence_id = require_key(errors, record, "id", path)
+        require_string(errors, evidence_id, f"{path}.id", non_empty=True)
+        if isinstance(evidence_id, str):
+            if evidence_id in seen:
+                add_validation_error(errors, f"{path}.id", "must be unique")
+            seen.add(evidence_id)
+        description = require_key(errors, record, "description", path)
+        require_string(errors, description, f"{path}.description", non_empty=True)
+
+
+def validate_evidence_records(errors: list[dict[str, str]], value: Any) -> None:
+    records = object_at(errors, value, "status.evidence")
+    if records is None:
+        return
+    for evidence_id, item in records.items():
+        path = f"status.evidence.{evidence_id}"
+        record = object_at(errors, item, path)
+        if record is None:
+            continue
+        require_bool(errors, require_key(errors, record, "ok", path), f"{path}.ok")
+        require_string(errors, require_key(errors, record, "summary", path), f"{path}.summary", non_empty=True)
+        require_string(errors, require_key(errors, record, "actor", path), f"{path}.actor", non_empty=True)
+        require_string(errors, require_key(errors, record, "attachedAt", path), f"{path}.attachedAt", non_empty=True)
+
+
+def validate_capsule_document(capsule: Any) -> list[dict[str, str]]:
+    errors: list[dict[str, str]] = []
+    document = object_at(errors, capsule, "$")
+    if document is None:
+        return errors
+
+    require_string(errors, require_key(errors, document, "apiVersion", ""), "apiVersion", non_empty=True)
+    if document.get("apiVersion") != "kubeactuary.dev/v0alpha1":
+        add_validation_error(errors, "apiVersion", "must be kubeactuary.dev/v0alpha1")
+    require_string(errors, require_key(errors, document, "kind", ""), "kind", non_empty=True)
+    if document.get("kind") != "OperationCapsule":
+        add_validation_error(errors, "kind", "must be OperationCapsule")
+
+    metadata = object_at(errors, require_key(errors, document, "metadata", ""), "metadata")
+    if metadata is not None:
+        metadata_id = require_key(errors, metadata, "id", "metadata")
+        require_string(errors, metadata_id, "metadata.id", non_empty=True)
+        if isinstance(metadata_id, str) and not metadata_id.startswith("opcap-"):
+            add_validation_error(errors, "metadata.id", "must start with opcap-")
+        require_string(errors, require_key(errors, metadata, "createdAt", "metadata"), "metadata.createdAt", non_empty=True)
+
+    spec = object_at(errors, require_key(errors, document, "spec", ""), "spec")
+    if spec is not None:
+        require_string(errors, require_key(errors, spec, "intent", "spec"), "spec.intent", non_empty=True)
+        require_string(errors, require_key(errors, spec, "actor", "spec"), "spec.actor", non_empty=True)
+        require_optional_string(errors, spec.get("kubeContext"), "spec.kubeContext")
+        require_optional_string(errors, spec.get("proposedCommand"), "spec.proposedCommand")
+        require_optional_string(errors, spec.get("manifestPath"), "spec.manifestPath")
+
+        target = object_at(errors, require_key(errors, spec, "target", "spec"), "spec.target")
+        if target is not None:
+            require_string(errors, require_key(errors, target, "verb", "spec.target"), "spec.target.verb", non_empty=True)
+            require_string_enum(
+                errors,
+                require_key(errors, target, "scope", "spec.target"),
+                "spec.target.scope",
+                VALID_TARGET_SCOPES,
+            )
+            require_bool(
+                errors,
+                require_key(errors, target, "modifiesCluster", "spec.target"),
+                "spec.target.modifiesCluster",
+            )
+
+        risk = object_at(errors, require_key(errors, spec, "risk", "spec"), "spec.risk")
+        if risk is not None:
+            require_string_enum(
+                errors,
+                require_key(errors, risk, "level", "spec.risk"),
+                "spec.risk.level",
+                VALID_RISK_LEVELS,
+            )
+            validate_string_list(errors, require_key(errors, risk, "reasons", "spec.risk"), "spec.risk.reasons")
+
+        validate_required_evidence(errors, require_key(errors, spec, "requiredEvidence", "spec"))
+
+        rollback = object_at(errors, require_key(errors, spec, "rollback", "spec"), "spec.rollback")
+        if rollback is not None:
+            require_bool(errors, require_key(errors, rollback, "required", "spec.rollback"), "spec.rollback.required")
+            require_bool(errors, require_key(errors, rollback, "provided", "spec.rollback"), "spec.rollback.provided")
+            require_optional_string(errors, rollback.get("command"), "spec.rollback.command")
+            require_optional_string(errors, rollback.get("manifestPath"), "spec.rollback.manifestPath")
+            require_optional_string(errors, rollback.get("manifestSha256"), "spec.rollback.manifestSha256")
+
+        validate_string_list(errors, require_key(errors, spec, "postChecks", "spec"), "spec.postChecks")
+
+    status = object_at(errors, require_key(errors, document, "status", ""), "status")
+    if status is not None:
+        require_string_enum(errors, require_key(errors, status, "state", "status"), "status.state", VALID_STATES)
+        validate_evidence_records(errors, require_key(errors, status, "evidence", "status"))
+        if "observations" in status and not isinstance(status["observations"], list):
+            add_validation_error(errors, "status.observations", "must be a list")
+
+    return errors
+
+
+def validate_capsule(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    errors = validate_capsule_document(capsule)
+
+    if args.format == "json":
+        write_json({"ok": not errors, "file": args.file, "errors": errors}, "-")
+        return 0 if not errors else 1
+
+    if errors:
+        print("validation: failed")
+        for error in errors:
+            print(f"validation-error: {error['path']}: {error['message']}")
+        return 1
+
+    print("validation: passed")
+    return 0
+
+
+def doctor_check(checks: list[dict[str, Any]], check_id: str, status: str, summary: str) -> None:
+    checks.append({"id": check_id, "status": status, "summary": summary})
+
+
+def doctor_summary(checks: list[dict[str, Any]]) -> str:
+    statuses = {check["status"] for check in checks}
+    if "fail" in statuses:
+        return "failed"
+    if "warn" in statuses:
+        return "ok-with-warnings"
+    return "ok"
+
+
+def parse_kubernetes_version(value: str | None) -> tuple[int, int] | None:
+    if not value:
+        return None
+    match = re.search(r"v?(\d+)\.(\d+)", value)
+    if not match:
+        return None
+    return int(match.group(1)), int(match.group(2))
+
+
+def kubectl_client_version(output: str) -> str | None:
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError:
+        match = re.search(r"Client Version:\s*(v?\d+\.\d+\.\S+)", output)
+        return match.group(1) if match else None
+
+    client = payload.get("clientVersion")
+    if isinstance(client, dict):
+        version = client.get("gitVersion")
+        return version if isinstance(version, str) else None
+    if isinstance(client, str):
+        return client
+    return None
+
+
+def collect_doctor_checks(args: argparse.Namespace) -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    if sys.version_info >= (3, 10):
+        doctor_check(checks, "python", "ok", f"Python {python_version} supports the current CLI")
+    else:
+        doctor_check(checks, "python", "fail", f"Python {python_version} is too old; Python 3.10+ is required")
+
+    doctor_check(checks, "runtime-dependencies", "ok", "no external Python packages are required")
+
+    kubectl_path = shutil.which(args.kubectl)
+    if not kubectl_path:
+        doctor_check(
+            checks,
+            "kubectl",
+            "warn",
+            f"kubectl not found at {args.kubectl}; collectors requiring kubectl will not run",
+        )
+        if args.server_version:
+            doctor_check(checks, "kubectl-skew", "warn", "server version was provided but kubectl client is unavailable")
+        return checks
+
+    doctor_check(checks, "kubectl", "ok", f"kubectl found at {kubectl_path}")
+    command = [kubectl_path, "version", "--client=true", "-o", "json"]
+    try:
+        result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5, check=False)
+    except subprocess.TimeoutExpired:
+        doctor_check(checks, "kubectl-client-version", "warn", "kubectl client version command timed out")
+        return checks
+    except OSError as exc:
+        doctor_check(checks, "kubectl-client-version", "warn", f"kubectl client version command failed: {exc}")
+        return checks
+
+    combined = (result.stdout + "\n" + result.stderr).strip()
+    if result.returncode != 0:
+        first_line = combined.splitlines()[0] if combined else "no output"
+        doctor_check(
+            checks,
+            "kubectl-client-version",
+            "warn",
+            f"kubectl client version command returned {result.returncode}: {first_line}",
+        )
+        return checks
+
+    client_version = kubectl_client_version(result.stdout)
+    if not client_version:
+        doctor_check(checks, "kubectl-client-version", "warn", "kubectl client version output was not recognized")
+        return checks
+
+    doctor_check(checks, "kubectl-client-version", "ok", f"kubectl client version: {client_version}")
+    if not args.server_version:
+        doctor_check(checks, "kubectl-skew", "ok", "server version not provided; skew comparison skipped")
+        return checks
+
+    client_minor = parse_kubernetes_version(client_version)
+    server_minor = parse_kubernetes_version(args.server_version)
+    if not client_minor:
+        doctor_check(checks, "kubectl-skew", "warn", f"could not parse kubectl client version {client_version}")
+    elif not server_minor:
+        doctor_check(checks, "kubectl-skew", "warn", f"could not parse server version {args.server_version}")
+    elif client_minor[0] != server_minor[0] or abs(client_minor[1] - server_minor[1]) > 1:
+        doctor_check(
+            checks,
+            "kubectl-skew",
+            "warn",
+            f"client {client_version} may be outside one minor of server {args.server_version}",
+        )
+    else:
+        doctor_check(
+            checks,
+            "kubectl-skew",
+            "ok",
+            f"client {client_version} is within one minor of server {args.server_version}",
+        )
+    return checks
+
+
+def doctor(args: argparse.Namespace) -> int:
+    checks = collect_doctor_checks(args)
+    summary = doctor_summary(checks)
+
+    if args.format == "json":
+        write_json({"ok": summary != "failed", "summary": summary, "checks": checks}, "-")
+        return 0 if summary != "failed" else 1
+
+    print(f"doctor: {summary}")
+    for check in checks:
+        prefix = {"ok": "check", "warn": "warning", "fail": "failure"}[check["status"]]
+        print(f"{prefix}: {check['id']}: {check['summary']}")
+    return 0 if summary != "failed" else 1
 
 
 def inspect_capsule(args: argparse.Namespace) -> int:
@@ -582,7 +1523,8 @@ def collect_auth(args: argparse.Namespace) -> int:
     stdout = result.stdout.strip()
     stderr = result.stderr.strip()
     ok = result.returncode == 0 and stdout.lower().splitlines()[:1] == ["yes"]
-    summary = f"{' '.join(shlex.quote(part) for part in command)} returned {result.returncode}"
+    reason = "command-ok" if ok else "authorization-denied"
+    summary = collector_summary(reason, f"{shell_join(command)} returned {result.returncode}")
     if stdout:
         summary += f" with stdout: {stdout.splitlines()[0]}"
 
@@ -592,6 +1534,7 @@ def collect_auth(args: argparse.Namespace) -> int:
         "actor": args.actor,
         "attachedAt": utc_now(),
         "collector": "kubectl-auth-can-i",
+        "reason": reason,
         "command": command,
         "exitCode": result.returncode,
         "stdout": stdout,
@@ -600,6 +1543,215 @@ def collect_auth(args: argparse.Namespace) -> int:
 
     attach_evidence_record(capsule, evidence_id, evidence)
     write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def collect_dry_run(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    spec = capsule.get("spec", {})
+    target = spec.get("target", {})
+    manifest = manifest_path(capsule, args.manifest)
+    collector = "kubectl-server-dry-run"
+
+    if not manifest:
+        evidence = inapplicable_manifest_evidence(
+            args,
+            collector,
+            "server-side dry-run requires a manifest path; proposed imperative commands are not executed",
+        )
+        attach_collector_evidence(capsule, "server-dry-run", evidence)
+        write_capsule_result(capsule, args.file, args.out, args.in_place)
+        return 0
+
+    if not Path(manifest).is_file():
+        evidence = {
+            "ok": False,
+            "summary": collector_summary("missing-source", f"manifest file not found: {manifest}"),
+            "actor": args.actor,
+            "attachedAt": utc_now(),
+            "collector": collector,
+            "reason": "manifest-not-found",
+            **source_fields(manifest),
+        }
+        attach_collector_evidence(capsule, "server-dry-run", evidence)
+        write_capsule_result(capsule, args.file, args.out, args.in_place)
+        return 0
+
+    command = scoped_kubectl_command(
+        [args.kubectl, "apply", "--dry-run=server", "-f", manifest],
+        spec,
+        target,
+    )
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+    reason = "command-ok" if result.returncode == 0 else "command-failed"
+    summary = collector_summary(reason, f"{shell_join(command)} returned {result.returncode}")
+    if stdout:
+        summary += f" with stdout: {stdout.splitlines()[0]}"
+
+    evidence = {
+        "ok": result.returncode == 0,
+        "summary": summary,
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+        "collector": collector,
+        "reason": reason,
+        "command": command,
+        "exitCode": result.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+        **source_fields(manifest),
+    }
+    attach_collector_evidence(capsule, "server-dry-run", evidence)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def collect_diff(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    spec = capsule.get("spec", {})
+    target = spec.get("target", {})
+    manifest = manifest_path(capsule, args.manifest)
+    collector = "kubectl-diff"
+
+    if not manifest:
+        evidence = inapplicable_manifest_evidence(
+            args,
+            collector,
+            "kubectl diff requires a manifest path; proposed imperative commands are not executed",
+        )
+        attach_collector_evidence(capsule, "diff", evidence)
+        write_capsule_result(capsule, args.file, args.out, args.in_place)
+        return 0
+
+    if not Path(manifest).is_file():
+        evidence = {
+            "ok": False,
+            "summary": collector_summary("missing-source", f"manifest file not found: {manifest}"),
+            "actor": args.actor,
+            "attachedAt": utc_now(),
+            "collector": collector,
+            "reason": "manifest-not-found",
+            **source_fields(manifest),
+        }
+        attach_collector_evidence(capsule, "diff", evidence)
+        write_capsule_result(capsule, args.file, args.out, args.in_place)
+        return 0
+
+    command = scoped_kubectl_command([args.kubectl, "diff", "-f", manifest], spec, target)
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+    ok = result.returncode in {0, 1}
+    if result.returncode == 0:
+        reason = "command-ok"
+    elif result.returncode == 1:
+        reason = "diff-found"
+    else:
+        reason = "command-failed"
+    summary = collector_summary(reason, f"{shell_join(command)} returned {result.returncode}")
+    if result.returncode == 1:
+        summary += " with diff output"
+    elif stdout:
+        summary += f" with stdout: {stdout.splitlines()[0]}"
+
+    evidence = {
+        "ok": ok,
+        "summary": summary,
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+        "collector": collector,
+        "reason": reason,
+        "command": command,
+        "exitCode": result.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+        "diffFound": result.returncode == 1,
+        **source_fields(manifest),
+    }
+    attach_collector_evidence(capsule, "diff", evidence)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def collect_rollback(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    spec = capsule.setdefault("spec", {})
+    rollback = spec.setdefault("rollback", {"required": True, "provided": False})
+
+    if args.command:
+        rollback["provided"] = True
+        rollback["command"] = args.command
+        evidence = {
+            "ok": True,
+            "summary": collector_summary("rollback-command", "rollback command attached"),
+            "actor": args.actor,
+            "attachedAt": utc_now(),
+            "collector": "rollback-plan",
+            "reason": "rollback-command",
+            "rollbackType": "command",
+            "command": args.command,
+        }
+    else:
+        if not Path(args.manifest).is_file():
+            evidence = {
+                "ok": False,
+                "summary": collector_summary("missing-source", f"rollback manifest file not found: {args.manifest}"),
+                "actor": args.actor,
+                "attachedAt": utc_now(),
+                "collector": "rollback-plan",
+                "reason": "manifest-not-found",
+                "rollbackType": "manifest",
+                "source": args.manifest,
+            }
+            attach_collector_evidence(capsule, "rollback", evidence)
+            write_capsule_result(capsule, args.file, args.out, args.in_place)
+            return 0
+        manifest_sha = sha256_file(args.manifest)
+        rollback["provided"] = True
+        rollback["manifestPath"] = args.manifest
+        rollback["manifestSha256"] = manifest_sha
+        evidence = {
+            "ok": True,
+            "summary": collector_summary("rollback-manifest", "rollback manifest attached"),
+            "actor": args.actor,
+            "attachedAt": utc_now(),
+            "collector": "rollback-plan",
+            "reason": "rollback-manifest",
+            "rollbackType": "manifest",
+            "source": args.manifest,
+            "sourceSha256": manifest_sha,
+        }
+
+    attach_collector_evidence(capsule, "rollback", evidence)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def collect_health_plan(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    checks = list(capsule.get("spec", {}).get("postChecks", []))
+    reason = "health-plan" if checks else "inapplicable"
+    evidence = {
+        "ok": bool(checks),
+        "summary": collector_summary(reason, f"{len(checks)} post-change health check(s) declared"),
+        "actor": args.actor,
+        "attachedAt": utc_now(),
+        "collector": "health-plan",
+        "reason": reason,
+        "checks": checks,
+    }
+    if not checks:
+        evidence["inapplicable"] = True
+    attach_collector_evidence(capsule, "post-checks", evidence)
+    write_capsule_result(capsule, args.file, args.out, args.in_place)
+    return 0
+
+
+def digest_capsule(args: argparse.Namespace) -> int:
+    capsule = load_capsule(args.file)
+    print(f"sha256:{capsule_spec_digest(capsule)}")
     return 0
 
 
@@ -656,7 +1808,14 @@ def demo(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Draft and verify Kubernetes operation capsules.")
+    parser = argparse.ArgumentParser(
+        description="Evidence-carrying operations for AI-assisted Kubernetes.",
+        epilog=(
+            "Run `kube-actuary help` for workflow help, or "
+            "`kube-actuary help agents --format json` for machine-readable guidance."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--version", action="version", version=f"kube-actuary {VERSION}")
     sub = parser.add_subparsers(dest="command_name", required=True)
 
@@ -673,6 +1832,17 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_parser = sub.add_parser("inspect", help="print a capsule summary")
     inspect_parser.add_argument("file")
     inspect_parser.set_defaults(func=inspect_capsule)
+
+    validate_parser = sub.add_parser("validate", help="validate capsule JSON structure")
+    validate_parser.add_argument("file")
+    validate_parser.add_argument("--format", choices=["text", "json"], default="text")
+    validate_parser.set_defaults(func=validate_capsule)
+
+    doctor_parser = sub.add_parser("doctor", help="check local runtime and kubectl client diagnostics")
+    doctor_parser.add_argument("--kubectl", default="kubectl")
+    doctor_parser.add_argument("--server-version", help="optional Kubernetes server version for minor-skew hints")
+    doctor_parser.add_argument("--format", choices=["text", "json"], default="text")
+    doctor_parser.set_defaults(func=doctor)
 
     verify_parser = sub.add_parser("verify", help="check that required evidence is attached")
     verify_parser.add_argument("file")
@@ -701,6 +1871,41 @@ def build_parser() -> argparse.ArgumentParser:
     auth_parser.add_argument("--out", default="-")
     auth_parser.set_defaults(func=collect_auth)
 
+    dry_run_parser = collect_sub.add_parser("dry-run", help="attach server-side dry-run evidence")
+    dry_run_parser.add_argument("file")
+    dry_run_parser.add_argument("--manifest")
+    dry_run_parser.add_argument("--kubectl", default="kubectl")
+    dry_run_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    dry_run_parser.add_argument("--in-place", action="store_true")
+    dry_run_parser.add_argument("--out", default="-")
+    dry_run_parser.set_defaults(func=collect_dry_run)
+
+    diff_parser = collect_sub.add_parser("diff", help="attach kubectl diff evidence")
+    diff_parser.add_argument("file")
+    diff_parser.add_argument("--manifest")
+    diff_parser.add_argument("--kubectl", default="kubectl")
+    diff_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    diff_parser.add_argument("--in-place", action="store_true")
+    diff_parser.add_argument("--out", default="-")
+    diff_parser.set_defaults(func=collect_diff)
+
+    rollback_parser = collect_sub.add_parser("rollback", help="attach rollback command or manifest evidence")
+    rollback_parser.add_argument("file")
+    rollback_source = rollback_parser.add_mutually_exclusive_group(required=True)
+    rollback_source.add_argument("--command")
+    rollback_source.add_argument("--manifest")
+    rollback_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    rollback_parser.add_argument("--in-place", action="store_true")
+    rollback_parser.add_argument("--out", default="-")
+    rollback_parser.set_defaults(func=collect_rollback)
+
+    health_plan_parser = collect_sub.add_parser("health-plan", help="attach post-change health plan evidence")
+    health_plan_parser.add_argument("file")
+    health_plan_parser.add_argument("--actor", default=os.environ.get("USER") or getpass.getuser())
+    health_plan_parser.add_argument("--in-place", action="store_true")
+    health_plan_parser.add_argument("--out", default="-")
+    health_plan_parser.set_defaults(func=collect_health_plan)
+
     render_parser = sub.add_parser("render-crd", help="render a capsule as an OperationCapsule CRD object")
     render_parser.add_argument("file")
     render_parser.add_argument("--name")
@@ -718,6 +1923,19 @@ def build_parser() -> argparse.ArgumentParser:
     demo_parser = sub.add_parser("demo", help="print a sample high-risk capsule")
     demo_parser.add_argument("--actor", default="ai-agent")
     demo_parser.set_defaults(func=demo)
+
+    digest_parser = sub.add_parser("digest", help="print deterministic capsule spec digest")
+    digest_parser.add_argument("file")
+    digest_parser.set_defaults(func=digest_capsule)
+
+    help_parser = sub.add_parser(
+        "help",
+        help="show workflow, safety, evidence, or agent guidance",
+        description="Show KubeActuary help in a human-readable or agent-readable form.",
+    )
+    help_parser.add_argument("topic", nargs="?", default="overview", choices=HELP_TOPICS)
+    help_parser.add_argument("--format", choices=["text", "json"], default="text")
+    help_parser.set_defaults(func=help_command)
 
     return parser
 

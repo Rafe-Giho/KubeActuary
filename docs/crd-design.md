@@ -65,9 +65,45 @@ This makes the controller mostly idle in normal operation.
 
 - `EvidenceComplete`
 - `GateOpen`
-- `RiskAccepted`
+- `Blocked`
 - `RollbackReady`
 - `Expired`
+
+## v0.3.0 Field Contract
+
+The `OperationCapsule.ops.kubeactuary.dev/v1alpha1` CRD keeps one embedded
+resource model for the alpha line:
+
+- `spec.intent`
+- `spec.actor.type`
+- `spec.actor.name`
+- `spec.proposedAction`
+- `spec.risk.level`
+- `spec.risk.reasons`
+- `spec.requiredEvidence`
+- `spec.evidence`
+- `spec.postChecks`
+- `spec.rollback`
+- `spec.ttlSecondsAfterFinished`
+- `status.phase`
+- `status.gate`
+- `status.missingEvidence`
+- `status.failedEvidence`
+- `status.digest`
+- `status.conditions`
+
+`render-crd` maps local capsule state into status fields for review, fixtures,
+and future controller compatibility. It does not patch the cluster.
+
+Condition mapping:
+
+| Type | True When |
+| --- | --- |
+| `EvidenceComplete` | all required evidence is attached and successful |
+| `GateOpen` | evidence is complete and no required evidence failed |
+| `Blocked` | at least one required evidence record failed |
+| `RollbackReady` | rollback is not required or explicit rollback evidence is provided |
+| `Expired` | a future expiry policy marks the capsule expired |
 
 ## Security Model
 
@@ -79,4 +115,3 @@ Recommended RBAC:
 - Only a future executor service account may execute approved capsules.
 
 This separates proposal, evidence, approval, and execution.
-

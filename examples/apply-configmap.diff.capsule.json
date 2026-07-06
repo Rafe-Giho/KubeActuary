@@ -1,0 +1,60 @@
+{
+  "apiVersion": "kubeactuary.dev/v0alpha1",
+  "kind": "OperationCapsule",
+  "metadata": {
+    "createdAt": "2026-07-05T00:00:00Z",
+    "id": "opcap-example-apply-configmap-diff"
+  },
+  "spec": {
+    "actor": "ci",
+    "intent": "capture kubectl diff for the demo ConfigMap",
+    "kubeContext": null,
+    "manifestPath": "examples/configmap-demo.yaml",
+    "postChecks": [
+      "affected resources become Ready or Healthy",
+      "no new warning events for affected resources"
+    ],
+    "proposedCommand": null,
+    "requiredEvidence": [
+      {
+        "description": "diff is attached or explicitly unavailable",
+        "id": "diff"
+      }
+    ],
+    "risk": {
+      "level": "medium",
+      "reasons": [
+        "cluster state may be modified"
+      ]
+    },
+    "rollback": {
+      "notes": "Attach rollback evidence before execution.",
+      "provided": false,
+      "required": true
+    },
+    "target": {
+      "modifiesCluster": true,
+      "namespace": "default",
+      "raw": null,
+      "scope": "unknown",
+      "verb": "manifest"
+    }
+  },
+  "status": {
+    "evidence": {
+      "diff": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:03:00Z",
+        "collector": "kubectl-diff",
+        "diffFound": true,
+        "exitCode": 1,
+        "ok": true,
+        "source": "examples/configmap-demo.yaml",
+        "sourceSha256": "02af31116e02017e9cc424dcec396a78275e83f6b5ea14805bf21f2c1c35e754",
+        "summary": "kubectl diff returned 1 with diff output"
+      }
+    },
+    "observations": [],
+    "state": "verified"
+  }
+}

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubeactuary-demo
+  namespace: default
+data:
+  release: "0.2.0"
+  mode: "preflight"

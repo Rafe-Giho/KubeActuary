@@ -1,0 +1,61 @@
+{
+  "apiVersion": "kubeactuary.dev/v0alpha1",
+  "kind": "OperationCapsule",
+  "metadata": {
+    "createdAt": "2026-07-05T00:00:00Z",
+    "id": "opcap-example-apply-configmap-rollback"
+  },
+  "spec": {
+    "actor": "ci",
+    "intent": "attach rollback evidence for the demo ConfigMap",
+    "kubeContext": null,
+    "manifestPath": "examples/configmap-demo.yaml",
+    "postChecks": [
+      "affected resources become Ready or Healthy",
+      "no new warning events for affected resources"
+    ],
+    "proposedCommand": null,
+    "requiredEvidence": [
+      {
+        "description": "rollback command or manifest is attached",
+        "id": "rollback"
+      }
+    ],
+    "risk": {
+      "level": "medium",
+      "reasons": [
+        "cluster state may be modified"
+      ]
+    },
+    "rollback": {
+      "manifestPath": "examples/configmap-demo.rollback.yaml",
+      "manifestSha256": "737d9a274835e16c83272b8c9f74c84ca874bb02aa5896bf9dadf732e391c3d5",
+      "notes": "Rollback manifest restores the demo ConfigMap data.",
+      "provided": true,
+      "required": true
+    },
+    "target": {
+      "modifiesCluster": true,
+      "namespace": "default",
+      "raw": null,
+      "scope": "unknown",
+      "verb": "manifest"
+    }
+  },
+  "status": {
+    "evidence": {
+      "rollback": {
+        "actor": "ci",
+        "attachedAt": "2026-07-05T00:04:00Z",
+        "collector": "rollback-plan",
+        "ok": true,
+        "rollbackType": "manifest",
+        "source": "examples/configmap-demo.rollback.yaml",
+        "sourceSha256": "737d9a274835e16c83272b8c9f74c84ca874bb02aa5896bf9dadf732e391c3d5",
+        "summary": "rollback manifest attached"
+      }
+    },
+    "observations": [],
+    "state": "verified"
+  }
+}

@@ -3,6 +3,14 @@
 KubeActuary should grow in small layers. Each layer must preserve the main
 constraint: AI is not trusted with unbounded Kubernetes write execution.
 
+The actionable local taskboard is maintained in
+[release-taskboard.md](release-taskboard.md). Repeatable release verification is
+run with:
+
+```sh
+python3 -B scripts/verify_release.py --version 0.2.0
+```
+
 ## v0.1: Local Capsule CLI
 
 Status: implemented as the v0.1.0 alpha target.
@@ -18,15 +26,16 @@ Status: implemented as the v0.1.0 alpha target.
 
 ## v0.2: Evidence Collectors
 
-Status: started. `collect auth` is implemented.
+Status: implemented as the v0.2.0 alpha target.
 
 Add read-only or dry-run collectors:
 
 - `collect auth`: run `kubectl auth can-i`. Implemented.
-- `collect diff`: run `kubectl diff`.
-- `collect dry-run`: run server-side dry-run.
-- `collect rollback`: attach rollback command or manifest snapshot.
-- `collect health-plan`: produce post-check plan.
+- `collect diff`: run `kubectl diff`. Implemented.
+- `collect dry-run`: run server-side dry-run. Implemented.
+- `collect rollback`: attach rollback command or manifest snapshot. Implemented.
+- `collect health-plan`: produce post-check plan. Implemented.
+- `digest`: print a deterministic capsule spec digest. Implemented.
 
 These collectors should write evidence into capsules. They should not execute
 the proposed write.
@@ -36,11 +45,27 @@ the proposed write.
 Add a lightweight CRD:
 
 - `OperationCapsule.ops.kubeactuary.dev`
-- status conditions: `EvidenceComplete`, `GateOpen`, `Blocked`, `Expired`
+- status conditions: `EvidenceComplete`, `GateOpen`, `Blocked`,
+  `RollbackReady`, `Expired`
 - final state TTL support through labels or a future controller
 
 No separate `Evidence` CRD initially. Keep evidence embedded or referenced from
 the capsule to reduce object count.
+
+Current local progress:
+
+- CRD field names for `spec`, embedded evidence, rollback, and status are
+  frozen for the alpha contract.
+- `render-crd` emits `status.phase`, `status.gate`, missing/failed evidence,
+  digest, and condition mappings for local fixtures.
+- `docs/kubernetes-compatibility.md` records the upstream N/N-1/N-2 target and
+  managed-service support snapshot.
+- `scripts/verify_crd_compatibility.py` performs offline CRD compatibility
+  smoke checks. Live kind/minikube matrix validation remains follow-up work.
+- CRD upgrade and rollback fixtures are available under `deploy/crds/fixtures/`
+  with an offline verifier and runbook.
+- The CRD includes OpenAPI descriptions for `kubectl explain`, with an offline
+  explain-quality verifier and live smoke runbook.
 
 ## v0.4: Minimal Controller
 
@@ -54,6 +79,19 @@ Build a low-overhead controller that:
 - never executes writes by default.
 
 Expected footprint: one small controller deployment, idle most of the time.
+
+Current local progress:
+
+- pure Python reconcile model computes OperationCapsule status from embedded
+  evidence;
+- dry-run `bin/kube-actuary-controller reconcile` prints status or status-only
+  patch JSON for fixtures;
+- `bin/kube-actuary-controller watch-command` documents the intended
+  OperationCapsule-only watch boundary;
+- `scripts/verify_controller_contract.py` checks the status patch and watch
+  target offline;
+- live controller process, RBAC, leader election, deployment manifests, and
+  status subresource writes remain future work.
 
 ## v0.5: Policy Adapters
 

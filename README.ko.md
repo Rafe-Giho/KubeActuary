@@ -6,7 +6,7 @@
 
 > AI가 Kubernetes를 조작하기 전에 증거를 들고 오게 만드는 실행 계약 CLI.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)](VERSION)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.x-3776AB)](bin/kube-actuary)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-CRD%20seed-326CE5)](deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml)
@@ -64,19 +64,27 @@ KubeActuary는 이 질문에 `OperationCapsule`로 답합니다.
 캡슐은 AI가 만들고, 사람이 검토하고, Git에 저장하고, CI에서 검증하고,
 Kubernetes CRD 객체로 렌더링하고, 향후 controller가 소비할 수 있습니다.
 
-## v0.1.0에서 되는 것
+## v0.2.0에서 되는 것
 
 - `kubectl` 명령 또는 manifest 경로에서 로컬 operation capsule 생성
 - 대상, 위험도, 상태, 증거 확인
+- 클러스터에 접근하지 않는 capsule JSON 구조 검증
+- 로컬 runtime과 `kubectl` client 진단
 - 수동 증거 첨부
 - `kubectl auth can-i` 증거 수집
+- manifest 기반 작업의 server-side dry-run 증거 수집
+- manifest 기반 작업의 `kubectl diff` 증거 수집
+- 명시적인 rollback 명령 또는 manifest 증거 첨부
+- post-change health-plan 증거 첨부
+- 감사용 deterministic spec digest 출력
 - 누락/실패 증거 검증
 - 실행 게이트 open/closed 판정
 - 로컬 캡슐을 Kubernetes `OperationCapsule` CRD 객체로 렌더링
+- 로컬 캡슐 상태를 CRD status field와 condition mapping으로 렌더링
 - `kubectl` 플러그인 진입점 제공
 - JSON Schema와 CRD seed 제공
 
-v0.1.0에서 하지 않는 것:
+v0.2.0에서 하지 않는 것:
 
 - 실제 클러스터 write 실행 없음
 - 클러스터 안에서 LLM 실행 없음
@@ -102,6 +110,21 @@ python3 bin/kube-actuary draft \
 python3 bin/kube-actuary inspect /tmp/scale.capsule.json
 ```
 
+캡슐 구조 검증:
+
+```sh
+python3 bin/kube-actuary validate /tmp/scale.capsule.json
+```
+
+`validate`는 로컬 capsule 계약을 확인합니다. 증거 완결성은 `verify`와
+`gate`가 판단합니다.
+
+로컬 전제조건 확인:
+
+```sh
+python3 bin/kube-actuary doctor
+```
+
 이 캡슐은 아직 제안일 뿐이므로 게이트가 닫힙니다.
 
 ```sh
@@ -123,6 +146,30 @@ python3 bin/kube-actuary attach-evidence /tmp/scale.capsule.json \
 ```sh
 python3 bin/kube-actuary collect auth /tmp/scale.with-approval.json \
   --out /tmp/scale.with-auth.json
+```
+
+manifest 기반 변경은 클러스터 write를 저장하지 않고 preflight 증거를 수집할 수
+있습니다.
+
+```sh
+python3 bin/kube-actuary collect dry-run /tmp/apply.capsule.json \
+  --manifest examples/configmap-demo.yaml \
+  --out /tmp/apply.with-dry-run.json
+
+python3 bin/kube-actuary collect diff /tmp/apply.with-dry-run.json \
+  --manifest examples/configmap-demo.yaml \
+  --out /tmp/apply.with-diff.json
+```
+
+rollback과 post-change health-plan 증거 첨부:
+
+```sh
+python3 bin/kube-actuary collect rollback /tmp/apply.with-diff.json \
+  --manifest examples/configmap-demo.rollback.yaml \
+  --out /tmp/apply.with-rollback.json
+
+python3 bin/kube-actuary collect health-plan /tmp/apply.with-rollback.json \
+  --out /tmp/apply.with-health.json
 ```
 
 로컬 캡슐을 Kubernetes 리소스로 렌더링:
@@ -154,8 +201,16 @@ command: kubectl get pods -n default
 ```text
 draft              OperationCapsule draft 생성
 inspect            대상, 위험도, 상태, 증거 요약
+validate           capsule JSON 구조 검증
+doctor             로컬 runtime과 kubectl 진단
 attach-evidence    수동 증거 첨부
 collect auth       kubectl auth can-i 증거 수집
+collect dry-run    server-side dry-run 증거 수집
+collect diff       kubectl diff 증거 수집
+collect rollback   rollback 명령 또는 manifest 증거 첨부
+collect health-plan post-change check 증거 첨부
+digest             deterministic capsule spec digest 출력
+help               workflow, safety, evidence, agent 안내 출력
 verify             필수 증거 확인
 gate               실행 게이트 open/closed 출력
 render-crd         캡슐을 Kubernetes CRD 객체로 렌더링
@@ -167,6 +222,24 @@ demo               고위험 샘플 캡슐 출력
 ```sh
 python3 bin/kube-actuary --version
 ```
+
+사람이 읽는 help:
+
+```sh
+python3 bin/kube-actuary help
+python3 bin/kube-actuary help workflow
+python3 bin/kube-actuary help safety
+```
+
+에이전트가 읽는 help:
+
+```sh
+python3 bin/kube-actuary help agents --format json
+```
+
+JSON help에는 command safety, cluster access, evidence id, 안정적인 exit code
+의미, CLI가 절대 실행하지 않는 작업, agent integration용 versioned
+`schemaVersion`/`compatibility` 계약이 들어갑니다.
 
 ## kubectl 플러그인
 
@@ -215,18 +288,32 @@ KubeActuary는 제안, 증거, 승인, 실행을 분리합니다.
 ```text
 bin/
   kube-actuary                 CLI
+  kube-actuary-controller      dry-run controller reconcile helper
   kubectl-actuary              kubectl plugin entrypoint
+controller/
+  reconcile.py                 순수 OperationCapsule status reconcile 모델
+.github/workflows/
+  ci.yml                       GitHub Actions 검증 workflow
 deploy/crds/
   operationcapsules...yaml     CRD seed
+  fixtures/                    CRD upgrade와 rollback fixture
 docs/
   collectors.md                evidence collector 계약
   landscape.md                 생태계 조사
   paradigm.md                  운영 모델
   project-assessment.md        현재 성숙도 평가
+  release-checklist.md         릴리스 gate 체크리스트
+  release-taskboard.md         로컬 v1.0 taskboard
+  kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
+  crd-upgrade-rollback.md      CRD fixture upgrade/rollback runbook
+  controller.md                저부하 controller 설계와 계약
+  kubectl-explain.md           kubectl explain quality runbook
   roadmap.md                   개발 계획
   v0.1.0.md                    alpha release 목표
+  test-plan-v0.2.0.md          v0.2.0 release test plan
+  test-results-v0.2.0.md       최신 검증 결과
   test-plan-v0.1.0.md          release test plan
-  test-results-v0.1.0.md       최신 검증 결과
+  test-results-v0.1.0.md       v0.1.0 검증 결과
   crd-design.md                Kubernetes-native 설계
   interoperability.md          CLI, MCP, GitOps, admission 계약
   novelty-check.md             신규성 경계
@@ -235,6 +322,13 @@ examples/
   operationcapsule-scale.yaml  CRD 예제
 schemas/
   operation-capsule...json     JSON Schema
+scripts/
+  generate_release_notes.py    release notes dry-run 생성기
+  verify_crd_compatibility.py  offline CRD compatibility smoke check
+  verify_crd_explain_quality.py offline kubectl explain quality check
+  verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
+  verify_controller_contract.py offline controller contract check
+  verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
   symbol-option-*.svg          이전 심볼 후보
@@ -248,14 +342,23 @@ tests/
 
 ```sh
 python3 -B -m unittest discover -s tests
+python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B bin/kube-actuary doctor
+python3 -B scripts/verify_crd_compatibility.py
+python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_crd_upgrade_fixtures.py
+python3 -B scripts/verify_controller_contract.py
+python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
 예제 검증:
 
 ```sh
+python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool examples/read-pods.verified.capsule.json
+python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; YAML.load_file("deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml"); puts "yaml ok"'
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml
 ```
 
 ## 브랜드 후보
@@ -268,17 +371,26 @@ check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 
 
 ## 로드맵
 
-가까운 작업:
+현재 v0.2.0:
 
-- `collect dry-run`: server-side dry-run 증거
-- `collect diff`: `kubectl diff` 증거
-- rollback evidence helper
-- capsule digest/signature
-- CRD status condition mapping
+- auth, dry-run, diff, rollback, health-plan evidence collector
+- 로컬 capsule 구조 검증
+- 로컬 runtime과 kubectl client 진단
+- GitHub Actions CI와 release notes dry-run 도구
+- versioned agent help compatibility 계약
+- deterministic capsule spec digest
+- 로컬 evidence workflow를 위한 CRD 렌더링 개선
+- 로컬 fixture와 향후 controller 호환성을 위한 CRD status condition mapping
+- upstream Kubernetes N/N-1/N-2와 managed-service support note를 위한
+  offline CRD compatibility smoke
+- offline verification이 포함된 CRD upgrade/rollback fixture
+- kubectl explain description과 offline quality check
+- 순수 저부하 controller reconcile 모델과 watch boundary 계약
 
 이후:
 
 - 저부하 controller
+- CRD status condition mapping
 - optional MCP server
 - Krew packaging
 - AI-originated write용 optional admission webhook
@@ -288,8 +400,8 @@ check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 
 
 ## 상태
 
-v0.1.0 alpha. local-first evidence workflow와 specification seed로는 사용할 수
-있지만, 아직 production controller는 아닙니다.
+v0.2.0 alpha. local-first evidence collector workflow와 specification seed로는
+사용할 수 있지만, 아직 production controller는 아닙니다.
 
 ## 라이선스
 

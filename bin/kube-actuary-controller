@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Dry-run entrypoint for the KubeActuary controller reconcile model."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shlex
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from controller.reconcile import reconcile_status, status_patch, watch_command
+
+
+def load_json(path: str) -> dict:
+    try:
+        return json.loads(Path(path).read_text())
+    except FileNotFoundError as exc:
+        raise SystemExit(f"file not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid JSON in {path}: {exc}") from exc
+
+
+def write_json(document: dict) -> None:
+    print(json.dumps(document, indent=2, sort_keys=True))
+
+
+def reconcile(args: argparse.Namespace) -> int:
+    document = load_json(args.file)
+    if args.format == "patch":
+        write_json(status_patch(document))
+    else:
+        write_json(reconcile_status(document))
+    return 0
+
+
+def print_watch_command(args: argparse.Namespace) -> int:
+    print(shlex.join(watch_command(args.namespace)))
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Dry-run KubeActuary controller reconcile helpers.",
+    )
+    sub = parser.add_subparsers(dest="command_name", required=True)
+
+    reconcile_parser = sub.add_parser("reconcile", help="compute status for one OperationCapsule JSON object")
+    reconcile_parser.add_argument("file")
+    reconcile_parser.add_argument("--format", choices=["status", "patch"], default="status")
+    reconcile_parser.set_defaults(func=reconcile)
+
+    watch_parser = sub.add_parser("watch-command", help="print the only Kubernetes watch command this controller needs")
+    watch_parser.add_argument("--namespace")
+    watch_parser.set_defaults(func=print_watch_command)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

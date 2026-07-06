@@ -1,0 +1,68 @@
+# KubeActuary Release Checklist
+
+Use this checklist before publishing an alpha release. The default release path
+is local-first and does not require a Kubernetes cluster.
+
+## Preflight
+
+- [ ] `VERSION` matches the intended release.
+- [ ] `CHANGELOG.md` has a section for the release version.
+- [ ] `docs/release-taskboard.md` marks the release-scope tasks as `DONE` or
+      explicitly leaves them out of scope.
+- [ ] README and README.ko describe the public CLI surface.
+- [ ] Safety boundaries still state that proposed Kubernetes writes are not
+      executed by default.
+
+## Local Verification
+
+Run:
+
+```sh
+python3 -B scripts/verify_release.py --version current
+python3 -B -m unittest discover -s tests
+python3 -B scripts/verify_crd_explain_quality.py
+python3 -B scripts/verify_crd_upgrade_fixtures.py
+python3 -B scripts/verify_controller_contract.py
+python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
+git diff --check
+```
+
+Expected:
+
+- release verification passes;
+- unit tests pass;
+- release notes render without errors;
+- CRD upgrade and rollback fixtures verify offline;
+- CRD explain descriptions and example commands verify offline;
+- controller contract emits status-only patch examples and OperationCapsule-only
+  watch commands;
+- no whitespace errors;
+- no `__pycache__` directories remain.
+
+## Artifact Checks
+
+- [ ] CLI version prints the intended version.
+- [ ] `kube-actuary help agents --format json` parses.
+- [ ] Agent help JSON includes the expected `schemaVersion` and
+      `compatibility.requiredCommandFields`.
+- [ ] CRD YAML parses.
+- [ ] `kubectl explain` runbook is reviewed for the current CRD.
+- [ ] CRD rollback fixture YAML parses.
+- [ ] controller dry-run contract check passes.
+- [ ] example capsules validate and gate as expected.
+- [ ] generated release notes include verification and rollback notes.
+
+## Publish Gate
+
+- [ ] GitHub Actions CI is green on the release branch or PR.
+- [ ] Release notes are reviewed.
+- [ ] Tag name matches `v<VERSION>`.
+- [ ] Published artifacts include source, CLI/plugin files, CRD seed, docs, and
+      example capsules.
+
+## Rollback
+
+- [ ] Keep the previous tag available.
+- [ ] If publishing fails, delete the draft release and rerun local
+      verification before retrying.
+- [ ] No cluster rollback is required for the local CLI-only alpha path.
