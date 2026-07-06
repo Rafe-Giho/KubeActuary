@@ -141,8 +141,8 @@ Coverage included:
   unprepared-directory guidance;
 - next-task evidence build from prepared raw files plus idempotent
   output-exists handling;
-- clean generated-artifact verification for Python cache directories and
-  bytecode files;
+- clean generated-artifact verification for Python cache directories,
+  bytecode files, and ignored local evidence state;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -381,7 +381,8 @@ python3 -B scripts/verify_clean_artifacts.py
 
 Result:
 
-- no `__pycache__` directories or Python bytecode files found.
+- no `__pycache__` directories or Python bytecode files found;
+- default local live evidence state is git-ignored.
 
 ## Release Judgment
 

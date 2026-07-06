@@ -42,7 +42,8 @@ Expected:
   optional admission webhook prototype, admission identity/annotation policy
   fixtures, admission digest/gate tamper fixtures, admission audit fixtures,
   admission response fixtures, local admission server smoke, and full manifest gate behavior;
-- no `__pycache__` directories or Python bytecode files are left behind.
+- no `__pycache__` directories or Python bytecode files are left behind, and
+  local live evidence state remains git-ignored.
 
 ## CLI Smoke Tests
 

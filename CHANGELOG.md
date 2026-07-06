@@ -63,7 +63,8 @@ Evidence collector release:
 - add local environment blocker reports for prepared evidence directories;
 - report missing local evidence directories as `not-prepared` in release
   progress instead of failing the task loop;
-- add clean-artifact verification for generated Python cache files;
+- add clean-artifact verification for generated Python cache files and ignored
+  local evidence state;
 - add live validation queue generation with ordered external evidence commands,
   optional environment blockers, and deterministic evidence-directory paths;
 - add live validation queue command safety verification for placeholder and
