@@ -528,6 +528,7 @@ def main() -> int:
             "missing-tool-blocker: `az`",
             "missing-tool-blocker: `gcloud`",
             "worklist: `python3 -B scripts/generate_version_worklist.py --format markdown --open-only --capture-status missing-tools --missing-tool kind`",
+            "blocker-worklist: `python3 -B scripts/generate_version_worklist.py --format markdown --open-only --version 0.4.4 --capture-status missing-tools --missing-tool kind`",
             "blockers: tools=`helm:2, kind:2, kubectl-krew:2, az:1, gcloud:1, k3s:1, microk8s:1, minikube:1`",
         ):
             if snippet not in markdown_result.stdout:
@@ -802,6 +803,12 @@ def main() -> int:
     version_blockers = versions.get("0.4.4", {}).get("blockers", {})
     if not any(item.get("tool") == "kind" for item in version_blockers.get("missingTools", [])):
         errors.append("0.4.4 should summarize its missing kind blocker")
+    version_kind_blocker = next(
+        (item for item in version_blockers.get("missingTools", []) if item.get("tool") == "kind"),
+        {},
+    )
+    if "--version 0.4.4 --capture-status missing-tools --missing-tool kind" not in version_kind_blocker.get("worklistCommand", ""):
+        errors.append("version blocker drilldown commands must preserve version filters")
     baseline_items = versions.get("Current Baseline", {}).get("openItems", [])
     if not any(item.get("captureStatus") == "tool-ready" for item in baseline_items):
         errors.append("current baseline must include a tool-ready item")

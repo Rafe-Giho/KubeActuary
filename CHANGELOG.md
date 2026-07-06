@@ -34,6 +34,7 @@ Evidence collector release:
 - surface missing tools and next steps in version worklist Markdown;
 - show all blocker summaries in version worklist Markdown;
 - show filtered worklist commands for version worklist blockers;
+- show version-scoped blocker drilldown commands in version worklist Markdown;
 - summarize repeated missing-tool and environment blockers in version worklist
   reports;
 - add capture-status, missing-tool, and environment-status filters to version

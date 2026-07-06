@@ -103,7 +103,7 @@ Expected:
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   summarizes every repeated missing-tool and environment blocker with filtered
-  worklist drilldown commands,
+  worklist drilldown commands, including version-scoped blocker commands,
   filters worklists, next-task selection, iteration packs, and history records
   by capture status, missing tool, or environment status,
   carries those blocker filters through live evidence scaffold and advance

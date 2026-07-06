@@ -148,8 +148,8 @@ Expected:
   status, without recommending environment-blocked capture commands or runnable
   JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
-  blocker summaries, blocker drilldown commands, blocker-focused filters, and
-  next-task selection;
+  blocker summaries, blocker drilldown commands with evidence-dir and version
+  context, blocker-focused filters, and next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live
@@ -308,8 +308,9 @@ Confirm from code and tests:
   evidence-aware iteration packs, evidence-aware iteration history,
   next-task selection, evidence-directory command
   resolution, completed-evidence skipping, capture-ready items, tool-blocked
-  items, version/open-only filters, blocker summaries, blocker drilldown
-  commands, blocker-focused filters, and optional environment blockers;
+  items, version/open-only filters, blocker summaries, evidence-aware and
+  version-scoped blocker drilldown commands, blocker-focused filters, and
+  optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

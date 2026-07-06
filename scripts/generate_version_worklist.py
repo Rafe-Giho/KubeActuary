@@ -438,9 +438,15 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         if version_missing:
             tools = ", ".join(f"{item['tool']}:{item['items']}" for item in version_missing)
             lines.append(f"  blockers: tools=`{tools}`")
+            for item in version_missing:
+                if item.get("worklistCommand"):
+                    lines.append(f"  blocker-worklist: `{item['worklistCommand']}`")
         if version_environment:
             statuses = ", ".join(f"{item['status']}:{item['items']}" for item in version_environment)
             lines.append(f"  blockers: environment=`{statuses}`")
+            for item in version_environment:
+                if item.get("worklistCommand"):
+                    lines.append(f"  blocker-worklist: `{item['worklistCommand']}`")
         for item in version["openItems"]:
             lines.append(f"  - `{item['captureStatus']}` {item['item']}")
             first_command = (item.get("commands") or [None])[0]
