@@ -91,7 +91,7 @@ Expected:
 - release taskboard audit verifies status rows, remaining evidence notes, and
   release check count;
 - release progress report verifies versioned task status, external gates, live
-  readiness, and optional evidence directory status;
+  readiness, tool-ready next actions, and optional evidence directory status;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
 - external gate evidence evaluation maps captured smoke manifests and

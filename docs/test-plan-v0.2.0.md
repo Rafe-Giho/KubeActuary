@@ -231,7 +231,7 @@ Confirm from code and tests:
 - release taskboard audit verifies status rows, remaining evidence notes, and
   the release suite check count;
 - release progress verifier checks versioned task status, external gates, live
-  readiness, and optional evidence directory status;
+  readiness, tool-ready next actions, and optional evidence directory status;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

@@ -104,7 +104,8 @@ Coverage included:
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
-- release progress report generation for versioned task tracking;
+- release progress report generation for versioned task tracking and
+  tool-ready next actions;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;

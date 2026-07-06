@@ -22,6 +22,17 @@ from scripts.verify_release import COMMON_CHECKS  # noqa: E402
 
 SCHEMA_VERSION = "kube-actuary.release-progress.v1"
 ORDERED_STATUSES = ("DONE", "VERIFY", "DOING", "TODO", "BLOCKED")
+KIND_READINESS_GATES = {
+    "admission": ("admission webhook live kind smoke",),
+    "controller": ("controller resource budget measurement",),
+    "controller-resource-budget": ("controller resource budget measurement",),
+    "crd": ("CRD live apply/explain smoke",),
+    "helm": ("Helm template and install smoke",),
+    "krew": ("Krew install smoke",),
+    "lightweight-cluster": ("lightweight cluster smoke matrix",),
+    "managed-kubernetes": ("managed Kubernetes EKS/GKE/AKS smoke",),
+    "packaging": ("Helm template and install smoke", "Krew install smoke"),
+}
 
 
 def count_statuses(rows: list[dict[str, str]]) -> dict[str, int]:
@@ -98,9 +109,49 @@ def summarize_readiness(readiness: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[str, Any]:
+    readiness_by_gate = {
+        gate.get("gate"): gate
+        for gate in readiness.get("gateToolReadiness", [])
+        if isinstance(gate, dict)
+    }
+    actions: list[dict[str, Any]] = []
+    for gate in plan.get("gates", []):
+        readiness_gates = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
+        missing_tools = sorted(
+            {
+                tool
+                for name in readiness_gates
+                for tool in readiness_by_gate.get(name, {}).get("missingTools", [])
+            }
+        )
+        commands = gate.get("recommendedCommands") or []
+        actions.append(
+            {
+                "id": gate.get("id"),
+                "item": gate.get("item"),
+                "kind": gate.get("kind"),
+                "version": gate.get("version") or gate.get("section"),
+                "status": "tool-ready" if not missing_tools else "missing-tools",
+                "missingTools": missing_tools,
+                "firstCommand": commands[0] if commands else None,
+            }
+        )
+    tool_ready = sum(1 for action in actions if action["status"] == "tool-ready")
+    return {
+        "summary": {
+            "total": len(actions),
+            "toolReady": tool_ready,
+            "blockedByTools": len(actions) - tool_ready,
+        },
+        "actions": actions,
+    }
+
+
 def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = None) -> dict[str, Any]:
     rows = taskboard_rows(TASKBOARD.read_text())
     plan = build_plan()
+    readiness = build_readiness_report()
     report: dict[str, Any] = {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(TASKBOARD.relative_to(ROOT)),
@@ -114,7 +165,8 @@ def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = N
         },
         "versions": group_rows(rows),
         "externalGatePlan": summarize_gate_plan(plan),
-        "liveValidationReadiness": summarize_readiness(build_readiness_report()),
+        "liveValidationReadiness": summarize_readiness(readiness),
+        "nextActions": build_next_actions(plan, readiness),
     }
     if evidence_dir is not None:
         target_output = output_dir if output_dir is not None else evidence_dir / DEFAULT_OUTPUT_DIR
@@ -150,6 +202,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
         for item in group["openItems"][:3]:
             lines.append(f"  - {item['status']}: {item['item']}")
     readiness = progress["liveValidationReadiness"]["summary"]
+    next_actions = progress["nextActions"]["summary"]
     lines.extend(
         [
             "",
@@ -157,8 +210,16 @@ def render_markdown(progress: dict[str, Any]) -> str:
             "",
             f"- tool-ready-gates: {readiness['toolReadyGates']}/{readiness['liveGates']}",
             f"- tools: {readiness['toolsAvailable']}/{readiness['toolsTotal']} available",
+            f"- tool-ready-actions: {next_actions['toolReady']}/{next_actions['total']}",
         ]
     )
+    tool_ready_actions = [action for action in progress["nextActions"]["actions"] if action["status"] == "tool-ready"]
+    if tool_ready_actions:
+        lines.extend(["", "## Tool-Ready Actions", ""])
+        for action in tool_ready_actions[:5]:
+            lines.append(f"- `{action['id']}` {action['item']}")
+            if action["firstCommand"]:
+                lines.append(f"  - `{action['firstCommand']}`")
     if "evidenceStatus" in progress:
         status = progress["evidenceStatus"]["summary"]
         lines.extend(

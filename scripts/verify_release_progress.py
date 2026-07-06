@@ -87,6 +87,16 @@ def main() -> int:
     readiness = progress.get("liveValidationReadiness", {}).get("summary", {})
     if readiness.get("liveGates") != 7 or "toolReadyGates" not in readiness:
         errors.append("progress report must include live readiness summary")
+    next_actions = progress.get("nextActions", {})
+    if next_actions.get("summary", {}).get("total") != 16:
+        errors.append("progress report must include one next action per external gate")
+    for action in next_actions.get("actions", []):
+        if action.get("status") not in {"tool-ready", "missing-tools"}:
+            errors.append(f"invalid next action status: {action.get('status')!r}")
+        if "missingTools" not in action:
+            errors.append("next action must include missingTools")
+    if not any(action.get("firstCommand") for action in next_actions.get("actions", [])):
+        errors.append("next actions must include recommended commands")
     evidence_status = evidence_progress.get("evidenceStatus", {})
     if evidence_status.get("summary", {}).get("status") != "partial":
         errors.append("progress report must include partial evidence-dir status")
