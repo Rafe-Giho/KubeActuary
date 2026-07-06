@@ -71,11 +71,17 @@ def main() -> int:
         probe_dir = Path(tmp) / "probe-evidence"
         filtered_dir = Path(tmp) / "filtered-evidence"
         version_dir = Path(tmp) / "version-evidence"
+        runnable_dir = Path(tmp) / "runnable-evidence"
+        blocked_dir = Path(tmp) / "blocked-evidence"
+        conflict_dir = Path(tmp) / "conflict-evidence"
         first = run_prepare(evidence_dir)
         second = run_prepare(evidence_dir)
         probe = run_prepare(probe_dir, "--probe-environment", env=fake_tool_env(Path(tmp) / "tools", cluster_ok=False))
         filtered = run_prepare(filtered_dir, "--missing-tool", "kind")
         versioned = run_prepare(version_dir, "--version", "0.4.3")
+        runnable_only = run_prepare(runnable_dir, "--runnable-only")
+        blocked_only = run_prepare(blocked_dir, "--blocked-only")
+        conflicting_modes = run_prepare(conflict_dir, "--runnable-only", "--blocked-only")
         unknown_version = run_prepare(Path(tmp) / "unknown-version", "--version", "9.9.9")
         queue_json = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
@@ -105,6 +111,8 @@ def main() -> int:
         filtered_next_task_path = filtered_dir / ".kubeactuary" / "next-version-task.json"
         version_next_task_path = version_dir / ".kubeactuary" / "next-version-task.json"
         version_next_task_md_path = version_dir / ".kubeactuary" / "next-version-task.md"
+        runnable_next_task_path = runnable_dir / ".kubeactuary" / "next-version-task.json"
+        blocked_next_task_path = blocked_dir / ".kubeactuary" / "next-version-task.json"
         probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
         probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
         probe_report_payload = json.loads(probe_report_path.read_text()) if probe_report_path.is_file() else {}
@@ -112,6 +120,8 @@ def main() -> int:
         filtered_next_task = json.loads(filtered_next_task_path.read_text()) if filtered_next_task_path.is_file() else {}
         version_next_task = json.loads(version_next_task_path.read_text()) if version_next_task_path.is_file() else {}
         version_next_task_md = version_next_task_md_path.read_text() if version_next_task_md_path.is_file() else ""
+        runnable_next_task = json.loads(runnable_next_task_path.read_text()) if runnable_next_task_path.is_file() else {}
+        blocked_next_task = json.loads(blocked_next_task_path.read_text()) if blocked_next_task_path.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -130,6 +140,18 @@ def main() -> int:
             errors.append(f"versioned scaffold failed: {versioned.stderr.strip() or versioned.stdout.strip()}")
         if "version: 0.4.3" not in versioned.stdout:
             errors.append("versioned scaffold must print selected version filters")
+        if runnable_only.returncode != 0:
+            errors.append(f"runnable-only scaffold failed: {runnable_only.stderr.strip() or runnable_only.stdout.strip()}")
+        if "runnable-only: true" not in runnable_only.stdout:
+            errors.append("runnable-only scaffold must print runnable-only mode")
+        if blocked_only.returncode != 0:
+            errors.append(f"blocked-only scaffold failed: {blocked_only.stderr.strip() or blocked_only.stdout.strip()}")
+        if "blocked-only: true" not in blocked_only.stdout:
+            errors.append("blocked-only scaffold must print blocked-only mode")
+        if conflicting_modes.returncode == 0:
+            errors.append("conflicting scaffold selector modes must fail")
+        if "--runnable-only and --blocked-only are mutually exclusive" not in conflicting_modes.stdout:
+            errors.append("conflicting scaffold selector modes should report the selector conflict")
         if unknown_version.returncode == 0 or "unknown version: 9.9.9" not in unknown_version.stdout:
             errors.append("versioned scaffold must reject unknown version filters")
         if advanced.returncode != 0:
@@ -238,6 +260,20 @@ def main() -> int:
             errors.append("versioned scaffold must preserve selected task version")
         if "0.4.3" not in version_next_task_md:
             errors.append("versioned scaffold next-task markdown must show the selected version")
+        runnable_selected = runnable_next_task.get("selected") or {}
+        if runnable_next_task.get("filters", {}).get("runnableOnly") is not True:
+            errors.append("runnable-only scaffold must persist runnable-only filter")
+        if runnable_selected.get("id") != "01-controller-resource-budget":
+            errors.append("runnable-only scaffold should select the first runnable task")
+        if runnable_selected.get("runnable") is not True:
+            errors.append("runnable-only scaffold selected task should be runnable")
+        blocked_selected = blocked_next_task.get("selected") or {}
+        if blocked_next_task.get("filters", {}).get("blockedOnly") is not True:
+            errors.append("blocked-only scaffold must persist blocked-only filter")
+        if blocked_selected.get("id") != "02-lightweight-cluster-smoke":
+            errors.append("blocked-only scaffold should select the first blocked task")
+        if blocked_selected.get("runnable") is not False:
+            errors.append("blocked-only scaffold selected task should be non-runnable")
         if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
             errors.append("scaffold next task schemaVersion mismatch")
         if next_task.get("evidenceDir") != str(evidence_dir):
@@ -279,6 +315,8 @@ def main() -> int:
             "--skip-complete-evidence",
             "--missing-tool",
             "--version",
+            "--runnable-only",
+            "--blocked-only",
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing scaffold detail: {snippet}")

@@ -274,7 +274,8 @@ Result:
   terminal text output,
   complete worklist blocker summaries, evidence-aware and version-scoped
   blocker drilldown commands, environment-reason drilldowns, blocker-focused
-  filters, runnable-only and blocked-only next-task selection,
+  filters, runnable-only and blocked-only next-task selection and scaffold
+  persistence,
   non-runnable blocked selector output, history-dir
   worklist/selector context, plus missing-tool and next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,

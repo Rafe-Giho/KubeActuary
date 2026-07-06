@@ -152,8 +152,8 @@ Expected:
 - version worklist check prints `version-worklist: passed` and covers complete
   text output, blocker summaries, blocker drilldown commands with evidence-dir
   and version/history context, blocker-focused filters, next-task selection,
-  `--runnable-only`, `--blocked-only`, and non-runnable selector output for
-  blocked tasks;
+  `--runnable-only`, `--blocked-only`, scaffold persistence for those selector
+  modes, and non-runnable selector output for blocked tasks;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live

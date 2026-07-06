@@ -532,6 +532,8 @@ python3 -B scripts/select_next_version_task.py --history-dir /tmp/kubeactuary-ve
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --version 0.4.3
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --runnable-only
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --blocked-only
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
 python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown --record
 python3 -B scripts/inspect_release_evidence_directory.py evidence/live --version 0.4.3

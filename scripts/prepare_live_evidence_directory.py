@@ -224,6 +224,8 @@ def prepare_directory(
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
+    runnable_only: bool = False,
+    blocked_only: bool = False,
 ) -> dict[str, Path | dict]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     for subdir in SUBDIRS:
@@ -249,6 +251,8 @@ def prepare_directory(
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
         environment_reason_filters=environment_reason_filters,
+        runnable_only=runnable_only,
+        blocked_only=blocked_only,
         prefer_prepared_queue=True,
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
@@ -296,6 +300,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
     parser.add_argument("--environment-reason", action="append", default=[], help="filter next-task selection by environment reason; repeatable")
+    parser.add_argument("--runnable-only", action="store_true", help="select only tool-ready next tasks")
+    parser.add_argument("--blocked-only", action="store_true", help="select only non-tool-ready next tasks")
     args = parser.parse_args(argv)
 
     evidence_dir = Path(args.evidence_dir)
@@ -310,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
             environment_reason_filters=args.environment_reason,
+            runnable_only=args.runnable_only,
+            blocked_only=args.blocked_only,
         )
     except (OSError, ValueError) as exc:
         print("live-evidence-directory: failed")
@@ -324,6 +332,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"tool-ready: {summary['toolReady']}/{summary['total']}")
     print("cluster-writes: disabled")
     print(f"probe-environment: {str(args.probe_environment).lower()}")
+    print(f"runnable-only: {str(args.runnable_only).lower()}")
+    print(f"blocked-only: {str(args.blocked_only).lower()}")
     for version in args.version:
         print(f"version: {version}")
     if queue.get("environmentProbe"):

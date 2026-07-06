@@ -172,6 +172,8 @@ python3 -B scripts/build_next_task_evidence.py evidence/live
 python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown --record
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --runnable-only
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --blocked-only
 ```
 
 ## Open Live Gates
