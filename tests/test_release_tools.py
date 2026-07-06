@@ -31,6 +31,7 @@ PLUTO_ADAPTER = ROOT / "scripts" / "verify_pluto_adapter.py"
 ADAPTER_CONTRACT = ROOT / "scripts" / "verify_adapter_contract.py"
 MCP_CONTRACT = ROOT / "scripts" / "verify_mcp_contract.py"
 EXECUTE_DISABLED = ROOT / "scripts" / "verify_execute_disabled.py"
+ADMISSION_WEBHOOK = ROOT / "scripts" / "verify_admission_webhook.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -405,6 +406,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("execute-disabled: passed", result.stdout)
         self.assertIn("mcp-execute: disabled", result.stdout)
+
+    def test_verify_admission_webhook(self):
+        result = subprocess.run(
+            [sys.executable, str(ADMISSION_WEBHOOK)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("admission-webhook: passed", result.stdout)
+        self.assertIn("failurePolicy: Ignore", result.stdout)
 
 
 if __name__ == "__main__":

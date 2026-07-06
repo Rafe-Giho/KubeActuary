@@ -299,10 +299,13 @@ deploy/crds/
   fixtures/                    CRD upgrade and rollback fixtures
 deploy/controller/
   *-rbac.yaml                  optional controller RBAC manifests
+deploy/admission/
+  validatingwebhookconfiguration.yaml optional admission webhook prototype
 deploy/kustomize/
   base/                        CRD-only Kustomize base
   overlays/                    optional controller RBAC overlays
 docs/
+  admission.md                optional admission prototype and safety defaults
   collectors.md                evidence collector contract
   landscape.md                 ecosystem research
   paradigm.md                  operating model
@@ -375,6 +378,7 @@ scripts/
   kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
   verify_mcp_contract.py      MCP safe-tool contract verifier
   verify_execute_disabled.py  disabled execute surface verifier
+  verify_admission_webhook.py optional admission prototype verifier
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -415,6 +419,7 @@ python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
+python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -425,7 +430,7 @@ python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.
 python3 -B -m json.tool examples/read-pods.verified.capsule.json
 python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml
 ```
 
 ## Brand Proposals

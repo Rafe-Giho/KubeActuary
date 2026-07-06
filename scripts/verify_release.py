@@ -214,6 +214,11 @@ COMMON_CHECKS = (
         contains=("execute-disabled: passed", "cli-execute: absent", "mcp-execute: disabled"),
     ),
     Check(
+        "admission webhook",
+        ("python3", "-B", "scripts/verify_admission_webhook.py"),
+        contains=("admission-webhook: passed", "failurePolicy: Ignore"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),
@@ -275,6 +280,7 @@ COMMON_CHECKS = (
             "deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml",
             "deploy/controller/namespace-scoped-rbac.yaml",
             "deploy/controller/cluster-scoped-rbac.yaml",
+            "deploy/admission/validatingwebhookconfiguration.yaml",
             "examples/operationcapsule-scale.yaml",
             "examples/configmap-demo.yaml",
             "examples/configmap-demo.rollback.yaml",

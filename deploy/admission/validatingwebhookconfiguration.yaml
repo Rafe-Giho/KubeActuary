@@ -1,0 +1,38 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: kubeactuary-ai-write-guard
+  labels:
+    app.kubernetes.io/name: kubeactuary
+    app.kubernetes.io/component: admission
+    kubeactuary.dev/optional: "true"
+webhooks:
+  - name: ai-write-guard.ops.kubeactuary.dev
+    admissionReviewVersions:
+      - v1
+    sideEffects: None
+    failurePolicy: Ignore
+    matchPolicy: Equivalent
+    timeoutSeconds: 2
+    namespaceSelector:
+      matchLabels:
+        kubeactuary.dev/admission: enabled
+    rules:
+      - apiGroups:
+          - "*"
+        apiVersions:
+          - "*"
+        operations:
+          - CREATE
+          - UPDATE
+          - PATCH
+          - DELETE
+        resources:
+          - "*/*"
+        scope: "*"
+    clientConfig:
+      service:
+        namespace: kubeactuary-system
+        name: kubeactuary-admission
+        path: /validate
+        port: 443

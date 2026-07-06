@@ -43,6 +43,7 @@ python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
+python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -78,6 +79,7 @@ Expected:
 - adapter contract verifies common evidence fields and normalized severity;
 - MCP contract verifies five safe tools and disabled execute tool;
 - disabled-execute verifier proves CLI and MCP surfaces do not expose execute;
+- admission webhook prototype verifies optional defaults and `failurePolicy: Ignore`;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -114,6 +116,7 @@ Expected:
 - [ ] adapter contract check passes.
 - [ ] MCP safe-tool contract check passes.
 - [ ] disabled-execute surface check passes.
+- [ ] admission webhook prototype check passes; run live kind smoke when kind is available.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

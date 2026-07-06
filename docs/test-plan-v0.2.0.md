@@ -23,7 +23,8 @@ Expected:
   runbooks, Kyverno adapter fixtures, OPA adapter fixtures, kube-linter adapter
   fixtures, kube-score adapter fixtures, Pluto adapter fixtures, adapter
   contract severity normalization, MCP safe-tool contract verification, and
-  disabled-execute surface verification, and full manifest gate behavior;
+  disabled-execute surface verification, optional admission webhook prototype,
+  and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -66,6 +67,7 @@ python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
+python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -102,6 +104,7 @@ Expected:
 - adapter contract check prints `adapter-contract: passed`;
 - MCP contract check prints `mcp-contract: passed`;
 - disabled-execute check prints `execute-disabled: passed`;
+- admission webhook check prints `admission-webhook: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -121,7 +124,7 @@ python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool examples/apply-configmap.diff.capsule.json
 python3 -B -m json.tool examples/apply-configmap.rollback.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml
 ```
 
 Expected:
@@ -129,7 +132,8 @@ Expected:
 - JSON examples parse;
 - schema JSON parses;
 - GitHub Actions workflow, Helm chart metadata, Kustomize manifests, CRD YAML,
-  CRD rollback fixture YAML, controller RBAC YAML, and example YAML files parse.
+  CRD rollback fixture YAML, controller RBAC YAML, admission webhook YAML, and
+  example YAML files parse.
 
 ## Safety Checks
 
@@ -193,6 +197,8 @@ Confirm from code and tests:
   `execute_approved_capsule` disabled;
 - disabled-execute verifier requires CLI command help and agent JSON to omit
   execute tools and MCP calls to reject `execute_approved_capsule`;
+- admission webhook prototype verifier requires `failurePolicy: Ignore`,
+  opt-in namespace selection, and bounded timeout;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -213,5 +219,5 @@ Expected:
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   air-gapped bundle, agent help contract, agent examples, Kyverno adapter, OPA
   adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
-  contract, MCP contract, disabled-execute check, gate behavior, JSON/YAML parsing, and
-  `git diff --check`.
+  contract, MCP contract, disabled-execute check, admission webhook, gate
+  behavior, JSON/YAML parsing, and `git diff --check`.

@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (40 checks)
-Ran 69 tests
+verification: passed (41 checks)
+Ran 70 tests
 OK
 ```
 
@@ -64,6 +64,7 @@ Coverage included:
 - agent help schema compatibility verification;
 - local CI and Codex agent runbook verification;
 - disabled execute surface verification;
+- optional admission webhook prototype verification;
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
@@ -117,6 +118,7 @@ python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
+python3 -B scripts/verify_admission_webhook.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -155,6 +157,7 @@ Result:
 - adapter contract check prints `adapter-contract: passed`;
 - MCP contract check prints `mcp-contract: passed`;
 - disabled-execute check prints `execute-disabled: passed`;
+- admission webhook check prints `admission-webhook: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;
@@ -194,7 +197,7 @@ python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool examples/apply-configmap.diff.capsule.json
 python3 -B -m json.tool examples/apply-configmap.rollback.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml /private/tmp/kubeactuary-render-v020.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml /private/tmp/kubeactuary-render-v020.yaml
 ```
 
 Result:
@@ -202,8 +205,8 @@ Result:
 - example capsule JSON files parse;
 - schema JSON parses;
 - GitHub Actions workflow, Helm chart metadata, Kustomize manifests, CRD YAML,
-  rollback fixture YAML, controller RBAC YAML, CR example YAML, manifest
-  examples, and generated CRD object YAML parse.
+  rollback fixture YAML, controller RBAC YAML, admission webhook YAML, CR
+  example YAML, manifest examples, and generated CRD object YAML parse.
 
 ### Cache Check
 
