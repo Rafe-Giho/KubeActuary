@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "kube-actuary.api-freeze.v1",
+  "release": "0.9.2",
+  "status": "frozen",
+  "policy": {
+    "mode": "additive-only",
+    "breakingChanges": [
+      "removing a required public field",
+      "renaming a public field",
+      "changing the published API group, kind, or version",
+      "removing enum values accepted by existing capsules"
+    ],
+    "allowedChanges": [
+      "adding optional fields",
+      "adding descriptions",
+      "adding new evidence collectors that use the existing evidence shape"
+    ]
+  },
+  "jsonSchema": {
+    "path": "schemas/operation-capsule.v0alpha1.schema.json",
+    "equals": {
+      "/properties/apiVersion/const": "kubeactuary.dev/v0alpha1",
+      "/properties/kind/const": "OperationCapsule"
+    },
+    "contains": {
+      "/required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status"
+      ],
+      "/properties/spec/required": [
+        "intent",
+        "actor",
+        "target",
+        "risk",
+        "requiredEvidence",
+        "rollback",
+        "postChecks"
+      ],
+      "/properties/spec/properties/target/required": [
+        "verb",
+        "scope",
+        "modifiesCluster"
+      ],
+      "/properties/spec/properties/target/properties/scope/enum": [
+        "namespace",
+        "cluster",
+        "unknown"
+      ],
+      "/properties/spec/properties/risk/properties/level/enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "/properties/status/required": [
+        "state",
+        "evidence"
+      ],
+      "/properties/status/properties/state/enum": [
+        "drafted",
+        "evidence-attached",
+        "verified",
+        "blocked",
+        "executed"
+      ]
+    }
+  },
+  "crd": {
+    "path": "deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml",
+    "requiredSnippets": [
+      "group: ops.kubeactuary.dev",
+      "scope: Namespaced",
+      "kind: OperationCapsule",
+      "name: v1alpha1",
+      "served: true",
+      "storage: true",
+      "subresources:",
+      "status: {}",
+      "intent:",
+      "actor:",
+      "proposedAction:",
+      "requiredEvidence:",
+      "evidence:",
+      "postChecks:",
+      "rollback:",
+      "ttlSecondsAfterFinished:",
+      "missingEvidence:",
+      "failedEvidence:",
+      "digest:",
+      "conditions:",
+      "sourceSha256:",
+      "collector:",
+      "reason:",
+      "exitCode:",
+      "inapplicable:",
+      "diffFound:",
+      "rollbackType:",
+      "manifestSha256:",
+      "EvidenceComplete",
+      "GateOpen",
+      "Blocked",
+      "RollbackReady",
+      "Expired"
+    ]
+  },
+  "docs": {
+    "path": "docs/api-freeze.md",
+    "requiredSnippets": [
+      "additive-only",
+      "no breaking schema diff",
+      "python3 -B scripts/verify_api_freeze.py",
+      "does not contact the cluster"
+    ]
+  }
+}

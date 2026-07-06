@@ -54,6 +54,7 @@ Evidence collector release:
 - add admission audit annotation fixtures and incident runbook;
 - add upstream Kubernetes N/N-1/N-2 conformance suite seed;
 - add security policy, threat model, and disclosure verifier;
+- add API freeze contract and additive compatibility verifier;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

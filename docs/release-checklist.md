@@ -34,6 +34,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
+python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -75,6 +76,8 @@ Expected:
 - Krew manifest generation verifies platform entries and archive digests;
 - SBOM and provenance generation verify archive digests;
 - security docs verify policy, threat model, and disclosure process;
+- API freeze gate verifies the additive-only public contract and no breaking
+  schema diff;
 - air-gapped manifest verifies required release and repository artifacts;
 - agent help contract verifies schema version and compatibility fields;
 - agent examples verify local CI and Codex runbooks without write commands;
@@ -117,6 +120,7 @@ Expected:
       available.
 - [ ] SBOM and provenance checks pass.
 - [ ] security policy and threat model check passes.
+- [ ] API freeze gate check passes.
 - [ ] air-gapped bundle manifest check passes.
 - [ ] agent help contract check passes.
 - [ ] agent example runbook check passes.

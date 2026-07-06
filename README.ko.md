@@ -310,6 +310,7 @@ deploy/kustomize/
 docs/
   admission.md                optional admission prototype and safety defaults
   admission-incident-runbook.md admission audit incident runbook
+  api-freeze.md               additive API freeze and compatibility gate
   conformance.md              upstream N/N-1/N-2 conformance suite
   threat-model.md             project threat model
   collectors.md                evidence collector 계약
@@ -345,6 +346,7 @@ examples/
   agent-codex-workflow.runbook.md Codex agent workflow runbook
 schemas/
   operation-capsule...json     JSON Schema
+  api-freeze.v0.9.2.json       frozen public API compatibility contract
 scripts/
   generate_release_notes.py    release notes dry-run 생성기
   verify_crd_compatibility.py  offline CRD compatibility smoke check
@@ -368,6 +370,7 @@ scripts/
   generate_provenance.py      release archive provenance generator
   verify_supply_chain.py      SBOM/provenance verifier
   verify_security_docs.py     security policy and threat model verifier
+  verify_api_freeze.py        additive API freeze verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -422,6 +425,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
+python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
