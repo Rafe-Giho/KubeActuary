@@ -125,7 +125,8 @@ Add optional adapters:
   fixtures.
 - OPA/Rego. Adapter available for captured `opa eval --format=json` output with
   pass/fail fixtures.
-- kube-linter
+- kube-linter. Adapter available for captured JSON output with pass/fail
+  fixtures.
 - kube-score
 - Pluto
 

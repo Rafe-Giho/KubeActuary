@@ -49,3 +49,27 @@ python3 -B scripts/verify_opa_adapter.py
 ```
 
 The verifier uses pass/fail fixtures under `tests/fixtures/opa`.
+
+## kube-linter
+
+```sh
+python3 -B scripts/adapt_kube_linter_evidence.py kube-linter-output.json
+```
+
+The adapter reads captured kube-linter JSON output and emits
+`kube-linter-policy` evidence. It does not run kube-linter, contact a cluster,
+or mutate resources.
+
+Evidence rules:
+
+- zero reports make evidence `ok: true`;
+- one or more reports make evidence `ok: false`;
+- output counts error, warning, and info severities.
+
+Verification:
+
+```sh
+python3 -B scripts/verify_kube_linter_adapter.py
+```
+
+The verifier uses pass/fail fixtures under `tests/fixtures/kube-linter`.

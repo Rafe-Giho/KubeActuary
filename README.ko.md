@@ -363,6 +363,8 @@ scripts/
   verify_kyverno_adapter.py   Kyverno adapter fixture verifier
   adapt_opa_evidence.py       OPA output to evidence adapter
   verify_opa_adapter.py       OPA adapter fixture verifier
+  adapt_kube_linter_evidence.py kube-linter output to evidence adapter
+  verify_kube_linter_adapter.py kube-linter adapter fixture verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -395,6 +397,7 @@ python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
+python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

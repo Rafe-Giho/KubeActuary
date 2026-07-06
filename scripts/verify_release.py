@@ -174,6 +174,11 @@ COMMON_CHECKS = (
         contains=("opa-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
     ),
     Check(
+        "kube-linter adapter",
+        ("python3", "-B", "scripts/verify_kube_linter_adapter.py"),
+        contains=("kube-linter-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

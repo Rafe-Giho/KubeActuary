@@ -40,6 +40,7 @@ Evidence collector release:
 - add air-gapped install manifest generator and offline bundle verifier;
 - add Kyverno policy evidence adapter with pass/fail fixtures;
 - add OPA/Rego policy evidence adapter with pass/fail fixtures;
+- add kube-linter policy evidence adapter with pass/fail fixtures;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

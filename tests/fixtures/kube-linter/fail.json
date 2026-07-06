@@ -1,0 +1,32 @@
+{
+  "Reports": [
+    {
+      "Check": "no-readiness-probe",
+      "Diagnostic": {
+        "Message": "container is missing a readiness probe",
+        "Severity": "warning"
+      },
+      "Object": {
+        "K8sObject": {
+          "Kind": "Deployment",
+          "Name": "demo",
+          "Namespace": "default"
+        }
+      }
+    },
+    {
+      "Check": "run-as-non-root",
+      "Diagnostic": {
+        "Message": "container does not set runAsNonRoot",
+        "Severity": "error"
+      },
+      "Object": {
+        "K8sObject": {
+          "Kind": "Deployment",
+          "Name": "demo",
+          "Namespace": "default"
+        }
+      }
+    }
+  ]
+}
