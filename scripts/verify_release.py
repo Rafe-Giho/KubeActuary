@@ -75,6 +75,11 @@ COMMON_CHECKS = (
         contains=("# KubeActuary 0.2.0 Release Notes", "## Verification", "## Rollback"),
     ),
     Check(
+        "release taskboard",
+        ("python3", "-B", "scripts/verify_release_taskboard.py"),
+        contains=("release-taskboard: passed", "release-checks:"),
+    ),
+    Check(
         "crd compatibility smoke",
         ("python3", "-B", "scripts/verify_crd_compatibility.py"),
         contains=("crd-compatibility: passed", "upstream-minors: 1.36, 1.35, 1.34"),

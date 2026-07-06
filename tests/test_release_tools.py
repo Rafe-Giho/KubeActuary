@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
+RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
@@ -80,6 +81,20 @@ class ReleaseToolTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(output.is_file())
             self.assertIn("Status: draft", output.read_text())
+
+    def test_verify_release_taskboard(self):
+        result = subprocess.run(
+            [sys.executable, str(RELEASE_TASKBOARD)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("release-taskboard: passed", result.stdout)
+        self.assertIn("release-checks:", result.stdout)
 
     def test_verify_agent_help_contract(self):
         result = subprocess.run(

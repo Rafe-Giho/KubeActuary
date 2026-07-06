@@ -22,6 +22,7 @@ Status legend:
 | Collector failure contract | DONE | stable summary prefix and reason-field unit tests |
 | GitHub Actions CI | DONE | workflow YAML parse and release verification command |
 | Release checklist and notes | DONE | release checklist doc plus generated notes dry-run |
+| Release taskboard audit | DONE | `scripts/verify_release_taskboard.py` verifies statuses, remaining evidence notes, and release check count |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |
 | CRD seed | DONE | YAML parse, CRD field contract tests, and `render-crd` status mapping tests |
@@ -61,7 +62,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (58 checks)
+verification: passed (59 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -79,6 +80,7 @@ adding in-cluster components.
 | 0.2.1 | Normalize collector error summaries and inapplicable evidence | DONE | unit tests for missing manifest/path/command failure summaries |
 | 0.2.2 | Add GitHub Actions CI for tests, JSON/YAML parse, release verification | DONE | workflow YAML parse plus `scripts/verify_release.py --version current` in CI |
 | 0.2.2 | Add release checklist and generated release notes template | DONE | `scripts/generate_release_notes.py --version 0.2.0 --output -` |
+| 0.2.3 | Add release taskboard audit | DONE | `scripts/verify_release_taskboard.py` checks status rows and release check count |
 | 0.2.3 | Add structured help schema version and compatibility test | DONE | `help agents --format json` schemaVersion and required field tests |
 
 ## v0.3.x: CRD API Contract

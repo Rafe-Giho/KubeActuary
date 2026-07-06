@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (58 checks)
-Ran 91 tests
+verification: passed (59 checks)
+Ran 92 tests
 OK
 ```
 
@@ -98,6 +98,7 @@ Coverage included:
 - MCP docs and client config verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
+- release taskboard status and check-count audit;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -121,6 +122,7 @@ python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
+python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -180,6 +182,7 @@ Result:
 - CRD compatibility smoke prints `crd-compatibility: passed`;
 - CRD explain quality check prints `crd-explain-quality: passed`;
 - conformance suite prints `conformance-suite: passed`;
+- release taskboard check prints `release-taskboard: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

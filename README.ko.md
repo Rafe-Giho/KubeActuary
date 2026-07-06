@@ -359,6 +359,7 @@ schemas/
   api-freeze.v0.9.2.json       frozen public API compatibility contract
 scripts/
   generate_release_notes.py    release notes dry-run 생성기
+  verify_release_taskboard.py  local release taskboard audit
   verify_crd_compatibility.py  offline CRD compatibility smoke check
   verify_crd_explain_quality.py offline kubectl explain quality check
   verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
@@ -434,6 +435,7 @@ tests/
 ```sh
 python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B scripts/verify_release_taskboard.py
 python3 -B bin/kube-actuary doctor
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py

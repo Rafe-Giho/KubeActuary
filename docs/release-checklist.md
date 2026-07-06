@@ -22,6 +22,7 @@ python3 -B scripts/verify_release.py --version current
 python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
+python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -76,6 +77,8 @@ Expected:
 - CRD upgrade and rollback fixtures verify offline;
 - CRD explain descriptions and example commands verify offline;
 - conformance suite verifies upstream N/N-1/N-2 local matrix;
+- release taskboard audit verifies status rows, remaining evidence notes, and
+  release check count;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
@@ -140,6 +143,7 @@ Expected:
 - [ ] `kubectl explain` runbook is reviewed for the current CRD.
 - [ ] CRD rollback fixture YAML parses.
 - [ ] controller dry-run contract check passes.
+- [ ] release taskboard audit check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
 - [ ] controller deployment seed check passes.

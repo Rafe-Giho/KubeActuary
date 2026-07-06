@@ -14,8 +14,8 @@ Expected:
 - release verification suite passes;
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
-  validate, doctor, normalized collector failures, human help, agent JSON help,
-  structured help compatibility, controller dry-run contract, controller RBAC,
+  validate, doctor, normalized collector failures, release taskboard audit,
+  human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller deployment seed, controller status
   patch plan, controller read-only sync, controller status apply dry-run,
   controller resource budget,
@@ -54,6 +54,7 @@ python3 -B bin/kube-actuary digest examples/apply-configmap.preflight.capsule.js
 python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
+python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -111,6 +112,7 @@ Expected:
   absent;
 - release notes dry-run prints verification and rollback sections;
 - conformance suite check prints `conformance-suite: passed`;
+- release taskboard check prints `release-taskboard: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -199,6 +201,8 @@ Confirm from code and tests:
   notes;
 - conformance suite verifies the upstream `1.36`, `1.35`, and `1.34` local
   matrix against CRD compatibility, upgrade fixtures, and explain quality;
+- release taskboard audit verifies status rows, remaining evidence notes, and
+  the release suite check count;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -295,7 +299,7 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
+  release notes dry-run, release taskboard audit, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller
   sync, controller status apply, controller resource budget, lightweight cluster smoke, digest, CRD render,
