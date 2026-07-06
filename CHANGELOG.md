@@ -55,6 +55,7 @@ Evidence collector release:
 - add tool-ready and missing-tool next actions to release progress reports;
 - show all open items per version in release progress Markdown;
 - show all action blockers in release progress Markdown;
+- show filtered worklist commands for release progress blockers;
 - summarize repeated missing-tool and environment blockers in release progress
   reports;
 - surface selected next-task, runner, environment, and advance status in release

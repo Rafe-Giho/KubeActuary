@@ -98,7 +98,7 @@ Expected:
   release check count;
 - release progress report verifies versioned task status, external gates, live
   readiness, tool-ready next actions, blocker summaries, and optional evidence
-  directory status;
+  directory status; blocker summaries include filtered worklist commands;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   summarizes repeated missing-tool and environment blockers,

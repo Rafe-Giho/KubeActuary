@@ -595,7 +595,8 @@ The selected next-task runner records `blocked-by-environment` or
 it does not reattempt live capture commands until the evidence directory is
 refreshed. Release evidence status recommends only `tool-ready` next commands;
 blocked or missing-tool actions stay in blocker summaries. Release progress
-uses the same rule for JSON `nextActions` runnable commands.
+uses the same rule for JSON `nextActions` runnable commands, while blocker
+summaries link to filtered local worklist commands.
 
 Validate examples:
 

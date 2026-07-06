@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from collections import Counter
 from pathlib import Path
@@ -110,7 +111,11 @@ def summarize_readiness(readiness: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[str, Any]:
+def build_next_actions(
+    plan: dict[str, Any],
+    readiness: dict[str, Any],
+    evidence_dir: Path | None = None,
+) -> dict[str, Any]:
     readiness_by_gate = {
         gate.get("gate"): gate
         for gate in readiness.get("gateToolReadiness", [])
@@ -148,7 +153,7 @@ def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[
             "blockedByTools": len(actions) - tool_ready,
             "blockedByEnvironment": 0,
         },
-        "blockers": next_action_blockers(actions),
+        "blockers": next_action_blockers(actions, evidence_dir=evidence_dir),
         "actions": actions,
     }
 
@@ -163,7 +168,7 @@ def load_live_validation_queue(evidence_dir: Path) -> dict[str, Any] | None:
     return queue
 
 
-def next_actions_from_queue(queue: dict[str, Any]) -> dict[str, Any]:
+def next_actions_from_queue(queue: dict[str, Any], evidence_dir: Path | None = None) -> dict[str, Any]:
     actions: list[dict[str, Any]] = []
     for item in queue.get("items", []):
         if not isinstance(item, dict):
@@ -192,7 +197,7 @@ def next_actions_from_queue(queue: dict[str, Any]) -> dict[str, Any]:
             "blockedByTools": summary.get("blockedByTools", 0),
             "blockedByEnvironment": summary.get("blockedByEnvironment", 0),
         },
-        "blockers": next_action_blockers(actions),
+        "blockers": next_action_blockers(actions, evidence_dir=evidence_dir),
         "actions": actions,
     }
 
@@ -204,7 +209,31 @@ def sorted_counts(counts: Counter[str]) -> list[dict[str, Any]]:
     ]
 
 
-def next_action_blockers(actions: list[dict[str, Any]]) -> dict[str, Any]:
+def command_string(args: list[str]) -> str:
+    return " ".join(shlex.quote(arg) for arg in args)
+
+
+def blocker_worklist_command(
+    capture_status: str,
+    filter_flag: str,
+    filter_value: str,
+    evidence_dir: Path | None = None,
+) -> str:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+    ]
+    if evidence_dir is not None:
+        args.extend(["--evidence-dir", evidence_dir.as_posix()])
+    args.extend(["--capture-status", capture_status, filter_flag, filter_value])
+    return command_string(args)
+
+
+def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | None = None) -> dict[str, Any]:
     missing_tools = Counter(
         tool
         for action in actions
@@ -223,11 +252,29 @@ def next_action_blockers(actions: list[dict[str, Any]]) -> dict[str, Any]:
     )
     return {
         "missingTools": [
-            {"tool": item["value"], "actions": item["actions"]}
+            {
+                "tool": item["value"],
+                "actions": item["actions"],
+                "worklistCommand": blocker_worklist_command(
+                    "missing-tools",
+                    "--missing-tool",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                ),
+            }
             for item in sorted_counts(missing_tools)
         ],
         "environment": [
-            {"status": item["value"], "actions": item["actions"]}
+            {
+                "status": item["value"],
+                "actions": item["actions"],
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-status",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                ),
+            }
             for item in sorted_counts(environment_statuses)
         ],
         "environmentNextSteps": [
@@ -310,7 +357,7 @@ def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = N
                     "clusterWrites": live_queue.get("clusterWrites"),
                     "summary": live_queue.get("summary", {}),
                 }
-                report["nextActions"] = next_actions_from_queue(live_queue)
+                report["nextActions"] = next_actions_from_queue(live_queue, evidence_dir=evidence_dir)
             report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
@@ -369,8 +416,12 @@ def render_markdown(progress: dict[str, Any]) -> str:
         lines.extend(["", "## Action Blockers", ""])
         for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['actions']} actions)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['actions']} actions)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_next_steps:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['actions']} actions)")
     if tool_ready_actions:

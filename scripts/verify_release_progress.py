@@ -202,6 +202,7 @@ def main() -> int:
         "missing-tool-blocker: `minikube`",
         "missing-tool-blocker: `az`",
         "missing-tool-blocker: `gcloud`",
+        "worklist: `python3 -B scripts/generate_version_worklist.py --format markdown --open-only --capture-status missing-tools --missing-tool minikube`",
     ):
         if snippet not in markdown_result.stdout:
             errors.append(f"markdown progress must include all action blockers: {snippet}")
@@ -233,6 +234,8 @@ def main() -> int:
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
+            "generate_version_worklist.py --format markdown --open-only --evidence-dir",
+            "--capture-status blocked-by-environment --environment-status cluster-unavailable",
             "blocker-next-step: start or select a disposable cluster, then rerun the probe (1 actions)",
             "prepare_live_evidence_directory.py",
         ):
@@ -275,6 +278,12 @@ def main() -> int:
     blockers = next_actions.get("blockers", {})
     if next_actions.get("summary", {}).get("blockedByTools", 0) and not blockers.get("missingTools"):
         errors.append("progress report must summarize missing tool blockers")
+    minikube_blocker = next(
+        (item for item in blockers.get("missingTools", []) if item.get("tool") == "minikube"),
+        {},
+    )
+    if "--missing-tool minikube" not in minikube_blocker.get("worklistCommand", ""):
+        errors.append("progress missing-tool blockers must include filtered worklist commands")
     for action in next_actions.get("actions", []):
         if action.get("status") not in {"tool-ready", "missing-tools"}:
             errors.append(f"invalid next action status: {action.get('status')!r}")
@@ -328,8 +337,19 @@ def main() -> int:
     ):
         errors.append("blocked evidence next actions must not expose runnable firstCommand")
     evidence_blockers = evidence_next_actions.get("blockers", {})
-    if evidence_blockers.get("environment") != [{"status": "cluster-unavailable", "actions": 1}]:
+    environment_summary = [
+        {"status": item.get("status"), "actions": item.get("actions")}
+        for item in evidence_blockers.get("environment", [])
+    ]
+    if environment_summary != [{"status": "cluster-unavailable", "actions": 1}]:
         errors.append("evidence progress must summarize environment blockers")
+    environment_commands = [
+        item.get("worklistCommand", "")
+        for item in evidence_blockers.get("environment", [])
+        if item.get("status") == "cluster-unavailable"
+    ]
+    if not environment_commands or "--evidence-dir" not in environment_commands[0]:
+        errors.append("evidence environment blockers must include evidence-aware worklist commands")
     if evidence_blockers.get("environmentNextSteps") != [
         {"nextStep": "start or select a disposable cluster, then rerun the probe", "actions": 1}
     ]:
