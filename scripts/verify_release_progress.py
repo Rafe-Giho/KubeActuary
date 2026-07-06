@@ -216,6 +216,8 @@ def main() -> int:
             "version-iteration-advance-consistency: `matched`",
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
+            "environment-blocker: `cluster-unavailable` (1 actions)",
+            "blocker-next-step: start or select a disposable cluster, then rerun the probe (1 actions)",
             "prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_markdown.stdout:
@@ -254,6 +256,9 @@ def main() -> int:
     next_actions = progress.get("nextActions", {})
     if next_actions.get("summary", {}).get("total") != 16:
         errors.append("progress report must include one next action per external gate")
+    blockers = next_actions.get("blockers", {})
+    if next_actions.get("summary", {}).get("blockedByTools", 0) and not blockers.get("missingTools"):
+        errors.append("progress report must summarize missing tool blockers")
     for action in next_actions.get("actions", []):
         if action.get("status") not in {"tool-ready", "missing-tools"}:
             errors.append(f"invalid next action status: {action.get('status')!r}")
@@ -297,6 +302,13 @@ def main() -> int:
         errors.append("evidence progress must preserve persisted environment-blocked action count")
     if (evidence_next_actions.get("actions") or [{}])[0].get("environmentStatus") != "cluster-unavailable":
         errors.append("evidence progress next actions must preserve environment status")
+    evidence_blockers = evidence_next_actions.get("blockers", {})
+    if evidence_blockers.get("environment") != [{"status": "cluster-unavailable", "actions": 1}]:
+        errors.append("evidence progress must summarize environment blockers")
+    if evidence_blockers.get("environmentNextSteps") != [
+        {"nextStep": "start or select a disposable cluster, then rerun the probe", "actions": 1}
+    ]:
+        errors.append("evidence progress must summarize environment blocker next steps")
     missing_status = missing_evidence_progress.get("evidenceStatus", {})
     if missing_status.get("summary", {}).get("status") != "not-prepared":
         errors.append("missing evidence progress must report not-prepared status")

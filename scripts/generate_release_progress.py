@@ -147,6 +147,7 @@ def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[
             "blockedByTools": len(actions) - tool_ready,
             "blockedByEnvironment": 0,
         },
+        "blockers": next_action_blockers(actions),
         "actions": actions,
     }
 
@@ -189,7 +190,48 @@ def next_actions_from_queue(queue: dict[str, Any]) -> dict[str, Any]:
             "blockedByTools": summary.get("blockedByTools", 0),
             "blockedByEnvironment": summary.get("blockedByEnvironment", 0),
         },
+        "blockers": next_action_blockers(actions),
         "actions": actions,
+    }
+
+
+def sorted_counts(counts: Counter[str]) -> list[dict[str, Any]]:
+    return [
+        {"value": value, "actions": count}
+        for value, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
+
+def next_action_blockers(actions: list[dict[str, Any]]) -> dict[str, Any]:
+    missing_tools = Counter(
+        tool
+        for action in actions
+        if action.get("status") == "missing-tools"
+        for tool in action.get("missingTools", [])
+    )
+    environment_statuses = Counter(
+        action.get("environmentStatus") or "unknown"
+        for action in actions
+        if action.get("status") == "blocked-by-environment"
+    )
+    environment_next_steps = Counter(
+        action.get("nextStep")
+        for action in actions
+        if action.get("status") == "blocked-by-environment" and action.get("nextStep")
+    )
+    return {
+        "missingTools": [
+            {"tool": item["value"], "actions": item["actions"]}
+            for item in sorted_counts(missing_tools)
+        ],
+        "environment": [
+            {"status": item["value"], "actions": item["actions"]}
+            for item in sorted_counts(environment_statuses)
+        ],
+        "environmentNextSteps": [
+            {"nextStep": item["value"], "actions": item["actions"]}
+            for item in sorted_counts(environment_next_steps)
+        ],
     }
 
 
@@ -317,6 +359,18 @@ def render_markdown(progress: dict[str, Any]) -> str:
         ]
     )
     tool_ready_actions = [action for action in progress["nextActions"]["actions"] if action["status"] == "tool-ready"]
+    blockers = progress["nextActions"].get("blockers", {})
+    missing_tool_blockers = blockers.get("missingTools") or []
+    environment_blockers = blockers.get("environment") or []
+    environment_next_steps = blockers.get("environmentNextSteps") or []
+    if missing_tool_blockers or environment_blockers:
+        lines.extend(["", "## Action Blockers", ""])
+        for item in missing_tool_blockers[:5]:
+            lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['actions']} actions)")
+        for item in environment_blockers[:5]:
+            lines.append(f"- environment-blocker: `{item['status']}` ({item['actions']} actions)")
+        for item in environment_next_steps[:3]:
+            lines.append(f"- blocker-next-step: {item['nextStep']} ({item['actions']} actions)")
     if tool_ready_actions:
         lines.extend(["", "## Tool-Ready Actions", ""])
         for action in tool_ready_actions[:5]:

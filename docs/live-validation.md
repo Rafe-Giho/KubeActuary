@@ -68,7 +68,9 @@ view also surfaces the selected next task, next-task runner status,
 next-task runner failure reason, environment probe/blocker status, and latest
 iteration advance status. It also prints queue-source details from the
 selected next-task, runner, and advance records when an evidence directory has
-been prepared.
+been prepared. The same progress view summarizes repeated missing-tool and
+environment blockers, so the remaining local task loop can distinguish
+installation work from disposable-cluster setup.
 If the prepared directory contains `.kubeactuary/live-validation-queue.json`,
 progress uses that persisted queue as the next-action source so action counts
 match the last local probe instead of the inventory-only tool snapshot.

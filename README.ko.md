@@ -360,7 +360,7 @@ schemas/
 scripts/
   generate_release_notes.py    release notes dry-run 생성기
   verify_release_taskboard.py  local release taskboard audit
-  generate_release_progress.py versioned release progress report generator
+  generate_release_progress.py versioned release progress report generator with blocker summary
   verify_release_progress.py   release progress verifier
   kube-actuary.release-progress.v1 release progress schema
   generate_version_worklist.py version-grouped task worklist generator with filters and evidence readiness

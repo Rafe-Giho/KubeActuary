@@ -97,7 +97,8 @@ Expected:
 - release taskboard audit verifies status rows, remaining evidence notes, and
   release check count;
 - release progress report verifies versioned task status, external gates, live
-  readiness, tool-ready next actions, and optional evidence directory status;
+  readiness, tool-ready next actions, blocker summaries, and optional evidence
+  directory status;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   resolves evidence paths and file readiness for the full local worklist,
