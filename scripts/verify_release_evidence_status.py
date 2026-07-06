@@ -26,6 +26,8 @@ from scripts.verify_live_evidence_schema import sample  # noqa: E402
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
+ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
+ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 LIGHTWEIGHT_PROVIDERS = ("kind", "minikube", "microk8s", "k3s")
 MANAGED_PROVIDERS = ("eks", "gke", "aks")
 SINGLE_REPORT_SCHEMAS = (
@@ -211,6 +213,16 @@ def main() -> int:
         errors.append("partial status must preserve next-task-run status")
     if next_task_run.get("summary", {}).get("ran") != 2:
         errors.append("partial status must summarize next-task-run command count")
+    environment_probe = partial_payload.get("environmentProbe") or {}
+    if environment_probe.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
+        errors.append("partial status must include environment-probe schema")
+    if environment_probe.get("clusterAccess") != "not-run":
+        errors.append("partial status must preserve default environment probe status")
+    environment_blockers = partial_payload.get("environmentBlockers") or {}
+    if environment_blockers.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
+        errors.append("partial status must include environment-blockers schema")
+    if environment_blockers.get("summary", {}).get("blockedByEnvironment") != 0:
+        errors.append("partial status must summarize environment blockers")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
@@ -229,6 +241,10 @@ def main() -> int:
         errors.append("partial text status must print next-task file readiness")
     if "next-task-run: passed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
+    if "environment-probe: not-run" not in partial_text.stdout:
+        errors.append("partial text status must print environment probe status")
+    if "environment-blockers: 0" not in partial_text.stdout:
+        errors.append("partial text status must print environment blocker count")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
@@ -276,6 +292,8 @@ def main() -> int:
         NEXT_TASK_SCHEMA,
         NEXT_TASK_BUILD_SCHEMA,
         NEXT_TASK_RUN_SCHEMA,
+        ENVIRONMENT_PROBE_SCHEMA,
+        ENVIRONMENT_BLOCKERS_SCHEMA,
     ):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
@@ -292,6 +310,7 @@ def main() -> int:
     print("partial: ok")
     print("complete: ok")
     print("next-task-run: ok")
+    print("environment: ok")
     return 0
 
 

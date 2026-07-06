@@ -23,6 +23,8 @@ from scripts.evaluate_external_gate_evidence import evaluate, load_supplemental 
 SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
+ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
+ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 NEXT_TASK_FILE_FLAGS = {
     "--sample": "sample",
     "--source": "source",
@@ -116,6 +118,40 @@ def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
+def load_environment_probe(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "environment-probe.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
+        raise ValueError(f"{path}: unsupported environment-probe schemaVersion: {payload.get('schemaVersion')!r}")
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "clusterWrites": payload.get("clusterWrites"),
+        "probeEnabled": payload.get("probeEnabled"),
+        "clusterAccess": payload.get("clusterAccess"),
+        "kubectl": payload.get("kubectl"),
+        "summary": payload.get("summary", {}),
+    }
+
+
+def load_environment_blockers(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "environment-blockers.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
+        raise ValueError(f"{path}: unsupported environment-blockers schemaVersion: {payload.get('schemaVersion')!r}")
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "clusterWrites": payload.get("clusterWrites"),
+        "summary": payload.get("summary", {}),
+        "selected": payload.get("selected"),
+    }
+
+
 def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
     commands: list[str] = []
     seen: set[str] = set()
@@ -142,6 +178,8 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     next_task = load_next_task(evidence_dir)
     next_task_run = load_next_task_run(evidence_dir)
+    environment_probe = load_environment_probe(evidence_dir)
+    environment_blockers = load_environment_blockers(evidence_dir)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -160,6 +198,8 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         },
         "nextTask": next_task,
         "nextTaskRun": next_task_run,
+        "environmentProbe": environment_probe,
+        "environmentBlockers": environment_blockers,
         "liveReports": manifest.get("reports", []),
         "supplementalEvidence": [
             {
@@ -219,6 +259,16 @@ def render_text(status: dict[str, Any]) -> str:
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"next-task-run-ran: {run_summary.get('ran', 0)}")
+    environment_probe = status.get("environmentProbe")
+    if isinstance(environment_probe, dict):
+        lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
+        probe_summary = environment_probe.get("summary", {})
+        if probe_summary:
+            lines.append(f"environment-probe-checks: {probe_summary.get('passed', 0)}/{probe_summary.get('checks', 0)}")
+    environment_blockers = status.get("environmentBlockers")
+    if isinstance(environment_blockers, dict):
+        blocker_summary = environment_blockers.get("summary", {})
+        lines.append(f"environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
     return "\n".join(lines) + "\n"
 
 

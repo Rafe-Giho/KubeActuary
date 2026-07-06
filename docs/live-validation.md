@@ -204,7 +204,8 @@ the evidence directory was prepared by the scaffold. It does not require
 complete release closure. For resolved next-task file paths, it reports whether
 the raw input and supplemental output files are present or still missing. When
 present, it also reports the latest `kube-actuary.next-version-task-run.v1`
-runner status from `.kubeactuary/next-version-task-run.json`.
+runner status from `.kubeactuary/next-version-task-run.json` and the local
+environment probe/blocker metadata from `.kubeactuary/environment-*.json`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.
