@@ -1,0 +1,7 @@
+controller:
+  enabled: false
+  namespace: kubeactuary-system
+  rbac:
+    scope: namespace
+  serviceAccount:
+    name: kubeactuary-controller

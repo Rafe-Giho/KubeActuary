@@ -125,6 +125,11 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "helm chart",
+        ("python3", "-B", "scripts/verify_helm_chart.py"),
+        contains=("helm-chart: passed", "crd: included", "controller: optional"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),
@@ -177,6 +182,8 @@ COMMON_CHECKS = (
             "-e",
             'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"',
             ".github/workflows/ci.yml",
+            "charts/kubeactuary/Chart.yaml",
+            "charts/kubeactuary/values.yaml",
             "deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml",
             "deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml",
             "deploy/controller/namespace-scoped-rbac.yaml",

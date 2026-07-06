@@ -101,7 +101,17 @@ Current local progress:
 - live controller process, HTTP serving, deployment manifests, status
   subresource writes, and live matrix evidence remain future work.
 
-## v0.5: Policy Adapters
+## v0.5: Packaging and Installation
+
+Make KubeActuary installable as a Kubernetes tool:
+
+- Helm chart seed packages the CRD and optional controller RBAC. Static
+  verification is available; live `helm template` and install smoke remain
+  follow-up work.
+- Kustomize, release archives, Krew, SBOM, provenance, and air-gapped install
+  docs remain follow-up work.
+
+## v0.6: Policy Adapters
 
 Add optional adapters:
 
@@ -113,7 +123,7 @@ Add optional adapters:
 
 Adapters should attach evidence, not replace the core gate.
 
-## v0.6: MCP Server
+## v0.7: MCP Server
 
 Expose safe MCP tools:
 
@@ -126,7 +136,7 @@ Expose safe MCP tools:
 Keep `execute_approved_capsule` disabled or experimental until the gate and
 audit story is mature.
 
-## v0.7: Admission and Audit
+## v0.8: Admission and Audit
 
 Add optional admission controls:
 

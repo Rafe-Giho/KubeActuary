@@ -27,6 +27,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -46,6 +47,7 @@ Expected:
   configuration without contacting the cluster;
 - controller resource budget contract and measurement parser verify offline;
 - lightweight cluster smoke plan verifies offline;
+- Helm chart contract verifies offline;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -65,6 +67,7 @@ Expected:
 - [ ] lightweight cluster smoke plan check passes.
 - [ ] live kind/minikube/MicroK8s/k3s evidence is attached before claiming
       matrix support.
+- [ ] Helm chart check passes; run `helm template` when Helm is available.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

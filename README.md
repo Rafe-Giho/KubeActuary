@@ -292,6 +292,8 @@ controller/
   reconcile.py                 pure OperationCapsule status reconcile model
 .github/workflows/
   ci.yml                       GitHub Actions verification workflow
+charts/
+  kubeactuary/                 Helm chart seed
 deploy/crds/
   operationcapsules...yaml     CRD seed
   fixtures/                    CRD upgrade and rollback fixtures
@@ -335,6 +337,7 @@ scripts/
   measure_controller_resources.py kubectl top budget measurement helper
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness
   verify_lightweight_cluster_smoke.py offline smoke harness check
+  verify_helm_chart.py        offline Helm chart contract check
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -359,6 +362,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -369,7 +373,7 @@ python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.
 python3 -B -m json.tool examples/read-pods.verified.capsule.json
 python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
 ```
 
 ## Brand Proposals

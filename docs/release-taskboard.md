@@ -33,6 +33,7 @@ Status legend:
 | Controller runtime contract | DONE | health, readiness, metrics, and Lease config verifier |
 | Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
 | Lightweight cluster smoke | VERIFY | offline smoke plan verifier added; live matrix evidence still needed |
+| Helm chart | VERIFY | chart seed and offline verifier added; live `helm template` not run because Helm is not installed |
 | Controller | TODO | No live controller deployment yet |
 | Packaging | TODO | No Krew, Homebrew, Helm, or release archive automation yet |
 | MCP server | TODO | Contract docs only |
@@ -42,7 +43,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (24 checks)
+verification: passed (25 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -96,7 +97,7 @@ Goal: make KubeActuary installable as a serious Kubernetes open-source tool.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.5.0 | Helm chart for CRD and optional controller | TODO | `helm template` and install smoke |
+| 0.5.0 | Helm chart for CRD and optional controller | VERIFY | `scripts/verify_helm_chart.py`; live `helm template` and install smoke still required |
 | 0.5.0 | Kustomize base and overlays | TODO | `kubectl kustomize` smoke |
 | 0.5.1 | Multi-arch release archives for CLI/plugin | TODO | sha256 and install smoke |
 | 0.5.2 | Krew manifest for `kubectl actuary` | TODO | krew manifest validation |
