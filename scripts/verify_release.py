@@ -50,6 +50,11 @@ COMMON_CHECKS = (
         contains=("agent-help-contract: passed", "schemaVersion: kube-actuary.help.v1"),
     ),
     Check(
+        "agent examples",
+        ("python3", "-B", "scripts/verify_agent_examples.py"),
+        contains=("agent-examples: passed", "runbooks: 2", "writes: disabled"),
+    ),
+    Check(
         "collect help",
         ("python3", "-B", "bin/kube-actuary", "collect", "--help"),
         contains=("auth", "dry-run", "diff", "rollback", "health-plan"),

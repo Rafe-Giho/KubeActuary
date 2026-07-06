@@ -332,6 +332,8 @@ docs/
 examples/
   *.capsule.json               local capsule examples
   operationcapsule-scale.yaml  CRD example
+  agent-local-ci.runbook.md    local CI agent workflow runbook
+  agent-codex-workflow.runbook.md Codex agent workflow runbook
 schemas/
   operation-capsule...json     JSON Schema
 scripts/
@@ -358,6 +360,7 @@ scripts/
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
+  verify_agent_examples.py    local CI/Codex runbook verifier
   adapt_kyverno_evidence.py   Kyverno output to evidence adapter
   verify_kyverno_adapter.py   Kyverno adapter fixture verifier
   adapt_opa_evidence.py       OPA output to evidence adapter
@@ -402,6 +405,7 @@ python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
+python3 -B scripts/verify_agent_examples.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
