@@ -227,7 +227,9 @@ The iteration advance helper wraps that runner with before/after version
 history recording and reports schema
 `kube-actuary.version-iteration-advance.v1`. In run mode it also records the
 selected runner status as `.kubeactuary/next-version-task-run.json` and
-`.kubeactuary/next-version-task-run.md`:
+`.kubeactuary/next-version-task-run.md`, plus the advance workflow status as
+`.kubeactuary/version-iteration-advance.json` and
+`.kubeactuary/version-iteration-advance.md`:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>

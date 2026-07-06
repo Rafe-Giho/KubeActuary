@@ -23,6 +23,8 @@ from scripts.select_next_version_task import build_selection  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.version-iteration-advance.v1"
+ADVANCE_REPORT_JSON = ".kubeactuary/version-iteration-advance.json"
+ADVANCE_REPORT_MD = ".kubeactuary/version-iteration-advance.md"
 
 
 def utc_now() -> str:
@@ -213,7 +215,55 @@ def render_text(result: dict[str, Any]) -> str:
         if result["nextTask"].get("captureStatus"):
             lines.append(f"next-task-status: {result['nextTask'].get('captureStatus')}")
         lines.append(f"skipped-complete-evidence: {result['nextTask'].get('skippedCompleteEvidence')}")
+        if result.get("advanceRecord"):
+            lines.append(f"advance-record: {result['advanceRecord'].get('json')}")
     return "\n".join(lines) + "\n"
+
+
+def render_markdown(result: dict[str, Any]) -> str:
+    lines = [
+        "# KubeActuary Version Iteration Advance",
+        "",
+        f"Schema: `{result['schemaVersion']}`",
+        f"Mode: `{result['mode']}`",
+        f"Status: `{result['status']}`",
+        f"Evidence directory: `{result['evidenceDir']}`",
+        f"History directory: `{result['historyDir']}`",
+        f"Cluster writes: `{result['clusterWrites']}`",
+        "",
+        "## Run",
+        "",
+    ]
+    if result["mode"] == "run":
+        lines.append(f"- run id: `{result.get('runId')}`")
+        lines.append(f"- before: `{(result.get('before') or {}).get('runId')}`")
+        if result.get("after"):
+            lines.append(f"- after: `{result['after'].get('runId')}`")
+        lines.append(f"- runner: `{(result.get('runner') or {}).get('status', 'not-run')}`")
+        if result.get("runnerRecord"):
+            lines.append(f"- runner record: `{result['runnerRecord'].get('json')}`")
+        next_task = result.get("nextTask") or {}
+        lines.append(f"- next task: `{next_task.get('selected')}`")
+        if next_task.get("captureStatus"):
+            lines.append(f"- next task status: `{next_task.get('captureStatus')}`")
+        lines.append(f"- history runs: {result.get('history', {}).get('runs')}")
+    else:
+        selected = result.get("selected") or {}
+        lines.append(f"- selected: `{selected.get('id')}`")
+        for step in result.get("plannedSteps", []):
+            lines.append(f"- planned step: {step}")
+    return "\n".join(lines) + "\n"
+
+
+def record_advance_result(evidence_dir: Path, result: dict[str, Any]) -> dict[str, str]:
+    json_path = evidence_dir / ADVANCE_REPORT_JSON
+    markdown_path = evidence_dir / ADVANCE_REPORT_MD
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {"json": str(json_path), "markdown": str(markdown_path)}
+    result["advanceRecord"] = record
+    json_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    markdown_path.write_text(render_markdown(result))
+    return record
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -231,20 +281,23 @@ def main(argv: list[str] | None = None) -> int:
 
     created_at = args.created_at or utc_now()
     run_id = args.run_id or created_at.replace(":", "").replace("+", "z")
+    evidence_dir = Path(args.evidence_dir)
+    history_dir = Path(args.history_dir)
     try:
         if args.run:
             result = run_advance(
-                Path(args.evidence_dir),
-                Path(args.history_dir),
+                evidence_dir,
+                history_dir,
                 run_id=run_id,
                 created_at=created_at,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
             )
+            record_advance_result(evidence_dir, result)
         else:
             result = planned_result(
-                Path(args.evidence_dir),
-                Path(args.history_dir),
+                evidence_dir,
+                history_dir,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
             )

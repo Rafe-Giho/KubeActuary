@@ -444,6 +444,7 @@ scripts/
   advance_version_iteration.py selected next-task runner plus before/after history and runner status recorder
   verify_version_iteration_advance.py version iteration advance verifier
   kube-actuary.version-iteration-advance.v1 version iteration advance schema
+  version-iteration-advance.json persisted advance workflow status report
   verify_live_evidence_directory_scaffold.py live evidence directory scaffold verifier
   validate_live_evidence.py   captured live evidence JSON validator
   verify_live_evidence_schema.py live evidence schema verifier

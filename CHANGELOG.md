@@ -47,6 +47,8 @@ Evidence collector release:
   directories;
 - add version iteration advance workflow for selected-task execution plus
   before/after history recording;
+- record version iteration advance workflow status under prepared evidence
+  directories;
 - record selected runner status from version iteration advance runs;
 - add probe-aware live evidence directory and iteration advance status for
   unavailable cluster environments;

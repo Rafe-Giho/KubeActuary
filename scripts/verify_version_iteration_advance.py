@@ -97,6 +97,20 @@ def main() -> int:
             errors.append("advance schemaVersion mismatch")
         if payload.get("status") != "passed" or payload.get("mode") != "run":
             errors.append("advance run must pass in run mode")
+        advance_record = payload.get("advanceRecord") or {}
+        advance_record_json = Path(advance_record.get("json", ""))
+        advance_record_md = Path(advance_record.get("markdown", ""))
+        if not advance_record_json.is_file() or not advance_record_md.is_file():
+            errors.append("advance must record its JSON and Markdown status reports")
+            advance_record_payload = {}
+        else:
+            advance_record_payload = json.loads(advance_record_json.read_text())
+            if "# KubeActuary Version Iteration Advance" not in advance_record_md.read_text():
+                errors.append("advance Markdown record must include the report title")
+        if advance_record_payload.get("schemaVersion") != "kube-actuary.version-iteration-advance.v1":
+            errors.append("advance recorded JSON schemaVersion mismatch")
+        if advance_record_payload.get("status") != "passed":
+            errors.append("advance recorded JSON must preserve passing status")
         if payload.get("runner", {}).get("status") != "passed":
             errors.append("advance must include a passing next-task runner result")
         runner_record = payload.get("runnerRecord") or {}
@@ -175,6 +189,14 @@ def main() -> int:
             errors.append("probe-blocked advance must not run the next-task runner")
         if blocked_payload.get("runnerRecord") is not None:
             errors.append("probe-blocked advance must not write a runner record")
+        blocked_advance_record = blocked_payload.get("advanceRecord") or {}
+        blocked_advance_json = Path(blocked_advance_record.get("json", ""))
+        if not blocked_advance_json.is_file():
+            errors.append("probe-blocked advance must record its blocked status")
+        else:
+            blocked_advance_payload = json.loads(blocked_advance_json.read_text())
+            if blocked_advance_payload.get("status") != "blocked-by-environment":
+                errors.append("probe-blocked advance record must preserve blocked status")
         if blocked_payload.get("history", {}).get("runs") != 1:
             errors.append("probe-blocked advance must record one history run")
         if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
@@ -187,7 +209,12 @@ def main() -> int:
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()
-        for snippet in ("advance_version_iteration.py", "kube-actuary.version-iteration-advance.v1", "next-version-task-run.json"):
+        for snippet in (
+            "advance_version_iteration.py",
+            "kube-actuary.version-iteration-advance.v1",
+            "next-version-task-run.json",
+            "version-iteration-advance.json",
+        ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing advance workflow detail: {snippet}")
 
@@ -202,6 +229,7 @@ def main() -> int:
     print("history-runs: 2")
     print("evidence: raw,supplemental")
     print("runner-record: metadata")
+    print("advance-record: metadata")
     return 0
 
 
