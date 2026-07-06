@@ -141,6 +141,7 @@ def load_next_task(
             "environmentStatus": selected.get("environmentStatus"),
             "environmentReason": selected.get("environmentReason"),
             "missingTools": selected.get("missingTools", []),
+            "nextStep": selected.get("nextStep"),
             "commands": selected.get("commands", []),
             "resolvedCommands": selected.get("resolvedCommands", []),
             "files": files,
@@ -217,6 +218,8 @@ def load_next_task_run(
             "captureStatus": selected.get("captureStatus"),
             "environmentStatus": selected.get("environmentStatus"),
             "environmentReason": selected.get("environmentReason"),
+            "missingTools": selected.get("missingTools", []),
+            "nextStep": selected.get("nextStep"),
         },
     }
 
@@ -243,6 +246,8 @@ def load_next_task_evidence_build(evidence_dir: Path) -> dict[str, Any] | None:
             "captureStatus": selected.get("captureStatus"),
             "environmentStatus": selected.get("environmentStatus"),
             "environmentReason": selected.get("environmentReason"),
+            "missingTools": selected.get("missingTools", []),
+            "nextStep": selected.get("nextStep"),
         },
         "records": [
             {

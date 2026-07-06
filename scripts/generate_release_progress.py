@@ -619,6 +619,12 @@ def render_markdown(progress: dict[str, Any]) -> str:
         selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
         if selected.get("id"):
             lines.append(f"- next-task: `{selected.get('id')}` ({selected.get('captureStatus')})")
+            if selected.get("environmentStatus"):
+                lines.append(f"- next-task-environment: `{selected.get('environmentStatus')}`")
+            if selected.get("environmentReason"):
+                lines.append(f"- next-task-environment-reason: `{selected.get('environmentReason')}`")
+            if selected.get("nextStep"):
+                lines.append(f"- next-task-next-step: {selected.get('nextStep')}")
             if next_task.get("queueSource"):
                 lines.append(f"- next-task-queue-source: `{next_task.get('queueSource')}`")
             if next_task.get("queueSourceOrigin"):
@@ -773,6 +779,12 @@ def render_text(progress: dict[str, Any]) -> str:
         selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
         if selected.get("id"):
             lines.append(f"next-task: {selected.get('id')} {selected.get('captureStatus')}")
+            if selected.get("environmentStatus"):
+                lines.append(f"next-task-environment: {selected.get('environmentStatus')}")
+            if selected.get("environmentReason"):
+                lines.append(f"next-task-environment-reason: {selected.get('environmentReason')}")
+            if selected.get("nextStep"):
+                lines.append(f"next-task-next-step: {selected.get('nextStep')}")
             if next_task.get("queueSource"):
                 lines.append(f"next-task-queue-source: {next_task.get('queueSource')}")
             if next_task.get("queueSourceOrigin"):

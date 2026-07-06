@@ -292,6 +292,15 @@ def main() -> int:
                 "liveReports": 0,
                 "supplementalEvidence": 0,
             },
+            "nextTask": {
+                "selected": {
+                    "id": "synthetic-next-task",
+                    "captureStatus": "blocked-by-environment",
+                    "environmentStatus": "cluster-unavailable",
+                    "environmentReason": "connection-refused",
+                    "nextStep": "start or select a disposable cluster, then rerun the probe",
+                },
+            },
             "nextCommands": [
                 f"python3 -B scripts/next_command_{index}.py"
                 for index in range(1, 5)
@@ -302,6 +311,9 @@ def main() -> int:
         for snippet in (
             "`tool-ready-6` Tool ready 6",
             "python3 -B scripts/tool_ready_6.py",
+            "next-task-environment: `cluster-unavailable`",
+            "next-task-environment-reason: `connection-refused`",
+            "next-task-next-step: start or select a disposable cluster, then rerun the probe",
             "next: `python3 -B scripts/next_command_4.py`",
         ):
             if snippet not in synthetic_markdown:
@@ -309,6 +321,9 @@ def main() -> int:
         for snippet in (
             "action: tool-ready-6 tool-ready None Tool ready 6",
             "first-command: python3 -B scripts/tool_ready_6.py",
+            "next-task-environment: cluster-unavailable",
+            "next-task-environment-reason: connection-refused",
+            "next-task-next-step: start or select a disposable cluster, then rerun the probe",
             "next: python3 -B scripts/next_command_4.py",
         ):
             if snippet not in synthetic_text:

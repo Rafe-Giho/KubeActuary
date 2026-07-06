@@ -755,6 +755,8 @@ def main() -> int:
     blocked_next_task_selected = blocked_next_task.get("selected") or {}
     if blocked_next_task_selected.get("environmentReason") != "command-failed":
         errors.append("blocked evidence status must preserve selected next-task blocker reason")
+    if blocked_next_task_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
+        errors.append("blocked evidence status must preserve selected next-task next step")
     if not any(
         "--environment-status cluster-unavailable --environment-reason command-failed" in command
         for command in blocked_next_task.get("worklistCommands", [])
@@ -763,9 +765,13 @@ def main() -> int:
     blocked_run_selected = (blocked_payload.get("nextTaskRun") or {}).get("selected") or {}
     if blocked_run_selected.get("environmentReason") != "command-failed":
         errors.append("blocked evidence status must backfill old next-task-run blocker reason")
+    if blocked_run_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
+        errors.append("blocked evidence status must backfill old next-task-run next step")
     blocked_build_selected = (blocked_payload.get("nextTaskEvidenceBuild") or {}).get("selected") or {}
     if blocked_build_selected.get("environmentReason") != "command-failed":
         errors.append("blocked evidence status must backfill old next-task evidence-build blocker reason")
+    if blocked_build_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
+        errors.append("blocked evidence status must backfill old next-task evidence-build next step")
     blocked_status_blockers = (blocked_payload.get("blockers") or {}).get("environment") or []
     if not any(
         item.get("status") == "cluster-unavailable"
