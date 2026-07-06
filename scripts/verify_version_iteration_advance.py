@@ -375,6 +375,20 @@ def main() -> int:
             errors.append("probe-blocked advance history must preserve prepared queue source")
         if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
             errors.append("probe-blocked advance must not capture raw evidence")
+        blocked_history_status = run_script(INSPECT_HISTORY, str(blocked_history_dir))
+        if blocked_history_status.returncode != 0:
+            errors.append(
+                f"probe-blocked history inspect failed: "
+                f"{blocked_history_status.stderr.strip() or blocked_history_status.stdout.strip()}"
+            )
+        else:
+            for snippet in (
+                "next-command: python3 -B scripts/advance_version_iteration.py",
+                "--version 0.4.3 --probe-environment",
+                "--capture-status blocked-by-environment --run",
+            ):
+                if snippet not in blocked_history_status.stdout:
+                    errors.append(f"probe-blocked history next command must preserve filters: {snippet}")
 
         output = tmpdir / "advance.json"
         written = run_script(ADVANCE, str(evidence_dir), str(history_dir / "plan-only"), "--format", "json", "--output", str(output))

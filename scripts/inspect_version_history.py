@@ -315,6 +315,7 @@ def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> lis
             str(evidence_dir),
             history_dir.as_posix(),
         ]
+        add_repeated_filter_args(args, "--version", filters.get("versions"))
         if probe_environment:
             args.append("--probe-environment")
         if kubectl != "kubectl":
