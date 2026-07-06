@@ -194,8 +194,8 @@ Expected:
   filters, optional environment probe status, plus
   `kube-actuary.environment-probe.v1` and
   `kube-actuary.environment-blockers.v1` reports;
-- next-version task runner verifies selected evidence commands in plan mode and
-  fake-run mode before live use;
+- next-version task runner verifies selected evidence commands in plan mode,
+  fake-run mode, and CLI Markdown output before live use;
 - version iteration advance verifies selected-task execution or environment
   blocking with blocker-focused filters, before/after evidence-aware history
   recording, and

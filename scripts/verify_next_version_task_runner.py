@@ -72,6 +72,7 @@ def main() -> int:
         evidence_dir = tmpdir / "evidence"
         blocked_dir = tmpdir / "blocked"
         missing_tools_dir = tmpdir / "missing-tools"
+        markdown_dir = tmpdir / "markdown"
         recorded_dir = tmpdir / "recorded"
         failing_dir = tmpdir / "failing"
         unprepared_dir = tmpdir / "unprepared"
@@ -87,12 +88,24 @@ def main() -> int:
             errors.append(f"prepare evidence dir failed: {prepared.stderr.strip() or prepared.stdout.strip()}")
 
         plan = run_script(RUNNER, str(evidence_dir))
+        plan_markdown = run_script(RUNNER, str(evidence_dir), "--format", "markdown")
         if plan.returncode != 0:
             errors.append(f"runner plan failed: {plan.stderr.strip() or plan.stdout.strip()}")
         if "next-version-task-run: plan" not in plan.stdout:
             errors.append("runner plan must report plan status")
         if "queue-source: prepared-live-validation-queue" not in plan.stdout:
             errors.append("runner plan text must show prepared queue source")
+        if plan_markdown.returncode != 0:
+            errors.append(f"runner plan Markdown failed: {plan_markdown.stderr.strip() or plan_markdown.stdout.strip()}")
+        for snippet in (
+            "# KubeActuary Next Version Task Run",
+            "Mode: `plan`",
+            "Status: `plan`",
+            "Queue source: `prepared-live-validation-queue`",
+            "## Commands",
+        ):
+            if snippet not in plan_markdown.stdout:
+                errors.append(f"runner plan Markdown should include: {snippet}")
         if raw.exists() or supplemental.exists():
             errors.append("runner plan must not write evidence files")
 
@@ -131,6 +144,7 @@ def main() -> int:
         )
         blocked = run_script(RUNNER, str(blocked_dir), "--run", "--format", "json")
         blocked_text = run_script(RUNNER, str(blocked_dir), "--run")
+        blocked_markdown = run_script(RUNNER, str(blocked_dir), "--run", "--format", "markdown")
         blocked_record = run_script(RUNNER, str(blocked_dir), "--run", "--record", "--format", "json")
         blocked_record_json = blocked_dir / ".kubeactuary" / "next-version-task-run.json"
         blocked_record_md = blocked_dir / ".kubeactuary" / "next-version-task-run.md"
@@ -148,6 +162,10 @@ def main() -> int:
             errors.append("blocked runner must preserve the selected blocker next step")
         if f"blocker: {blocked_next_step}" not in blocked_text.stdout:
             errors.append("blocked runner text output must print the blocker summary")
+        if blocked_markdown.returncode != 0:
+            errors.append("blocked runner Markdown should return zero while preserving blocked status")
+        if f"- `{blocked_next_step}`" not in blocked_markdown.stdout:
+            errors.append("blocked runner Markdown must print the blocker summary")
         if blocked_record.returncode != 0:
             errors.append("blocked runner --record should return zero while preserving blocked status")
         if not blocked_record_json.is_file() or not blocked_record_md.is_file():
@@ -214,7 +232,22 @@ def main() -> int:
 
         run_env = fake_tool_env(tmpdir / "tools")
         failing_env = fake_failing_tool_env(tmpdir / "failing-tools")
+        markdown_prepared = run_script(PREPARE, str(markdown_dir))
+        run_markdown = run_script(RUNNER, str(markdown_dir), "--run", "--format", "markdown", env=run_env)
         run = run_script(RUNNER, str(evidence_dir), "--run", "--format", "json", env=run_env)
+        if markdown_prepared.returncode != 0:
+            errors.append(f"markdown evidence dir prepare failed: {markdown_prepared.stderr.strip() or markdown_prepared.stdout.strip()}")
+        if run_markdown.returncode != 0:
+            errors.append(f"runner run Markdown failed: {run_markdown.stderr.strip() or run_markdown.stdout.strip()}")
+        for snippet in (
+            "Mode: `run`",
+            "Status: `passed`",
+            "Queue source: `prepared-live-validation-queue`",
+            "## Run Records",
+            "exit code: 0",
+        ):
+            if snippet not in run_markdown.stdout:
+                errors.append(f"runner run Markdown should include: {snippet}")
         if run.returncode != 0:
             errors.append(f"runner execution failed: {run.stderr.strip() or run.stdout.strip()}")
             payload = {}

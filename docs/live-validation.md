@@ -316,6 +316,7 @@ persist the runner report as `.kubeactuary/next-version-task-run.json` and
 
 ```sh
 python3 -B scripts/run_next_version_task.py <evidence-dir>
+python3 -B scripts/run_next_version_task.py <evidence-dir> --format markdown
 python3 -B scripts/run_next_version_task.py <evidence-dir> --run
 python3 -B scripts/run_next_version_task.py <evidence-dir> --run --record
 ```

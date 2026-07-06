@@ -436,7 +436,7 @@ scripts/
   prepare_live_evidence_directory.py live evidence directory scaffold generator with probe-aware next-task advancement
   kube-actuary.environment-probe.v1 environment probe report schema
   kube-actuary.environment-blockers.v1 environment blocker report schema
-  run_next_version_task.py selected next-task plan/run/record helper
+  run_next_version_task.py text/json/Markdown selected next-task plan/run/record helper
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
   next-version-task-run.json persisted selected runner status report
@@ -520,6 +520,7 @@ python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-compl
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
 python3 -B scripts/run_next_version_task.py evidence/live
+python3 -B scripts/run_next_version_task.py evidence/live --format markdown
 python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/run_next_version_task.py evidence/live --run --record
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
