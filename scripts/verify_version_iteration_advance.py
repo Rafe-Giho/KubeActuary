@@ -185,10 +185,21 @@ def main() -> int:
             blocked_payload = json.loads(blocked.stdout)
         if blocked_payload.get("status") != "blocked-by-environment":
             errors.append("probe advance must report blocked-by-environment without running evidence commands")
-        if blocked_payload.get("runner") is not None:
-            errors.append("probe-blocked advance must not run the next-task runner")
-        if blocked_payload.get("runnerRecord") is not None:
-            errors.append("probe-blocked advance must not write a runner record")
+        blocked_runner = blocked_payload.get("runner") or {}
+        if blocked_runner.get("status") != "blocked-by-environment":
+            errors.append("probe-blocked advance must record blocked next-task runner status")
+        if blocked_runner.get("summary", {}).get("ran") != 0:
+            errors.append("probe-blocked advance must not run evidence commands")
+        blocked_runner_record = blocked_payload.get("runnerRecord") or {}
+        blocked_runner_json = Path(blocked_runner_record.get("json", ""))
+        if not blocked_runner_json.is_file():
+            errors.append("probe-blocked advance must write a blocked runner record")
+        else:
+            blocked_runner_payload = json.loads(blocked_runner_json.read_text())
+            if blocked_runner_payload.get("status") != "blocked-by-environment":
+                errors.append("probe-blocked runner record must preserve blocked status")
+            if blocked_runner_payload.get("summary", {}).get("ran") != 0:
+                errors.append("probe-blocked runner record must preserve zero executed commands")
         blocked_advance_record = blocked_payload.get("advanceRecord") or {}
         blocked_advance_json = Path(blocked_advance_record.get("json", ""))
         if not blocked_advance_json.is_file():

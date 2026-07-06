@@ -307,7 +307,7 @@ Confirm from code and tests:
   evidence directories and preserving failed-run summaries;
 - version iteration advance verifier wraps the selected-task runner with
   probe-aware before/after evidence-aware history recording and validates the
-  resulting diff or environment blocker;
+  resulting diff or zero-run environment-blocked runner record;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

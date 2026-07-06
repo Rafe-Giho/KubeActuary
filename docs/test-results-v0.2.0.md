@@ -145,6 +145,8 @@ Coverage included:
   output-exists handling;
 - next-version task runner success, failed-run summary, and recorded report
   verification;
+- version iteration advance records zero-run blocked runner status when the
+  environment probe blocks selected live evidence capture;
 - clean generated-artifact verification for Python cache directories,
   bytecode files, and ignored local evidence state;
 - digest stability across status evidence changes;

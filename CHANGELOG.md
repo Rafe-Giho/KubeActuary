@@ -39,6 +39,8 @@ Evidence collector release:
   and progress output;
 - use persisted live validation queues as the release progress next-action
   source for prepared evidence directories;
+- record zero-run blocked runner status during probe-blocked version
+  iteration advance;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

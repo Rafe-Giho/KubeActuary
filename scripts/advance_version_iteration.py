@@ -19,12 +19,14 @@ from scripts.prepare_live_evidence_directory import prepare_directory  # noqa: E
 from scripts.record_version_iteration import record_iteration  # noqa: E402
 from scripts.run_next_version_task import build_result as run_next_task  # noqa: E402
 from scripts.run_next_version_task import record_result as record_next_task_run  # noqa: E402
+from scripts.run_next_version_task import SCHEMA_VERSION as NEXT_TASK_RUN_SCHEMA  # noqa: E402
 from scripts.select_next_version_task import build_selection  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.version-iteration-advance.v1"
 ADVANCE_REPORT_JSON = ".kubeactuary/version-iteration-advance.json"
 ADVANCE_REPORT_MD = ".kubeactuary/version-iteration-advance.md"
+NEXT_TASK_PATH = ".kubeactuary/next-version-task.json"
 
 
 def utc_now() -> str:
@@ -75,6 +77,44 @@ def planned_result(
     }
 
 
+def blocked_runner_result(
+    evidence_dir: Path,
+    next_task: dict[str, Any],
+    selected: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    commands = selected.get("resolvedCommands") or selected.get("commands") or []
+    return {
+        "schemaVersion": NEXT_TASK_RUN_SCHEMA,
+        "mode": "run",
+        "status": str(selected.get("captureStatus") or "blocked"),
+        "clusterWrites": "disabled-or-server-side-dry-run-only",
+        "ranAt": created_at,
+        "evidenceDir": str(evidence_dir),
+        "nextTask": {
+            "schemaVersion": next_task.get("schemaVersion"),
+            "path": str(evidence_dir / NEXT_TASK_PATH),
+            "selected": {
+                "id": selected.get("id"),
+                "version": selected.get("version"),
+                "item": selected.get("item"),
+                "kind": selected.get("kind"),
+                "captureStatus": selected.get("captureStatus"),
+            },
+        },
+        "summary": {
+            "commands": len(commands),
+            "validCommands": 0,
+            "ran": 0,
+            "failed": 0,
+            "validationErrors": 0,
+        },
+        "validations": [],
+        "records": [],
+        "failure": None,
+    }
+
+
 def run_advance(
     evidence_dir: Path,
     history_dir: Path,
@@ -101,6 +141,8 @@ def run_advance(
     )
     selected = (prepared.get("nextTask") or {}).get("selected") or {}
     if probe_environment and selected.get("captureStatus") != "tool-ready":
+        runner = blocked_runner_result(evidence_dir, prepared.get("nextTask") or {}, selected, created_at)
+        runner_record = record_next_task_run(evidence_dir, runner)
         history = inspect_history(history_dir)
         return {
             "schemaVersion": SCHEMA_VERSION,
@@ -118,8 +160,8 @@ def run_advance(
                 "runId": before.get("runId"),
                 "summary": before.get("summary"),
             },
-            "runner": None,
-            "runnerRecord": None,
+            "runner": runner,
+            "runnerRecord": runner_record,
             "after": None,
             "nextTask": {
                 "schemaVersion": (prepared.get("nextTask") or {}).get("schemaVersion"),

@@ -274,7 +274,10 @@ accept `--probe-environment --kubectl <path>`. The probe runs only read-only
 `kubectl version --client=true` and `kubectl cluster-info` checks. When cluster
 access is unavailable, the prepared next-task artifacts record
 `blocked-by-environment` instead of pretending the live evidence can be
-captured. The scaffold also writes
+captured. Probe-blocked advance runs also write a zero-run
+`.kubeactuary/next-version-task-run.json` record with `blocked-by-environment`
+status, so stale failed runner records do not remain the latest local state.
+The scaffold also writes
 `.kubeactuary/environment-probe.json` with schema
 `kube-actuary.environment-probe.v1` for read-only probe details and
 `.kubeactuary/environment-blockers.json` with schema
