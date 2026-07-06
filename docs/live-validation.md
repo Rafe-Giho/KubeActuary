@@ -95,11 +95,12 @@ context when they are active. Use `--capture-status`,
 iteration-pack, iteration-history, live-evidence scaffold, and
 version-iteration advance commands to keep a local loop focused on one blocker
 class.
-Version iteration packs preserve the same queue source in their index and
-per-version files. Version iteration history records and status output keep
-that source so run-to-run comparisons remain traceable. Persisted next-task
-runner and version-iteration advance reports keep it too, so recorded local
-execution state stays tied to the queue snapshot that selected the task.
+Version iteration packs preserve the same queue source, blocker summaries,
+and blocker drilldown commands in their index and per-version files. Version
+iteration history records and status output keep that source so run-to-run
+comparisons remain traceable. Persisted next-task runner and version-iteration
+advance reports keep it too, so recorded local execution state stays tied to
+the queue snapshot that selected the task.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It

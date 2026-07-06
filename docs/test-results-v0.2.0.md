@@ -269,7 +269,7 @@ Result:
   complete worklist blocker summaries, evidence-aware and version-scoped
   blocker drilldown commands, blocker-focused filters, plus missing-tool and
   next-step visibility,
-  iteration pack queue-source preservation,
+  iteration pack queue-source and blocker drilldown preservation,
   iteration history queue-source preservation,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,

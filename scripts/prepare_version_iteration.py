@@ -36,6 +36,7 @@ def iteration_record(version: dict[str, Any], worklist: dict[str, Any]) -> dict[
         "version": version.get("version"),
         "status": version.get("status"),
         "summary": version.get("summary", {}),
+        "blockers": version.get("blockers", {}),
         "openItems": version.get("openItems", []),
         "closureCommands": worklist.get("closureCommands", []),
     }
@@ -68,9 +69,25 @@ def render_iteration(record: dict[str, Any]) -> str:
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         f"- evidence files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
         "",
-        "## Open Items",
-        "",
     ]
+    blockers = record.get("blockers", {})
+    missing_tool_blockers = blockers.get("missingTools") or []
+    environment_blockers = blockers.get("environment") or []
+    environment_next_steps = blockers.get("environmentNextSteps") or []
+    if missing_tool_blockers or environment_blockers:
+        lines.extend(["## Blockers", ""])
+        for item in missing_tool_blockers:
+            lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
+        for item in environment_blockers:
+            lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
+        for item in environment_next_steps:
+            lines.append(f"- blocker-next-step: {item['nextStep']} ({item['items']} items)")
+        lines.append("")
+    lines.extend(["## Open Items", ""])
     if not record["openItems"]:
         lines.append("- none")
     for item in record["openItems"]:

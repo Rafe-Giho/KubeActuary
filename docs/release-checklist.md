@@ -110,7 +110,8 @@ Expected:
   workflows,
   resolves evidence paths and file readiness for the full local worklist,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
-  while preserving evidence readiness when `--evidence-dir` is used,
+  while preserving blocker summaries, drilldown commands, and evidence
+  readiness when `--evidence-dir` is used,
   compares packs with schema `kube-actuary.version-iteration-diff.v1`,
   records evidence-aware run history with schema `kube-actuary.version-iteration-history.v1`,
   inspects evidence-aware history status with schema `kube-actuary.version-iteration-history-status.v1`,

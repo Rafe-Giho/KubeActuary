@@ -30,6 +30,7 @@ Evidence collector release:
 - add evidence-aware next-task selection that skips completed local evidence files;
 - make evidence-aware worklists and next-task selection prefer prepared live
   validation queues when an evidence directory already has one;
+- preserve blocker summaries and drilldown commands in version iteration packs;
 - surface the worklist queue source in Markdown/text next-task outputs;
 - surface missing tools and next steps in version worklist Markdown;
 - show all blocker summaries in version worklist Markdown;

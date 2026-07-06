@@ -384,6 +384,19 @@ def main() -> int:
         filtered_iteration_readme = (
             filtered_iteration_dir / "README.md"
         ).read_text() if (filtered_iteration_dir / "README.md").is_file() else ""
+        filtered_iteration_044_path = (
+            filtered_iteration_dir / "versions" / "0-4-4.md"
+        )
+        filtered_iteration_044_markdown = (
+            filtered_iteration_044_path.read_text()
+            if filtered_iteration_044_path.is_file()
+            else ""
+        )
+        filtered_iteration_044_worklist = (
+            "worklist: `python3 -B scripts/generate_version_worklist.py "
+            "--format markdown --open-only --version 0.4.4 "
+            "--capture-status missing-tools --missing-tool kind`"
+        )
         probe_iteration_dir = tmpdir / "probe-iteration"
         probe_iteration_result = run_prepare(
             str(probe_iteration_dir),
@@ -638,6 +651,10 @@ def main() -> int:
         errors.append("filtered version iteration should preserve missing-tool filters")
     if "missing-tools: `kind`" not in filtered_iteration_readme:
         errors.append("filtered version iteration README should show active filter")
+    if "missing-tool-blocker: `kind`" not in filtered_iteration_044_markdown:
+        errors.append("filtered version iteration Markdown should show blocker summaries")
+    if filtered_iteration_044_worklist not in filtered_iteration_044_markdown:
+        errors.append("filtered version iteration Markdown should show version-scoped blocker drilldown")
     if evidence_iteration_payload.get("evidenceDir") != str(completed_evidence_dir):
         errors.append("evidence-aware iteration should record the evidence directory")
     evidence_iteration_summary = evidence_iteration_payload.get("summary", {})

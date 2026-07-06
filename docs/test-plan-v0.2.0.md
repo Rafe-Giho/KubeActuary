@@ -160,11 +160,13 @@ Expected:
 - worklist, next-task, iteration-pack, iteration-history, live scaffold, and
   advance commands preserve capture-status, missing-tool, and
   environment-status filters;
-- prepared-queue version iteration packs preserve the queue source;
+- prepared-queue version iteration packs preserve the queue source, blocker
+  summaries, and blocker drilldown commands;
 - prepared-queue version iteration history records and status preserve the queue source;
 - prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
-- version iteration packs preserve resolved closure commands and evidence
-  readiness when `--evidence-dir` is used;
+- version iteration packs preserve resolved closure commands, blocker
+  summaries, blocker drilldown commands, and evidence readiness when
+  `--evidence-dir` is used;
 - version iteration history records and inspects evidence readiness deltas
   between runs;
 - evidence-aware next-task selection skips completed local evidence file sets
