@@ -100,11 +100,21 @@ def recommended_commands(kind: str) -> list[str]:
     if kind == "admission":
         return ["python3 -B scripts/run_admission_kind_smoke.py --run --output <path>"]
     if kind == "controller-resource-budget":
-        return ["python3 -B scripts/measure_controller_resources.py --sample <kubectl-top-output.txt>"]
+        return [
+            "python3 -B scripts/measure_controller_resources.py --sample <kubectl-top-output.txt>",
+            "python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source <kubectl-top-output.txt> --output <external-evidence.json>",
+        ]
     if kind == "crd":
         return [
             "kubectl apply --dry-run=server -f deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml",
             "kubectl explain operationcapsules --api-version=ops.kubeactuary.dev/v1alpha1",
+            "python3 -B scripts/build_external_evidence.py --kind kubectl-explain --source <kubectl-explain-output.txt> --output <external-evidence.json>",
+        ]
+    if kind == "controller":
+        return [
+            "python3 -B bin/kube-actuary-controller loop --iterations 2 --interval-seconds 0 --format json > <controller-loop-output.json>",
+            "python3 -B scripts/build_external_evidence.py --kind controller-live-loop --source <controller-loop-output.json> --output <external-evidence.json>",
+            "python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source <kubectl-top-output.txt> --output <external-evidence.json>",
         ]
     return []
 

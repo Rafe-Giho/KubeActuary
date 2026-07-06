@@ -89,6 +89,9 @@ def main() -> int:
         "run_helm_smoke.py --run --output",
         "run_krew_smoke.py --run --output",
         "run_admission_kind_smoke.py --run --output",
+        "build_external_evidence.py --kind kubectl-explain",
+        "build_external_evidence.py --kind controller-resource-budget",
+        "build_external_evidence.py --kind controller-live-loop",
         "check_live_evidence_coverage.py <manifest.json>",
         "build_release_evidence_directory.py <evidence-dir>",
     ):
