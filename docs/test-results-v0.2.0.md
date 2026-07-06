@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (51 checks)
-Ran 81 tests
+verification: passed (52 checks)
+Ran 82 tests
 OK
 ```
 
@@ -83,6 +83,7 @@ Coverage included:
 - Pluto deprecated API adapter pass/fail fixture verification;
 - common adapter evidence contract and normalized severity verification;
 - MCP safe-tool JSON-RPC contract verification;
+- MCP docs and client config verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -135,6 +136,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_mcp_docs.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
@@ -184,6 +186,7 @@ Result:
 - Pluto adapter check prints `pluto-adapter: passed`;
 - adapter contract check prints `adapter-contract: passed`;
 - MCP contract check prints `mcp-contract: passed`;
+- MCP docs check prints `mcp-docs: passed`;
 - disabled-execute check prints `execute-disabled: passed`;
 - admission webhook check prints `admission-webhook: passed`;
 - admission policy check prints `admission-policy: passed`;

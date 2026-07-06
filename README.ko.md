@@ -328,6 +328,7 @@ docs/
   air-gapped-install.md        offline install artifact checklist
   krew.md                      Krew manifest generation and verification
   live-validation.md           external live validation evidence ledger
+  mcp.md                       MCP client config and safe-tool guide
   policy-adapters.md           policy evidence adapter contracts
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
@@ -347,6 +348,7 @@ docs/
 examples/
   *.capsule.json               로컬 capsule 예제
   operationcapsule-scale.yaml  CRD 예제
+  mcp-client-config.json       safe MCP client config example
   agent-local-ci.runbook.md    local CI agent workflow runbook
   agent-codex-workflow.runbook.md Codex agent workflow runbook
 schemas/
@@ -397,6 +399,7 @@ scripts/
   verify_adapter_contract.py  common adapter contract verifier
   kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
   verify_mcp_contract.py      MCP safe-tool contract verifier
+  verify_mcp_docs.py          MCP docs and client config verifier
   verify_execute_disabled.py  disabled execute surface verifier
   verify_admission_webhook.py optional admission prototype verifier
   evaluate_admission_review.py offline admission policy evaluator
@@ -449,6 +452,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_mcp_docs.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py

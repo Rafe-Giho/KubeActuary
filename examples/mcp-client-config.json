@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "kube-actuary": {
+      "command": "python3",
+      "args": [
+        "-B",
+        "scripts/kube_actuary_mcp_server.py"
+      ],
+      "env": {}
+    }
+  }
+}

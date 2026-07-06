@@ -48,6 +48,7 @@ Evidence collector release:
 - add safe stdlib MCP/JSON-RPC wrapper for draft, inspect, attach, verify, and gate;
 - add dedicated agent help contract verifier for schema compatibility;
 - add local CI and Codex agent workflow runbooks with verifier;
+- add MCP client config example and docs verifier;
 - add explicit disabled-execute verifier for CLI and MCP surfaces;
 - add optional admission webhook prototype manifest with offline verifier;
 - add AI identity selector and required admission annotation allow/deny fixtures;

@@ -37,6 +37,7 @@ KUBE_SCORE_ADAPTER = ROOT / "scripts" / "verify_kube_score_adapter.py"
 PLUTO_ADAPTER = ROOT / "scripts" / "verify_pluto_adapter.py"
 ADAPTER_CONTRACT = ROOT / "scripts" / "verify_adapter_contract.py"
 MCP_CONTRACT = ROOT / "scripts" / "verify_mcp_contract.py"
+MCP_DOCS = ROOT / "scripts" / "verify_mcp_docs.py"
 EXECUTE_DISABLED = ROOT / "scripts" / "verify_execute_disabled.py"
 ADMISSION_WEBHOOK = ROOT / "scripts" / "verify_admission_webhook.py"
 ADMISSION_POLICY = ROOT / "scripts" / "verify_admission_policy.py"
@@ -359,7 +360,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("docs-freeze: passed", result.stdout)
-        self.assertIn("public-examples: 10 checked", result.stdout)
+        self.assertIn("public-examples: 11 checked", result.stdout)
 
     def test_verify_live_validation_readiness(self):
         result = subprocess.run(
@@ -501,6 +502,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("mcp-contract: passed", result.stdout)
         self.assertIn("execute-tool: disabled", result.stdout)
+
+    def test_verify_mcp_docs(self):
+        result = subprocess.run(
+            [sys.executable, str(MCP_DOCS)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("mcp-docs: passed", result.stdout)
+        self.assertIn("client-config: examples/mcp-client-config.json", result.stdout)
 
     def test_verify_execute_disabled(self):
         result = subprocess.run(

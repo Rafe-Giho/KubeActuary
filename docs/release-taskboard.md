@@ -50,14 +50,14 @@ Status legend:
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
 | Controller | DOING | Optional `serve` runtime and Deployment seed exist; live watch/status patch loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
-| MCP server | DOING | safe stdlib JSON-RPC wrapper exists; examples/versioning remain |
+| MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
 | Admission/audit | TODO | Contract docs only |
 
 Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (51 checks)
+verification: passed (52 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -143,6 +143,7 @@ execution by default.
 | 0.7.1 | Agent help contract versioning | DONE | `scripts/verify_agent_help_contract.py` validates schema compatibility |
 | 0.7.2 | Agent examples for local CI and Codex workflows | DONE | `scripts/verify_agent_examples.py` validates local CI and Codex runbooks |
 | 0.7.3 | Explicitly disabled experimental execute tool | DONE | `scripts/verify_execute_disabled.py` proves CLI/MCP execute is absent or disabled |
+| 0.7.4 | MCP client config and docs | DONE | `scripts/verify_mcp_docs.py` validates safe client config and guide |
 
 ## v0.8.x: Optional Admission and Audit
 

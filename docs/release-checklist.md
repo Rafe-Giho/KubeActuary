@@ -49,6 +49,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_mcp_docs.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
@@ -98,6 +99,7 @@ Expected:
 - Pluto adapter verifies pass and fail fixtures;
 - adapter contract verifies common evidence fields and normalized severity;
 - MCP contract verifies five safe tools and disabled execute tool;
+- MCP docs verify the client config and safe-tool guide;
 - disabled-execute verifier proves CLI and MCP surfaces do not expose execute;
 - admission webhook prototype verifies optional defaults and `failurePolicy: Ignore`;
 - admission policy verifies AI identity selection and required annotations;
@@ -145,6 +147,7 @@ Expected:
 - [ ] Pluto adapter fixture check passes.
 - [ ] adapter contract check passes.
 - [ ] MCP safe-tool contract check passes.
+- [ ] MCP docs and client config check passes.
 - [ ] disabled-execute surface check passes.
 - [ ] admission webhook prototype check passes; run live kind smoke when kind is available.
 - [ ] admission policy allow/deny fixture check passes.

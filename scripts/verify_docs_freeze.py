@@ -45,6 +45,7 @@ REQUIRED_EXAMPLES = (
     "examples/configmap-demo.yaml",
     "examples/configmap-demo.rollback.yaml",
     "examples/operationcapsule-scale.yaml",
+    "examples/mcp-client-config.json",
     "examples/agent-local-ci.runbook.md",
     "examples/agent-codex-workflow.runbook.md",
 )
@@ -109,6 +110,11 @@ def main() -> int:
             continue
         if example.endswith(".capsule.json"):
             verify_capsule(path, errors)
+        elif example == "examples/mcp-client-config.json":
+            payload = read_json(path)
+            server = payload.get("mcpServers", {}).get("kube-actuary", {})
+            if server.get("args") != ["-B", "scripts/kube_actuary_mcp_server.py"]:
+                errors.append("examples/mcp-client-config.json does not point to MCP server")
         elif example.endswith(".yaml"):
             text = path.read_text()
             if "apiVersion:" not in text or "kind:" not in text:

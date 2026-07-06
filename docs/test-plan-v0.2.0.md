@@ -26,9 +26,9 @@ Expected:
   OPA adapter fixtures, kube-linter adapter fixtures, kube-score adapter
   fixtures, Pluto adapter fixtures, adapter
   contract severity normalization, MCP safe-tool contract verification, and
-  disabled-execute surface verification, optional admission webhook prototype,
-  admission identity/annotation policy fixtures, admission digest/gate tamper
-  fixtures, admission audit fixtures, and full manifest gate behavior;
+  MCP docs/client config verification, disabled-execute surface verification,
+  optional admission webhook prototype, admission identity/annotation policy
+  fixtures, admission digest/gate tamper fixtures, admission audit fixtures, and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -77,6 +77,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_mcp_docs.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
@@ -124,6 +125,7 @@ Expected:
 - Pluto adapter check prints `pluto-adapter: passed`;
 - adapter contract check prints `adapter-contract: passed`;
 - MCP contract check prints `mcp-contract: passed`;
+- MCP docs check prints `mcp-docs: passed`;
 - disabled-execute check prints `execute-disabled: passed`;
 - admission webhook check prints `admission-webhook: passed`;
 - admission policy check prints `admission-policy: passed`;
@@ -233,6 +235,8 @@ Confirm from code and tests:
   `severity` values across pass/fail fixtures;
 - MCP contract verification exposes only the five safe tools and keeps
   `execute_approved_capsule` disabled;
+- MCP docs verifier checks `examples/mcp-client-config.json` and the safe-tool
+  guide;
 - disabled-execute verifier requires CLI command help and agent JSON to omit
   execute tools and MCP calls to reject `execute_approved_capsule`;
 - admission webhook prototype verifier requires `failurePolicy: Ignore`,
@@ -264,6 +268,6 @@ Expected:
   security docs, API freeze, docs freeze, live validation readiness, project
   governance, air-gapped bundle, agent help contract, agent examples, Kyverno
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
-  contract, MCP contract, disabled-execute check, admission webhook, admission
-  policy, admission digest/gate, admission audit, gate behavior, JSON/YAML
-  parsing, and `git diff --check`.
+  contract, MCP contract, MCP docs, disabled-execute check, admission webhook,
+  admission policy, admission digest/gate, admission audit, gate behavior,
+  JSON/YAML parsing, and `git diff --check`.

@@ -16,7 +16,7 @@ Expected:
 
 ```text
 docs-freeze: passed
-public-examples: 10 checked
+public-examples: 11 checked
 writes: disabled
 ```
 
@@ -29,5 +29,6 @@ This is a public examples audit. It is local-only and does not contact the clust
   present.
 - Public capsule JSON examples parse and keep the `OperationCapsule` shape.
 - Public YAML examples include `apiVersion` and `kind`.
+- MCP client config points to the safe stdlib wrapper.
 - Agent runbooks keep direct Kubernetes writes outside the agent workflow.
 - Release verification includes this gate before tagging.

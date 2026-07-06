@@ -191,7 +191,7 @@ COMMON_CHECKS = (
     Check(
         "docs freeze",
         ("python3", "-B", "scripts/verify_docs_freeze.py"),
-        contains=("docs-freeze: passed", "public-examples: 10 checked", "writes: disabled"),
+        contains=("docs-freeze: passed", "public-examples: 11 checked", "writes: disabled"),
     ),
     Check(
         "live validation readiness",
@@ -242,6 +242,11 @@ COMMON_CHECKS = (
         "mcp contract",
         ("python3", "-B", "scripts/verify_mcp_contract.py"),
         contains=("mcp-contract: passed", "safe-tools: 5", "execute-tool: disabled"),
+    ),
+    Check(
+        "mcp docs",
+        ("python3", "-B", "scripts/verify_mcp_docs.py"),
+        contains=("mcp-docs: passed", "client-config: examples/mcp-client-config.json", "execute-tool: disabled"),
     ),
     Check(
         "execute disabled",
