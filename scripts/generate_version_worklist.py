@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.generate_live_validation_queue import SCHEMA_VERSION as LIVE_QUEUE_SCHEMA  # noqa: E402
 from scripts.generate_live_validation_queue import build_queue  # noqa: E402
 from scripts.generate_release_progress import build_progress  # noqa: E402
+from scripts.inspect_version_history import inspect_history  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.version-worklist.v1"
@@ -258,6 +259,35 @@ def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[s
     return record
 
 
+def history_context_for_item(item: dict[str, Any], history_status: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(history_status, dict):
+        return None
+    blocker_streak = history_status.get("latestBlockerStreak")
+    if not isinstance(blocker_streak, dict):
+        return None
+    signature = blocker_streak.get("signature")
+    if not isinstance(signature, dict) or signature.get("id") != item.get("id"):
+        return None
+    action = history_status.get("latestBlockerAction")
+    context = {
+        "schemaVersion": history_status.get("schemaVersion"),
+        "historyDir": history_status.get("historyDir"),
+        "valid": history_status.get("valid"),
+        "latestRunId": history_status.get("summary", {}).get("latestRunId"),
+        "latestBlockerStreak": blocker_streak,
+    }
+    if isinstance(action, dict):
+        context["latestBlockerAction"] = action
+    return context
+
+
+def attach_history_context(open_items: list[dict[str, Any]], history_status: dict[str, Any] | None) -> None:
+    for item in open_items:
+        context = history_context_for_item(item, history_status)
+        if context is not None:
+            item["historyContext"] = context
+
+
 def version_status(open_items: list[dict[str, Any]]) -> str:
     if not open_items:
         return "complete"
@@ -302,10 +332,12 @@ def build_worklist(
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
     prefer_prepared_queue: bool = False,
+    history_dir: Path | None = None,
 ) -> dict[str, Any]:
     progress = build_progress()
     queue, queue_source = worklist_queue(evidence_dir, probe_environment, kubectl, prefer_prepared_queue)
     queue_by_key = queue_lookup(queue)
+    history_status = inspect_history(history_dir) if history_dir is not None else None
     capture_statuses = set(capture_status_filters or [])
     missing_tools = set(missing_tool_filters or [])
     environment_statuses = set(environment_status_filters or [])
@@ -328,6 +360,7 @@ def build_worklist(
                 environment_reasons,
             )
         ]
+        attach_history_context(open_items, history_status)
         capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
         blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
         blocked_by_environment = sum(
@@ -386,6 +419,7 @@ def build_worklist(
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+            "historyDir": history_dir.as_posix() if history_dir else None,
         },
         "summary": summarize_versions(versions),
         "blockers": work_item_blockers(
@@ -406,6 +440,13 @@ def build_worklist(
     if evidence_dir is not None:
         worklist["evidenceDir"] = evidence_dir.as_posix()
         worklist["resolvedClosureCommands"] = queue.get("resolvedClosureCommands", [])
+    if history_status is not None:
+        worklist["historyStatus"] = {
+            "schemaVersion": history_status.get("schemaVersion"),
+            "historyDir": history_status.get("historyDir"),
+            "valid": history_status.get("valid"),
+            "summary": history_status.get("summary", {}),
+        }
     return worklist
 
 
@@ -436,6 +477,8 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         ("environment-statuses", filters.get("environmentStatuses") or []),
         ("environment-reasons", filters.get("environmentReasons") or []),
     ]
+    if filters.get("historyDir"):
+        active_filters.append(("history-dir", [filters["historyDir"]]))
     active_filters = [(name, values) for name, values in active_filters if values]
     if active_filters:
         lines.extend(["## Filters", ""])
@@ -507,6 +550,20 @@ def render_markdown(worklist: dict[str, Any]) -> str:
             if item.get("evidenceSummary"):
                 evidence = item["evidenceSummary"]
                 lines.append(f"    evidence: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
+            history_context = item.get("historyContext")
+            if isinstance(history_context, dict):
+                streak = history_context.get("latestBlockerStreak", {})
+                action = history_context.get("latestBlockerAction", {})
+                if isinstance(streak, dict):
+                    lines.append(
+                        f"    history: `{streak.get('status')}` streak={streak.get('streak')} "
+                        f"latest=`{history_context.get('latestRunId')}`"
+                    )
+                if isinstance(action, dict):
+                    lines.append(f"    history-action: `{action.get('action')}`")
+                    lines.append(f"    history-retry: `{str(action.get('retryRecommended')).lower()}`")
+                    if action.get("nextStep"):
+                        lines.append(f"    history-next: {action.get('nextStep')}")
             if first_command:
                 lines.append(f"    command: `{first_command}`")
             first_resolved = (item.get("resolvedCommands") or [None])[0]
@@ -541,6 +598,8 @@ def render_text(worklist: dict[str, Any]) -> str:
     ):
         for value in filters.get(key) or []:
             lines.append(f"{label}: {value}")
+    if filters.get("historyDir"):
+        lines.append(f"history-dir: {filters.get('historyDir')}")
     blockers = worklist.get("blockers", {})
     for item in blockers.get("missingTools") or []:
         lines.append(f"missing-tool-blocker: {item['tool']} ({item['items']} items)")
@@ -597,6 +656,19 @@ def render_text(worklist: dict[str, Any]) -> str:
             if item.get("evidenceSummary"):
                 evidence = item["evidenceSummary"]
                 lines.append(f"evidence: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
+            history_context = item.get("historyContext")
+            if isinstance(history_context, dict):
+                streak = history_context.get("latestBlockerStreak", {})
+                action = history_context.get("latestBlockerAction", {})
+                if isinstance(streak, dict):
+                    lines.append(f"history-blocker-streak: {streak.get('streak')}")
+                    lines.append(f"history-blocker-status: {streak.get('status')}")
+                    lines.append(f"history-latest-run-id: {history_context.get('latestRunId')}")
+                if isinstance(action, dict):
+                    lines.append(f"history-blocker-action: {action.get('action')}")
+                    lines.append(f"history-blocker-retry-recommended: {str(action.get('retryRecommended')).lower()}")
+                    if action.get("nextStep"):
+                        lines.append(f"history-blocker-next-step: {action.get('nextStep')}")
             first_command = (item.get("commands") or [None])[0]
             if first_command:
                 lines.append(f"command: {first_command}")
@@ -619,6 +691,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
     parser.add_argument("--environment-reason", action="append", default=[], help="filter open items by environment reason; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
+    parser.add_argument("--history-dir", help="optional version iteration history directory for repeated blocker context")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -634,6 +707,7 @@ def main(argv: list[str] | None = None) -> int:
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
             environment_reason_filters=args.environment_reason,
+            history_dir=Path(args.history_dir) if args.history_dir else None,
         )
     except ValueError as exc:
         print("version-worklist: failed", file=sys.stderr)

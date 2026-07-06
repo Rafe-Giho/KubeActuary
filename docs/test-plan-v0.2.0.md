@@ -151,7 +151,7 @@ Expected:
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
   text output, blocker summaries, blocker drilldown commands with evidence-dir
-  and version context, blocker-focused filters, and next-task selection;
+  and version/history context, blocker-focused filters, and next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live
@@ -168,6 +168,8 @@ Expected:
 - version iteration history status preserves latest blocker summaries,
   repeated latest blocker streaks, blocker action guidance, retry guards, and
   drilldown commands in text, JSON, and Markdown output;
+- version worklist `--history-dir` attaches matching latest blocker
+  streak/action guidance to the selected open item in text, JSON, and Markdown;
 - version iteration history status preserves latest run filters in text, JSON,
   Markdown, and recorded status reports;
 - version iteration history status preserves selected latest next-task details
