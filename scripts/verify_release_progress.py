@@ -263,6 +263,8 @@ def main() -> int:
             "next-task-queue-source-origin: `inferred-live-validation-queue`",
             "next-task-queue-consistency: `mismatched`",
             "next-task-queue-mismatches: `captureStatus, resolvedCommands`",
+            "next-task-file: `missing` `output`",
+            "next-task-command: `python3 -B scripts/capture_controller_resource_budget.py",
             "next-task-run: `failed`",
             "next-task-run-queue-source: `prepared-live-validation-queue`",
             "next-task-run-queue-source-origin: `inferred-live-validation-queue`",

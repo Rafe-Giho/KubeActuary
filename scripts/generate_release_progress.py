@@ -460,6 +460,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
             file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
             if file_summary:
                 lines.append(f"- next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
+            for item in selected.get("files", []):
+                file_status = "present" if item.get("exists") else "missing"
+                lines.append(f"- next-task-file: `{file_status}` `{item.get('role')}` `{item.get('path')}`")
+            for command in selected.get("resolvedCommands", []):
+                lines.append(f"- next-task-command: `{command}`")
         next_task_run = evidence_status.get("nextTaskRun")
         if isinstance(next_task_run, dict):
             lines.append(f"- next-task-run: `{next_task_run.get('status')}` ({next_task_run.get('mode')})")

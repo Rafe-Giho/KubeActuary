@@ -256,10 +256,11 @@ Result:
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directory progress uses the persisted live validation queue
   as the next-action source, shows every open item in version Markdown, and
-  shows every action blocker plus filtered worklist commands, every runnable
-  tool-ready action and evidence next command, and persisted queue-source status
-  without recommending environment-blocked capture commands or runnable JSON
-  first commands for blocked actions;
+  shows every action blocker plus filtered worklist commands, selected
+  next-task file/command details, every runnable tool-ready action and evidence
+  next command, and persisted queue-source status without recommending
+  environment-blocked capture commands or runnable JSON first commands for
+  blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
   recording, history status inspection, evidence-aware worklist readiness,

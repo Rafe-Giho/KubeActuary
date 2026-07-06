@@ -75,6 +75,7 @@ Evidence collector release:
 - show filtered worklist commands for release progress blockers;
 - show all tool-ready actions and evidence next commands in release progress
   Markdown;
+- show selected next-task file details and commands in release progress Markdown;
 - summarize repeated missing-tool and environment blockers in release progress
   reports;
 - surface selected next-task, runner, environment, and advance status in release
