@@ -73,6 +73,39 @@ def group_rows(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
     return grouped
 
 
+def filter_rows(rows: list[dict[str, str]], version_filters: list[str]) -> list[dict[str, str]]:
+    if not version_filters:
+        return rows
+    requested = set(version_filters)
+    available = {version_key(row) for row in rows}
+    missing = sorted(requested - available)
+    if missing:
+        raise ValueError(f"unknown version: {', '.join(missing)}")
+    return [row for row in rows if version_key(row) in requested]
+
+
+def filter_gate_plan(plan: dict[str, Any], version_filters: list[str]) -> dict[str, Any]:
+    if not version_filters:
+        return plan
+    requested = set(version_filters)
+    gates = [
+        gate
+        for gate in plan.get("gates", [])
+        if (gate.get("version") or gate.get("section")) in requested
+    ]
+    return {
+        **plan,
+        "summary": {
+            **plan.get("summary", {}),
+            "verify": len(gates),
+            "doing": 0,
+            "todo": 0,
+            "blocked": 0,
+        },
+        "gates": gates,
+    }
+
+
 def summarize_gate_plan(plan: dict[str, Any]) -> dict[str, Any]:
     gates = plan.get("gates", [])
     return {
@@ -154,6 +187,7 @@ def build_next_actions(
     plan: dict[str, Any],
     readiness: dict[str, Any],
     evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     readiness_by_gate = {
         gate.get("gate"): gate
@@ -208,7 +242,11 @@ def build_next_actions(
             "blockedByTools": blocked_by_tools,
             "blockedByEnvironment": blocked_by_environment,
         },
-        "blockers": next_action_blockers(actions, evidence_dir=evidence_dir),
+        "blockers": next_action_blockers(
+            actions,
+            evidence_dir=evidence_dir,
+            version_filters=version_filters,
+        ),
         "actions": actions,
     }
 
@@ -223,10 +261,17 @@ def load_live_validation_queue(evidence_dir: Path) -> dict[str, Any] | None:
     return queue
 
 
-def next_actions_from_queue(queue: dict[str, Any], evidence_dir: Path | None = None) -> dict[str, Any]:
+def next_actions_from_queue(
+    queue: dict[str, Any],
+    evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any]:
+    requested = set(version_filters or [])
     actions: list[dict[str, Any]] = []
     for item in queue.get("items", []):
         if not isinstance(item, dict):
+            continue
+        if requested and item.get("version") not in requested:
             continue
         commands = item.get("resolvedCommands") or item.get("commands") or []
         status = item.get("status")
@@ -245,15 +290,24 @@ def next_actions_from_queue(queue: dict[str, Any], evidence_dir: Path | None = N
             }
         )
     summary = queue.get("summary", {})
+    tool_ready = sum(1 for action in actions if action.get("status") == "tool-ready")
+    blocked_by_tools = sum(1 for action in actions if action.get("status") == "missing-tools")
+    blocked_by_environment = sum(1 for action in actions if action.get("status") == "blocked-by-environment")
     return {
         "source": "prepared-live-validation-queue",
         "summary": {
-            "total": summary.get("total", len(actions)),
-            "toolReady": summary.get("toolReady", 0),
-            "blockedByTools": summary.get("blockedByTools", 0),
-            "blockedByEnvironment": summary.get("blockedByEnvironment", 0),
+            "total": len(actions) if requested else summary.get("total", len(actions)),
+            "toolReady": tool_ready if requested else summary.get("toolReady", 0),
+            "blockedByTools": blocked_by_tools if requested else summary.get("blockedByTools", 0),
+            "blockedByEnvironment": (
+                blocked_by_environment if requested else summary.get("blockedByEnvironment", 0)
+            ),
         },
-        "blockers": next_action_blockers(actions, evidence_dir=evidence_dir),
+        "blockers": next_action_blockers(
+            actions,
+            evidence_dir=evidence_dir,
+            version_filters=version_filters,
+        ),
         "actions": actions,
     }
 
@@ -274,6 +328,7 @@ def blocker_worklist_command(
     filter_flag: str,
     filter_value: str,
     evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
 ) -> str:
     args = [
         "python3",
@@ -285,11 +340,17 @@ def blocker_worklist_command(
     ]
     if evidence_dir is not None:
         args.extend(["--evidence-dir", evidence_dir.as_posix()])
+    for version in version_filters or []:
+        args.extend(["--version", version])
     args.extend(["--capture-status", capture_status, filter_flag, filter_value])
     return command_string(args)
 
 
-def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | None = None) -> dict[str, Any]:
+def next_action_blockers(
+    actions: list[dict[str, Any]],
+    evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any]:
     missing_tools = Counter(
         tool
         for action in actions
@@ -321,6 +382,7 @@ def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | Non
                     "--missing-tool",
                     item["value"],
                     evidence_dir=evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for item in sorted_counts(missing_tools)
@@ -334,6 +396,7 @@ def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | Non
                     "--environment-status",
                     item["value"],
                     evidence_dir=evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for item in sorted_counts(environment_statuses)
@@ -347,6 +410,7 @@ def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | Non
                     "--environment-reason",
                     item["value"],
                     evidence_dir=evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for item in sorted_counts(environment_reasons)
@@ -405,13 +469,21 @@ def build_progress(
     output_dir: Path | None = None,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    version_filters: list[str] | None = None,
 ) -> dict[str, Any]:
-    rows = taskboard_rows(TASKBOARD.read_text())
-    plan = build_plan()
+    version_filters = list(version_filters or [])
+    rows = filter_rows(taskboard_rows(TASKBOARD.read_text()), version_filters)
+    plan = filter_gate_plan(build_plan(), version_filters)
     readiness = build_readiness_report(probe_environment=probe_environment, kubectl=kubectl)
     report: dict[str, Any] = {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(TASKBOARD.relative_to(ROOT)),
+        "filters": {
+            "versions": version_filters,
+            "probeEnvironment": probe_environment,
+            "kubectl": kubectl,
+            "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+        },
         "releaseSuite": {
             "version": "0.2.0",
             "checks": len(COMMON_CHECKS),
@@ -423,7 +495,7 @@ def build_progress(
         "versions": group_rows(rows),
         "externalGatePlan": summarize_gate_plan(plan),
         "liveValidationReadiness": summarize_readiness(readiness),
-        "nextActions": build_next_actions(plan, readiness),
+        "nextActions": build_next_actions(plan, readiness, version_filters=version_filters),
     }
     if evidence_dir is not None:
         target_output = output_dir if output_dir is not None else evidence_dir / DEFAULT_OUTPUT_DIR
@@ -436,7 +508,11 @@ def build_progress(
                     "clusterWrites": live_queue.get("clusterWrites"),
                     "summary": live_queue.get("summary", {}),
                 }
-                report["nextActions"] = next_actions_from_queue(live_queue, evidence_dir=evidence_dir)
+                report["nextActions"] = next_actions_from_queue(
+                    live_queue,
+                    evidence_dir=evidence_dir,
+                    version_filters=version_filters,
+                )
             report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
@@ -460,9 +536,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
         f"- todo: {summary['todo']}",
         f"- release checks: {progress['releaseSuite']['checks']}",
         "",
-        "## Versions",
-        "",
     ]
+    filters = progress.get("filters", {})
+    if filters.get("versions"):
+        lines.extend(["## Filters", "", f"- versions: `{', '.join(filters['versions'])}`", ""])
+    lines.extend(["## Versions", ""])
     for group in progress["versions"]:
         counts = group["summary"]
         lines.append(
@@ -608,6 +686,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary release progress report.")
     parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--evidence-dir", help="optional local evidence directory to inspect")
     parser.add_argument("--output-dir", help="artifact output directory for evidence-dir status")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
@@ -623,6 +702,7 @@ def main(argv: list[str] | None = None) -> int:
             output_dir,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            version_filters=args.version,
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("release-progress: failed")

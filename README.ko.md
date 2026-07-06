@@ -500,6 +500,7 @@ python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
+python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
@@ -608,7 +609,7 @@ Release evidence status는 `tool-ready` next command만 추천하고,
 blocked 또는 missing-tool action은 로컬 worklist drilldown과 함께 blocker
 summary에 남깁니다. Release
 progress는 준비된 evidence 디렉터리 없이도 같은 read-only environment
-probe를 실행할 수 있습니다. JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
+probe를 실행할 수 있고 `--version`으로 리포트 범위를 좁힐 수 있습니다. JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
 Markdown에는 tool-ready action, 선택된 next-task 파일/명령/worklist 상세,
 evidence next command를 모두 표시합니다.
 

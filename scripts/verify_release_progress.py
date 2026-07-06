@@ -204,6 +204,8 @@ def main() -> int:
 
         json_result = run_generator("--format", "json")
         markdown_result = run_generator("--format", "markdown")
+        version_result = run_generator("--format", "json", "--version", "0.4.3")
+        version_markdown_result = run_generator("--format", "markdown", "--version", "0.4.3")
         probe_json_result = run_generator_with_env(
             "--format",
             "json",
@@ -211,6 +213,16 @@ def main() -> int:
             "--kubectl",
             "kubectl",
             env=fake_probe_env(tmpdir / "probe-tools"),
+        )
+        version_probe_markdown_result = run_generator_with_env(
+            "--format",
+            "markdown",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--kubectl",
+            "kubectl",
+            env=fake_probe_env(tmpdir / "version-probe-tools"),
         )
         probe_markdown_result = run_generator_with_env(
             "--format",
@@ -220,6 +232,7 @@ def main() -> int:
             "kubectl",
             env=fake_probe_env(tmpdir / "probe-tools-md"),
         )
+        unknown_version = run_generator("--format", "json", "--version", "9.9.9")
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
         with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
         missing_evidence_dir = tmpdir / "missing-evidence"
@@ -283,6 +296,25 @@ def main() -> int:
                 errors.append(f"markdown progress must include all runnable entries: {snippet}")
     if markdown_result.returncode != 0 or "# KubeActuary Release Progress" not in markdown_result.stdout:
         errors.append("markdown progress output must include heading")
+    if version_result.returncode != 0:
+        errors.append(f"version progress failed: {version_result.stderr.strip() or version_result.stdout.strip()}")
+        version_progress = {}
+    else:
+        version_progress = json.loads(version_result.stdout)
+    if version_markdown_result.returncode != 0:
+        errors.append(
+            f"version progress markdown failed: {version_markdown_result.stderr.strip() or version_markdown_result.stdout.strip()}"
+        )
+    else:
+        for snippet in (
+            "versions: `0.4.3`",
+            "`0.4.3` done=2 verify=1",
+            "Resource budget target: idle <50m CPU and <64Mi memory",
+        ):
+            if snippet not in version_markdown_result.stdout:
+                errors.append(f"version progress markdown missing detail: {snippet}")
+        if "Current Baseline" in version_markdown_result.stdout:
+            errors.append("version progress markdown must omit unrelated versions")
     if probe_json_result.returncode != 0:
         errors.append(f"probe progress failed: {probe_json_result.stderr.strip() or probe_json_result.stdout.strip()}")
         probe_progress = {}
@@ -304,6 +336,22 @@ def main() -> int:
         ):
             if snippet not in probe_markdown_result.stdout:
                 errors.append(f"probe progress markdown missing detail: {snippet}")
+    if version_probe_markdown_result.returncode != 0:
+        errors.append(
+            "version probe progress markdown failed: "
+            f"{version_probe_markdown_result.stderr.strip() or version_probe_markdown_result.stdout.strip()}"
+        )
+    else:
+        for snippet in (
+            "versions: `0.4.3`",
+            "environment-blocked-actions: 1",
+            "environment-blocker: `cluster-unavailable` (1 actions)",
+            "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",
+        ):
+            if snippet not in version_probe_markdown_result.stdout:
+                errors.append(f"version probe progress markdown missing detail: {snippet}")
+    if unknown_version.returncode == 0 or "unknown version: 9.9.9" not in unknown_version.stdout:
+        errors.append("release progress must reject unknown version filters")
     for snippet in (
         "VERIFY: Krew manifest",
         "VERIFY: Managed Kubernetes smoke",
@@ -390,6 +438,18 @@ def main() -> int:
         errors.append("v0.4.4 group should keep lightweight smoke VERIFY")
     if progress.get("externalGatePlan", {}).get("verify") != 16:
         errors.append("progress report must include external gate summary")
+    if version_progress.get("filters", {}).get("versions") != ["0.4.3"]:
+        errors.append("version progress must preserve version filters")
+    if version_progress.get("summary", {}).get("rows") != 3 or version_progress.get("summary", {}).get("verify") != 1:
+        errors.append("version progress must narrow summary rows to the requested version")
+    version_groups = version_progress.get("versions", [])
+    if len(version_groups) != 1 or version_groups[0].get("version") != "0.4.3":
+        errors.append("version progress must include only the requested version group")
+    if version_progress.get("externalGatePlan", {}).get("verify") != 1:
+        errors.append("version progress must narrow external gate plan")
+    version_actions = version_progress.get("nextActions", {}).get("actions", [])
+    if len(version_actions) != 1 or version_actions[0].get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+        errors.append("version progress must narrow next actions to the requested version")
     readiness = progress.get("liveValidationReadiness", {}).get("summary", {})
     if readiness.get("liveGates") != 7 or "toolReadyGates" not in readiness:
         errors.append("progress report must include live readiness summary")
