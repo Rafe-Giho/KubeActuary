@@ -739,6 +739,11 @@ def main() -> int:
         errors.append("blocked text status must print environment worklist drilldowns")
     if version_blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:
         errors.append("version-blocked status must preserve version filters")
+    version_environment_summary = (version_blocked_payload.get("environmentBlockers") or {}).get("summary", {})
+    if version_environment_summary.get("blockedByEnvironment") != 1:
+        errors.append("version-blocked status must scope environment blocker summary to the requested version")
+    if version_environment_summary.get("selectedBlocked") is not True:
+        errors.append("version-blocked status must preserve selected blocked state inside the requested version")
     version_environment_blockers = (version_blocked_payload.get("blockers") or {}).get("environment") or []
     if version_environment_blockers != [
         {
@@ -770,6 +775,7 @@ def main() -> int:
     for snippet in (
         "filter-version: 0.4.3",
         f"next: {expected_version_probe_command}",
+        "environment-blockers: 1",
         "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",
         "--version 0.4.3 --capture-status blocked-by-environment --environment-reason command-failed",
     ):

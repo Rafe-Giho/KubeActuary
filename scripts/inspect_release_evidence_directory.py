@@ -250,19 +250,37 @@ def load_environment_probe(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
-def load_environment_blockers(evidence_dir: Path) -> dict[str, Any] | None:
+def load_environment_blockers(
+    evidence_dir: Path,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "environment-blockers.json"
     if not path.is_file():
         return None
     payload = json.loads(path.read_text())
     if payload.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
         raise ValueError(f"{path}: unsupported environment-blockers schemaVersion: {payload.get('schemaVersion')!r}")
+    requested = set(version_filters or [])
+    items = [
+        item
+        for item in payload.get("items", [])
+        if isinstance(item, dict) and (not requested or item.get("version") in requested)
+    ]
+    selected = payload.get("selected") if isinstance(payload.get("selected"), dict) else {}
+    summary = dict(payload.get("summary", {}) if isinstance(payload.get("summary"), dict) else {})
+    if requested:
+        summary["blockedByEnvironment"] = len(items)
+        summary["selectedBlocked"] = (
+            selected.get("version") in requested
+            and selected.get("captureStatus") == "blocked-by-environment"
+        )
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
         "clusterWrites": payload.get("clusterWrites"),
-        "summary": payload.get("summary", {}),
-        "selected": payload.get("selected"),
+        "summary": summary,
+        "selected": selected,
+        "items": items,
     }
 
 
@@ -644,6 +662,7 @@ def next_commands(
     selected_status = selected.get("captureStatus")
     blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
     selected_blocked = blocker_summary.get("selectedBlocked") is True
+    scoped_environment_blocked = bool(requested) and blocker_summary.get("blockedByEnvironment", 0) > 0
     selected_ready = selected_status == "tool-ready" and not selected_blocked
     skip_gate_ids = {selected_id} if selected_id and selected_in_scope else set()
     queue_commands, queue_gate_ids = queue_resolved_commands(
@@ -670,7 +689,7 @@ def next_commands(
             commands.append(command)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
-    if selected_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
+    if selected_blocked or scoped_environment_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
         probe_args = [
             "python3",
             "-B",
@@ -711,7 +730,7 @@ def inspect_directory(
     next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     next_task_evidence_build = load_next_task_evidence_build(evidence_dir)
     environment_probe = load_environment_probe(evidence_dir)
-    environment_blockers = load_environment_blockers(evidence_dir)
+    environment_blockers = load_environment_blockers(evidence_dir, version_filters=version_filters)
     version_iteration_advance = load_version_iteration_advance(
         evidence_dir,
         fallback_queue_source,
