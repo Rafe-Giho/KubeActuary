@@ -415,11 +415,11 @@ Confirm from code and tests:
 - live validation readiness verifier inventories remaining external validation
   gates and missing local tools without contacting clusters or cloud APIs by
   default, and verifies optional read-only environment probing with fake
-  kubectl;
+  kubectl plus stable probe reason classification;
 - live validation queue verifier checks schema
   `kube-actuary.live-validation-queue.v1`, ordered evidence commands, and
-  tool-ready, missing-tool, or environment-blocked status for each external
-  gate;
+  tool-ready, missing-tool, or environment-blocked status plus environment
+  probe reasons for each external gate;
 - live validation queue safety verifier checks placeholder and resolved queue
   commands stay dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,

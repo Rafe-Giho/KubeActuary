@@ -46,6 +46,7 @@ Evidence collector release:
   iteration advance records;
 - preserve prepared queue source on probe-generated live evidence next-task
   artifacts;
+- record stable environment probe reason fields for repeated local validation;
 - preserve prepared queue source in version iteration packs;
 - preserve prepared queue source in version iteration history records and status;
 - show latest blocker summaries and drilldowns in version iteration history status;

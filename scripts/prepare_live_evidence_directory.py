@@ -34,6 +34,7 @@ def readme_text(evidence_dir: Path, queue: dict) -> str:
     environment_probe = queue.get("environmentProbe") or {}
     probe_line = (
         f"- environment-probe: `{environment_probe.get('clusterAccess')}`"
+        f" ({environment_probe.get('reason')})"
         if environment_probe
         else "- environment-probe: `not-run`"
     )
@@ -81,6 +82,7 @@ def environment_probe_report(evidence_dir: Path, queue: dict) -> dict:
         "probeEnabled": bool(environment_probe),
         "kubectl": environment_probe.get("kubectl"),
         "clusterAccess": environment_probe.get("clusterAccess", "not-run"),
+        "reason": environment_probe.get("reason", "not-run"),
         "checks": checks,
         "summary": {
             "checks": len(checks),
@@ -100,6 +102,7 @@ def render_environment_probe(report: dict) -> str:
         f"Cluster writes: `{report['clusterWrites']}`",
         f"Probe enabled: {str(report['probeEnabled']).lower()}",
         f"Cluster access: `{report['clusterAccess']}`",
+        f"Reason: `{report['reason']}`",
         "",
         "## Summary",
         "",
@@ -115,6 +118,8 @@ def render_environment_probe(report: dict) -> str:
             status = "passed" if check.get("ok") else "failed"
             command = " ".join(str(part) for part in check.get("command", []))
             lines.append(f"- `{status}` {check.get('name')}: `{command}`")
+            if check.get("reason"):
+                lines.append(f"  reason: `{check.get('reason')}`")
             if check.get("exitCode") is not None:
                 lines.append(f"  exit code: {check.get('exitCode')}")
     else:
@@ -145,6 +150,7 @@ def environment_blocker_report(evidence_dir: Path, queue: dict, next_task: dict)
         "environmentProbe": environment_probe or None,
         "summary": {
             "clusterAccess": environment_probe.get("clusterAccess", "not-run"),
+            "reason": environment_probe.get("reason", "not-run"),
             "blockedByEnvironment": len(blocked_items),
             "selectedBlocked": selected.get("captureStatus") == "blocked-by-environment",
         },
@@ -173,6 +179,7 @@ def render_environment_blockers(report: dict) -> str:
         "## Summary",
         "",
         f"- cluster access: `{summary['clusterAccess']}`",
+        f"- reason: `{summary.get('reason')}`",
         f"- blocked by environment: {summary['blockedByEnvironment']}",
         f"- selected blocked: {str(summary['selectedBlocked']).lower()}",
         "",

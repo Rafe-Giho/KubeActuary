@@ -842,14 +842,17 @@ def main() -> int:
     latest_history_probe = history_status_payload.get("latestEnvironmentProbe", {})
     if latest_history_probe.get("clusterAccess") != "unavailable":
         errors.append("version iteration history status should preserve latest probe cluster access")
+    if latest_history_probe.get("reason") != "command-failed":
+        errors.append("version iteration history status should preserve latest probe reason")
     failed_probe_checks = latest_history_probe.get("failedChecks", [])
     if not any(
         item.get("name") == "cluster-info"
         and item.get("exitCode") == 1
+        and item.get("reason") == "command-failed"
         and item.get("message") == "cluster unavailable from fake kubectl"
         for item in failed_probe_checks
     ):
-        errors.append("version iteration history status should summarize failed probe messages")
+        errors.append("version iteration history status should summarize failed probe reasons and messages")
     latest_history_blockers = history_status_payload.get("latestBlockers", {})
     if not any(
         item.get("status") == "cluster-unavailable" and item.get("items") == 1
@@ -868,7 +871,12 @@ def main() -> int:
         errors.append("version iteration history text should show latest blocker drilldown command")
     if "environment-probe: unavailable" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment probe status")
-    if "environment-probe-failure: cluster-info exit=1 message=cluster unavailable from fake kubectl" not in history_status.stdout:
+    if "environment-probe-reason: command-failed" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment probe reason")
+    if (
+        "environment-probe-failure: cluster-info exit=1 reason=command-failed "
+        "message=cluster unavailable from fake kubectl"
+    ) not in history_status.stdout:
         errors.append("version iteration history text should show latest environment probe failure")
     if "latest-diff-status-changed: 1" not in history_status.stdout:
         errors.append("version iteration history text should show latest diff status changes")
@@ -950,7 +958,9 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest blocker drilldown command")
     if "## Latest Environment Probe" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include environment probe details")
-    if "failed `cluster-info` exit=1: cluster unavailable from fake kubectl" not in history_status_markdown.stdout:
+    if "reason: `command-failed`" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest probe reason")
+    if "failed `cluster-info` exit=1 reason=command-failed: cluster unavailable from fake kubectl" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest probe failure")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
@@ -1006,7 +1016,7 @@ def main() -> int:
             errors.append(f"version iteration history recorded Markdown should preserve next command: {command}")
     if "environment `cluster-unavailable`: 1 items" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest blockers")
-    if "failed `cluster-info` exit=1: cluster unavailable from fake kubectl" not in history_status_record_md_text:
+    if "failed `cluster-info` exit=1 reason=command-failed: cluster unavailable from fake kubectl" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest probe failure")
     evidence_runs = evidence_history_index.get("runs", [])
     if len(evidence_runs) != 2:

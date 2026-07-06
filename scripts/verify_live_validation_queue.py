@@ -50,6 +50,8 @@ def fake_tool_dir(path: Path, cluster_ok: bool) -> dict[str, str]:
         "    print('Client Version: fake')\n"
         "    raise SystemExit(0)\n"
         "if args[:1] == ['cluster-info']:\n"
+        f"    if {cluster_exit} != 0:\n"
+        "        print('connection refused from fake kubectl', file=sys.stderr)\n"
         f"    raise SystemExit({cluster_exit})\n"
         "raise SystemExit(0)\n"
     )
@@ -181,6 +183,15 @@ def main() -> int:
         errors.append("probe queue must record environment-probe mode")
     if probe_queue.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
         errors.append("probe queue must report unavailable cluster access")
+    if probe_queue.get("environmentProbe", {}).get("reason") != "connection-refused":
+        errors.append("probe queue must report stable unavailable-cluster reason")
+    probe_checks = probe_queue.get("environmentProbe", {}).get("checks", [])
+    cluster_check = next(
+        (item for item in probe_checks if isinstance(item, dict) and item.get("name") == "cluster-info"),
+        {},
+    )
+    if cluster_check.get("reason") != "connection-refused":
+        errors.append("probe queue must preserve failed check reason")
     if probe_summary.get("blockedByTools") != 0:
         errors.append("fake all-tools probe should not be blocked by missing tools")
     if probe_summary.get("blockedByEnvironment") != 14:

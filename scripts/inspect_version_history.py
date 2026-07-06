@@ -101,6 +101,7 @@ def summarize_environment_probe(probe: Any) -> dict[str, Any]:
                 {
                     "name": check.get("name"),
                     "exitCode": check.get("exitCode"),
+                    "reason": check.get("reason"),
                     "message": probe_message(check),
                 }
             )
@@ -108,6 +109,7 @@ def summarize_environment_probe(probe: Any) -> dict[str, Any]:
         "enabled": probe.get("enabled"),
         "kubectl": probe.get("kubectl"),
         "clusterAccess": probe.get("clusterAccess"),
+        "reason": probe.get("reason"),
         "failedChecks": failed_checks,
     }
 
@@ -514,14 +516,17 @@ def render_text(status: dict[str, Any]) -> str:
     environment_probe = status.get("latestEnvironmentProbe", {})
     if isinstance(environment_probe, dict) and environment_probe:
         lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
+        if environment_probe.get("reason"):
+            lines.append(f"environment-probe-reason: {environment_probe.get('reason')}")
         if environment_probe.get("kubectl"):
             lines.append(f"environment-probe-kubectl: {environment_probe.get('kubectl')}")
         for check in environment_probe.get("failedChecks", []) or []:
             message = check.get("message")
             suffix = f" message={message}" if message else ""
+            reason = f" reason={check.get('reason')}" if check.get("reason") else ""
             lines.append(
                 f"environment-probe-failure: {check.get('name')} "
-                f"exit={check.get('exitCode')}{suffix}"
+                f"exit={check.get('exitCode')}{reason}{suffix}"
             )
     for error in status["errors"]:
         lines.append(f"error: {error}")
@@ -688,15 +693,18 @@ def render_markdown(status: dict[str, Any]) -> str:
     if isinstance(environment_probe, dict) and environment_probe:
         lines.extend(["", "## Latest Environment Probe", ""])
         lines.append(f"- cluster access: `{environment_probe.get('clusterAccess')}`")
+        if environment_probe.get("reason"):
+            lines.append(f"- reason: `{environment_probe.get('reason')}`")
         if environment_probe.get("kubectl"):
             lines.append(f"- kubectl: `{environment_probe.get('kubectl')}`")
         failed_checks = environment_probe.get("failedChecks", []) or []
         if not failed_checks:
             lines.append("- failed checks: none")
         for check in failed_checks:
+            reason = f" reason={check.get('reason')}" if check.get("reason") else ""
             message = f": {check.get('message')}" if check.get("message") else ""
             lines.append(
-                f"- failed `{check.get('name')}` exit={check.get('exitCode')}{message}"
+                f"- failed `{check.get('name')}` exit={check.get('exitCode')}{reason}{message}"
             )
     if status["errors"]:
         lines.extend(["", "## Errors", ""])

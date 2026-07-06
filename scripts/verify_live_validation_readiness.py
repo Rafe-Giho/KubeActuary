@@ -66,6 +66,7 @@ DOC_SNIPPETS = (
     "tool-ready-gates",
     "--probe-environment",
     "environment-probe",
+    "reason",
 )
 
 TASKBOARD_SNIPPETS = (
@@ -101,6 +102,25 @@ def gate_tool_readiness(tools: dict[str, dict[str, str | None]]) -> list[dict[st
     return readiness
 
 
+def probe_reason(ok: bool, stdout: str, stderr: str) -> str:
+    if ok:
+        return "command-ok"
+    text = f"{stdout}\n{stderr}".lower()
+    if "timed out" in text:
+        return "timeout"
+    if "connection refused" in text:
+        return "connection-refused"
+    if "operation not permitted" in text:
+        return "network-not-permitted"
+    if "i/o timeout" in text or "context deadline exceeded" in text:
+        return "network-timeout"
+    if "no configuration has been provided" in text:
+        return "kubeconfig-missing"
+    if "forbidden" in text:
+        return "authorization-denied"
+    return "command-failed"
+
+
 def run_probe(name: str, command: list[str]) -> dict[str, Any]:
     try:
         result = subprocess.run(
@@ -120,23 +140,30 @@ def run_probe(name: str, command: list[str]) -> dict[str, Any]:
             "exitCode": None,
             "stdout": "",
             "stderr": str(exc),
+            "reason": "command-not-found",
         }
     except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or ""
         return {
             "name": name,
             "command": command,
             "ok": False,
             "exitCode": None,
-            "stdout": exc.stdout or "",
+            "stdout": stdout,
             "stderr": "timed out",
+            "reason": probe_reason(False, stdout, "timed out"),
         }
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+    ok = result.returncode == 0
     return {
         "name": name,
         "command": command,
-        "ok": result.returncode == 0,
+        "ok": ok,
         "exitCode": result.returncode,
-        "stdout": result.stdout.strip(),
-        "stderr": result.stderr.strip(),
+        "stdout": stdout,
+        "stderr": stderr,
+        "reason": probe_reason(ok, stdout, stderr),
     }
 
 
@@ -145,15 +172,19 @@ def environment_probe(kubectl: str) -> dict[str, Any]:
     cluster = run_probe("cluster-info", [kubectl, "cluster-info", "--request-timeout=5s"])
     if not client["ok"]:
         cluster_access = "kubectl-unavailable"
+        reason = str(client.get("reason", "command-failed"))
     elif cluster["ok"]:
         cluster_access = "available"
+        reason = "cluster-available"
     else:
         cluster_access = "unavailable"
+        reason = str(cluster.get("reason", "command-failed"))
     return {
         "enabled": True,
         "clusterWrites": "disabled",
         "kubectl": kubectl,
         "clusterAccess": cluster_access,
+        "reason": reason,
         "checks": [client, cluster],
     }
 
@@ -236,6 +267,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     errors: list[str] = []
+    reason_cases = (
+        ("connection refused", "connection-refused"),
+        ("connect: operation not permitted", "network-not-permitted"),
+        ("i/o timeout", "network-timeout"),
+        ("no configuration has been provided", "kubeconfig-missing"),
+        ("forbidden", "authorization-denied"),
+    )
+    for message, expected in reason_cases:
+        actual = probe_reason(False, "", message)
+        if actual != expected:
+            errors.append(f"probe reason mismatch for {message!r}: {actual!r}")
     verify_docs(errors)
     verify_taskboard(errors)
     report = build_report(probe_environment=args.probe_environment, kubectl=args.kubectl)

@@ -187,10 +187,10 @@ Expected:
 - documentation freeze verifies public docs and examples;
 - live validation readiness inventories external tool availability without
   running cluster or cloud checks by default and can probe current cluster
-  availability without writes;
+  availability without writes while recording stable probe reasons;
 - live validation queue emits schema `kube-actuary.live-validation-queue.v1`
   with ordered tool-ready, missing-tool, and environment-blocked evidence
-  commands;
+  commands plus stable environment probe reason fields;
 - live validation queue safety verifies placeholder and resolved queue commands
   remain dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifies the local reports/raw/supplemental

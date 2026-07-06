@@ -64,8 +64,8 @@ Status legend:
 | kube-score adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Pluto adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Adapter contract | DONE | common fields and normalized severity verifier |
-| Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates and missing tools without running them; optional environment probe classifies current cluster availability without writes |
-| Live validation queue | DONE | `scripts/generate_live_validation_queue.py` and `scripts/verify_live_validation_queue.py` verify schema `kube-actuary.live-validation-queue.v1` for ordered evidence commands plus environment-blocked gates |
+| Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates and missing tools without running them; optional environment probe classifies current cluster availability and stable failure reasons without writes |
+| Live validation queue | DONE | `scripts/generate_live_validation_queue.py` and `scripts/verify_live_validation_queue.py` verify schema `kube-actuary.live-validation-queue.v1` for ordered evidence commands plus environment-blocked gates and probe reasons |
 | Live validation queue safety | DONE | `scripts/verify_live_validation_queue_safety.py` verifies placeholder and resolved queue commands stay dry-run/read-only/evidence-only |
 | Live evidence directory scaffold | DONE | `scripts/prepare_live_evidence_directory.py` and `scripts/verify_live_evidence_directory_scaffold.py` verify local reports/raw/supplemental/.kubeactuary scaffold generation plus prepared-queue-sourced, blocker-filtered `--missing-tool`, and probe-aware next-task artifacts, schemas `kube-actuary.environment-probe.v1` and `kube-actuary.environment-blockers.v1`, and `--skip-complete-evidence` advancement |
 | Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |

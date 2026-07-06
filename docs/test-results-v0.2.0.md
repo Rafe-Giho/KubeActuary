@@ -336,9 +336,11 @@ Result:
 - security docs check prints `security-docs: passed`;
 - API freeze check prints `api-freeze: passed`;
 - docs freeze check prints `docs-freeze: passed`;
-- live validation readiness check prints `live-validation-readiness: passed`;
+- live validation readiness check prints `live-validation-readiness: passed`
+  and verifies stable probe reason classification;
 - live validation queue check prints `live-validation-queue: passed` and
-  verifies environment-blocked gate handling with fake kubectl;
+  verifies environment-blocked gate handling and probe reasons with fake
+  kubectl;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed` and verifies next-task artifacts

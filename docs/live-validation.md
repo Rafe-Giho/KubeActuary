@@ -58,7 +58,10 @@ With `--probe-environment`, the readiness verifier and queue generator run
 read-only `kubectl` checks to classify current cluster availability. They do not
 create, update, patch, or delete Kubernetes resources. Environment-blocked gates
 are reported as `blocked-by-environment` so local worklists can distinguish
-"tool installed" from "disposable cluster not reachable".
+"tool installed" from "disposable cluster not reachable". The environment probe
+also records a stable `reason` such as `connection-refused`,
+`network-not-permitted`, or `kubeconfig-missing` so repeated local validation
+can compare why a cluster is unavailable without parsing raw `kubectl` stderr.
 
 The release progress report can also inspect `--evidence-dir`. If that
 directory has not been prepared yet, it reports `not-prepared` instead of

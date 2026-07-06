@@ -53,6 +53,8 @@ def fake_tool_env(path: Path, cluster_ok: bool) -> dict[str, str]:
         "    print('Client Version: fake')\n"
         "    raise SystemExit(0)\n"
         "if args[:1] == ['cluster-info']:\n"
+        f"    if {cluster_exit} != 0:\n"
+        "        print('connection refused from fake kubectl', file=sys.stderr)\n"
         f"    raise SystemExit({cluster_exit})\n"
         "raise SystemExit(0)\n"
     )
@@ -164,14 +166,28 @@ def main() -> int:
             errors.append("probe scaffold environment probe schemaVersion mismatch")
         if probe_report_payload.get("clusterAccess") != "unavailable":
             errors.append("probe scaffold environment probe must record unavailable cluster access")
+        if probe_report_payload.get("reason") != "connection-refused":
+            errors.append("probe scaffold environment probe must record unavailable-cluster reason")
         if probe_report_payload.get("summary", {}).get("checks") != 2:
             errors.append("probe scaffold environment probe must record two checks")
         if probe_report_payload.get("summary", {}).get("failed") != 1:
             errors.append("probe scaffold environment probe must record one failed check")
+        probe_cluster_check = next(
+            (
+                item
+                for item in probe_report_payload.get("checks", [])
+                if isinstance(item, dict) and item.get("name") == "cluster-info"
+            ),
+            {},
+        )
+        if probe_cluster_check.get("reason") != "connection-refused":
+            errors.append("probe scaffold environment probe must preserve failed check reason")
         if probe_blockers.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
             errors.append("probe scaffold blocker report schemaVersion mismatch")
         if probe_blockers.get("summary", {}).get("clusterAccess") != "unavailable":
             errors.append("probe scaffold blocker report must record unavailable cluster access")
+        if probe_blockers.get("summary", {}).get("reason") != "connection-refused":
+            errors.append("probe scaffold blocker report must record unavailable-cluster reason")
         if probe_blockers.get("summary", {}).get("blockedByEnvironment") != 14:
             errors.append("probe scaffold blocker report must count environment-blocked items")
         probe_selected = probe_next_task.get("selected") or {}
