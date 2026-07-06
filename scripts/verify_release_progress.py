@@ -198,6 +198,13 @@ def main() -> int:
     ):
         if snippet not in markdown_result.stdout:
             errors.append(f"markdown progress must include all open items: {snippet}")
+    for snippet in (
+        "missing-tool-blocker: `minikube`",
+        "missing-tool-blocker: `az`",
+        "missing-tool-blocker: `gcloud`",
+    ):
+        if snippet not in markdown_result.stdout:
+            errors.append(f"markdown progress must include all action blockers: {snippet}")
     if with_evidence.returncode != 0:
         errors.append(f"evidence progress failed: {with_evidence.stderr.strip() or with_evidence.stdout.strip()}")
         evidence_progress = {}

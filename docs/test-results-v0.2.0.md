@@ -256,7 +256,7 @@ Result:
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directory progress uses the persisted live validation queue
   as the next-action source, shows every open item in version Markdown, and
-  shows persisted queue-source status plus blocker summaries without
+  shows every action blocker plus persisted queue-source status without
   recommending environment-blocked capture commands or runnable JSON first
   commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises

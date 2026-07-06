@@ -367,11 +367,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
     environment_next_steps = blockers.get("environmentNextSteps") or []
     if missing_tool_blockers or environment_blockers:
         lines.extend(["", "## Action Blockers", ""])
-        for item in missing_tool_blockers[:5]:
+        for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['actions']} actions)")
-        for item in environment_blockers[:5]:
+        for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['actions']} actions)")
-        for item in environment_next_steps[:3]:
+        for item in environment_next_steps:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['actions']} actions)")
     if tool_ready_actions:
         lines.extend(["", "## Tool-Ready Actions", ""])

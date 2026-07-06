@@ -67,7 +67,7 @@ start the local evidence loop. For prepared directories, the Markdown progress
 view lists every open item under its version and surfaces the selected next
 task, next-task runner status, next-task runner failure reason,
 environment probe/blocker status, and latest iteration advance status. It also
-prints queue-source details from the
+prints every action blocker and queue-source details from the
 selected next-task, runner, and advance records when an evidence directory has
 been prepared. The same progress view summarizes repeated missing-tool and
 environment blockers, so the remaining local task loop can distinguish
