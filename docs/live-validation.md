@@ -74,6 +74,9 @@ installation work from disposable-cluster setup.
 If the prepared directory contains `.kubeactuary/live-validation-queue.json`,
 progress uses that persisted queue as the next-action source so action counts
 match the last local probe instead of the inventory-only tool snapshot.
+Progress JSON only fills `nextActions.actions[].firstCommand` for `tool-ready`
+actions; blocked actions keep their blocker and next-step metadata without
+presenting a runnable command.
 Evidence-aware version worklists and next-task selection use that same
 prepared queue when `--evidence-dir` is passed, so local iteration commands
 show the last probed environment blockers until the directory is refreshed.
@@ -269,7 +272,8 @@ artifact, so stale local execution records are visible before repeated
 iteration. The status `nextCommands` list recommends only commands whose
 prepared queue item is `tool-ready`; `missing-tools` and
 `blocked-by-environment` actions stay in blocker summaries and next-step text
-instead of being suggested as runnable capture commands.
+instead of being suggested as runnable capture commands. Release progress uses
+the same rule for `nextActions.actions[].firstCommand`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.

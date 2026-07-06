@@ -73,6 +73,7 @@ Evidence collector release:
   next-command output;
 - limit release evidence next-command output to tool-ready commands, keeping
   missing-tool and environment-blocked actions in blocker summaries;
+- limit release progress next-action runnable commands to tool-ready actions;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

@@ -127,15 +127,16 @@ def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[
             }
         )
         commands = gate.get("recommendedCommands") or []
+        status = "tool-ready" if not missing_tools else "missing-tools"
         actions.append(
             {
                 "id": gate.get("id"),
                 "item": gate.get("item"),
                 "kind": gate.get("kind"),
                 "version": gate.get("version") or gate.get("section"),
-                "status": "tool-ready" if not missing_tools else "missing-tools",
+                "status": status,
                 "missingTools": missing_tools,
-                "firstCommand": commands[0] if commands else None,
+                "firstCommand": commands[0] if status == "tool-ready" and commands else None,
             }
         )
     tool_ready = sum(1 for action in actions if action["status"] == "tool-ready")
@@ -168,17 +169,18 @@ def next_actions_from_queue(queue: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(item, dict):
             continue
         commands = item.get("resolvedCommands") or item.get("commands") or []
+        status = item.get("status")
         actions.append(
             {
                 "id": item.get("id"),
                 "item": item.get("item"),
                 "kind": item.get("kind"),
                 "version": item.get("version"),
-                "status": item.get("status"),
+                "status": status,
                 "missingTools": item.get("missingTools", []),
                 "environmentStatus": item.get("environmentStatus"),
                 "nextStep": item.get("nextStep"),
-                "firstCommand": commands[0] if commands else None,
+                "firstCommand": commands[0] if status == "tool-ready" and commands else None,
             }
         )
     summary = queue.get("summary", {})

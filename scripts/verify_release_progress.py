@@ -264,6 +264,8 @@ def main() -> int:
             errors.append(f"invalid next action status: {action.get('status')!r}")
         if "missingTools" not in action:
             errors.append("next action must include missingTools")
+        if action.get("status") != "tool-ready" and action.get("firstCommand"):
+            errors.append("blocked inventory next actions must not expose runnable firstCommand")
     if not any(action.get("firstCommand") for action in next_actions.get("actions", [])):
         errors.append("next actions must include recommended commands")
     evidence_status = evidence_progress.get("evidenceStatus", {})
@@ -304,6 +306,11 @@ def main() -> int:
         errors.append("evidence progress must preserve persisted environment-blocked action count")
     if (evidence_next_actions.get("actions") or [{}])[0].get("environmentStatus") != "cluster-unavailable":
         errors.append("evidence progress next actions must preserve environment status")
+    if any(
+        action.get("status") != "tool-ready" and action.get("firstCommand")
+        for action in evidence_next_actions.get("actions", [])
+    ):
+        errors.append("blocked evidence next actions must not expose runnable firstCommand")
     evidence_blockers = evidence_next_actions.get("blockers", {})
     if evidence_blockers.get("environment") != [{"status": "cluster-unavailable", "actions": 1}]:
         errors.append("evidence progress must summarize environment blockers")
