@@ -16,6 +16,7 @@ README = ROOT / "README.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 sys.path.insert(0, str(ROOT))
 
+from scripts.generate_release_progress import render_markdown  # noqa: E402
 from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 
@@ -187,6 +188,48 @@ def main() -> int:
         progress = {}
     else:
         progress = json.loads(json_result.stdout)
+        synthetic_progress = json.loads(json.dumps(progress))
+        synthetic_progress["nextActions"] = {
+            "source": "synthetic",
+            "summary": {
+                "total": 6,
+                "toolReady": 6,
+                "blockedByTools": 0,
+                "blockedByEnvironment": 0,
+            },
+            "blockers": {"missingTools": [], "environment": [], "environmentNextSteps": []},
+            "actions": [
+                {
+                    "id": f"tool-ready-{index}",
+                    "item": f"Tool ready {index}",
+                    "status": "tool-ready",
+                    "missingTools": [],
+                    "firstCommand": f"python3 -B scripts/tool_ready_{index}.py",
+                }
+                for index in range(1, 7)
+            ],
+        }
+        synthetic_progress["evidenceStatus"] = {
+            "summary": {
+                "status": "partial",
+                "coveredGates": 0,
+                "totalGates": 16,
+                "liveReports": 0,
+                "supplementalEvidence": 0,
+            },
+            "nextCommands": [
+                f"python3 -B scripts/next_command_{index}.py"
+                for index in range(1, 5)
+            ],
+        }
+        synthetic_markdown = render_markdown(synthetic_progress)
+        for snippet in (
+            "`tool-ready-6` Tool ready 6",
+            "python3 -B scripts/tool_ready_6.py",
+            "next: `python3 -B scripts/next_command_4.py`",
+        ):
+            if snippet not in synthetic_markdown:
+                errors.append(f"markdown progress must include all runnable entries: {snippet}")
     if markdown_result.returncode != 0 or "# KubeActuary Release Progress" not in markdown_result.stdout:
         errors.append("markdown progress output must include heading")
     for snippet in (

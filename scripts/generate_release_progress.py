@@ -426,7 +426,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['actions']} actions)")
     if tool_ready_actions:
         lines.extend(["", "## Tool-Ready Actions", ""])
-        for action in tool_ready_actions[:5]:
+        for action in tool_ready_actions:
             lines.append(f"- `{action['id']}` {action['item']}")
             if action["firstCommand"]:
                 lines.append(f"  - `{action['firstCommand']}`")
@@ -498,7 +498,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 if consistency.get("mismatches"):
                     lines.append(f"- version-iteration-advance-mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         next_commands = evidence_status.get("nextCommands", [])
-        for command in next_commands[:3]:
+        for command in next_commands:
             lines.append(f"- next: `{command}`")
     lines.extend(["", "## Closure", ""])
     for command in progress["externalGatePlan"]["closureCommands"]:

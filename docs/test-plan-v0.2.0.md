@@ -143,9 +143,10 @@ Expected:
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directories use the persisted live validation queue as the
   next-action source, show every open item in version Markdown, and show
-  every action blocker plus filtered worklist commands and persisted
-  queue-source status, without recommending environment-blocked capture
-  commands or runnable JSON first commands for blocked actions;
+  every action blocker plus filtered worklist commands, every runnable
+  tool-ready action and evidence next command, and persisted queue-source
+  status, without recommending environment-blocked capture commands or runnable
+  JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
   blocker summaries, blocker-focused filters, and next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
@@ -297,7 +298,8 @@ Confirm from code and tests:
   readiness, tool-ready next actions, optional evidence directory status, and
   `not-prepared` guidance for missing evidence directories, plus selected
   next-task, runner failure, environment, advance status, and repeated blocker
-  summaries with filtered worklist commands in Markdown output;
+  summaries with filtered worklist commands in Markdown output; it also checks
+  tool-ready action and evidence next-command output is not truncated;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, evidence-aware worklist readiness,
