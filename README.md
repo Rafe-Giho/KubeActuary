@@ -361,7 +361,7 @@ scripts/
   generate_release_progress.py versioned release progress report generator with blocker summary
   verify_release_progress.py   release progress verifier
   kube-actuary.release-progress.v1 release progress schema
-  generate_version_worklist.py version-grouped task worklist generator with filters and evidence readiness
+  generate_version_worklist.py version-grouped task worklist generator with filters, blockers, and evidence readiness
   prepare_version_iteration.py local version iteration pack generator with evidence readiness
   compare_version_iterations.py local version iteration diff generator
   record_version_iteration.py local version iteration history recorder with evidence readiness

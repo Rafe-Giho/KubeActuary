@@ -80,6 +80,9 @@ show the last probed environment blockers until the directory is refreshed.
 Their Markdown/text output also prints the queue source, making prepared queue
 reuse visible during repeated local verification. Worklist Markdown also prints
 missing tools and next steps per item so blocked local loops remain actionable.
+It also summarizes repeated missing-tool and environment blockers across the
+whole worklist and per version, so repeated validation can focus on the shared
+blocker before re-running evidence commands.
 Version iteration packs preserve the same queue source in their index and
 per-version files. Version iteration history records and status output keep
 that source so run-to-run comparisons remain traceable. Persisted next-task

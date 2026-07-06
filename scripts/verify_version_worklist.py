@@ -677,6 +677,11 @@ def main() -> int:
         errors.append(f"expected 12 tool-blocked items, got {summary.get('blockedByTools')!r}")
     if summary.get("blockedByEnvironment") != 0:
         errors.append("default version worklist must not probe environment blockers")
+    blockers = worklist.get("blockers", {})
+    if not any(item.get("tool") == "kind" and item.get("items") == 5 for item in blockers.get("missingTools", [])):
+        errors.append("default version worklist must summarize repeated kind blockers")
+    if blockers.get("environment"):
+        errors.append("default version worklist must not summarize environment blockers without a probe")
     for expected in ("Current Baseline", "0.2.0", "0.4.4", "0.9.0"):
         if expected not in versions:
             errors.append(f"version worklist missing version: {expected}")
@@ -686,6 +691,9 @@ def main() -> int:
         errors.append("current baseline should include capture-ready work")
     if versions.get("0.4.4", {}).get("status") != "missing-tools":
         errors.append("0.4.4 should remain missing-tools until live matrix tools are available")
+    version_blockers = versions.get("0.4.4", {}).get("blockers", {})
+    if not any(item.get("tool") == "kind" for item in version_blockers.get("missingTools", [])):
+        errors.append("0.4.4 should summarize its missing kind blocker")
     baseline_items = versions.get("Current Baseline", {}).get("openItems", [])
     if not any(item.get("captureStatus") == "tool-ready" for item in baseline_items):
         errors.append("current baseline must include a tool-ready item")
@@ -763,6 +771,9 @@ def main() -> int:
         errors.append("probe worklist should leave the two non-cluster Krew items capture-ready")
     if "blocked-by-environment" not in probe_statuses:
         errors.append("probe worklist must mark affected versions blocked-by-environment")
+    probe_blockers = probe_worklist.get("blockers", {})
+    if probe_blockers.get("environment") != [{"status": "cluster-unavailable", "items": 14}]:
+        errors.append("probe worklist must summarize cluster-unavailable blockers")
 
     prepared_summary = prepared_queue_worklist.get("summary", {})
     prepared_selected = prepared_queue_next.get("selected") or {}
@@ -776,6 +787,9 @@ def main() -> int:
         errors.append("prepared evidence-dir worklist must preserve persisted environment blockers")
     if prepared_summary.get("captureReady") != 2:
         errors.append("prepared evidence-dir worklist must preserve persisted capture-ready items")
+    prepared_blockers = prepared_queue_worklist.get("blockers", {})
+    if prepared_blockers.get("environment") != [{"status": "cluster-unavailable", "items": 14}]:
+        errors.append("prepared evidence-dir worklist must preserve environment blocker summary")
     if prepared_selected.get("captureStatus") != "tool-ready" or prepared_selected.get("kind") != "krew":
         errors.append("prepared evidence-dir selector should use persisted queue ordering and choose a Krew item")
 

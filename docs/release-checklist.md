@@ -101,6 +101,7 @@ Expected:
   directory status;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
+  summarizes repeated missing-tool and environment blockers,
   resolves evidence paths and file readiness for the full local worklist,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving evidence readiness when `--evidence-dir` is used,

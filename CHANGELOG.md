@@ -32,6 +32,8 @@ Evidence collector release:
   validation queues when an evidence directory already has one;
 - surface the worklist queue source in Markdown/text next-task outputs;
 - surface missing tools and next steps in version worklist Markdown;
+- summarize repeated missing-tool and environment blockers in version worklist
+  reports;
 - preserve prepared queue source in version iteration packs;
 - preserve prepared queue source in version iteration history records and status;
 - preserve prepared queue source in next-task runner and advance reports;

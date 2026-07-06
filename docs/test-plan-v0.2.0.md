@@ -144,13 +144,15 @@ Expected:
   prepared evidence directories use the persisted live validation queue as the
   next-action source and show persisted queue-source status plus blocker
   summaries;
-- version worklist check prints `version-worklist: passed` and covers next-task selection;
+- version worklist check prints `version-worklist: passed` and covers blocker
+  summaries plus next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live
   validation queue when the evidence directory already contains one;
 - prepared-queue worklist and next-task Markdown output show the queue source;
-- prepared-queue worklist Markdown shows missing tools and next steps;
+- prepared-queue worklist Markdown shows blocker summaries, missing tools, and
+  next steps;
 - prepared-queue version iteration packs preserve the queue source;
 - prepared-queue version iteration history records and status preserve the queue source;
 - prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
@@ -296,7 +298,8 @@ Confirm from code and tests:
   evidence-aware iteration packs, evidence-aware iteration history,
   next-task selection, evidence-directory command
   resolution, completed-evidence skipping, capture-ready items, tool-blocked
-  items, version/open-only filters, and optional environment blockers;
+  items, version/open-only filters, blocker summaries, and optional
+  environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

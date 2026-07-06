@@ -7,6 +7,7 @@ import argparse
 import json
 import shlex
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -86,6 +87,46 @@ def evidence_summary(files: list[dict[str, Any]]) -> dict[str, int | bool]:
         "existingFiles": existing,
         "missingFiles": len(files) - existing,
         "complete": bool(files) and existing == len(files),
+    }
+
+
+def sorted_counts(counts: Counter[str]) -> list[dict[str, Any]]:
+    return [
+        {"value": value, "items": count}
+        for value, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
+
+def work_item_blockers(open_items: list[dict[str, Any]]) -> dict[str, Any]:
+    missing_tools = Counter(
+        tool
+        for item in open_items
+        if item.get("captureStatus") == "missing-tools"
+        for tool in item.get("missingTools", [])
+    )
+    environment_statuses = Counter(
+        item.get("environmentStatus") or "unknown"
+        for item in open_items
+        if item.get("captureStatus") == "blocked-by-environment"
+    )
+    environment_next_steps = Counter(
+        item.get("nextStep")
+        for item in open_items
+        if item.get("captureStatus") == "blocked-by-environment" and item.get("nextStep")
+    )
+    return {
+        "missingTools": [
+            {"tool": item["value"], "items": item["items"]}
+            for item in sorted_counts(missing_tools)
+        ],
+        "environment": [
+            {"status": item["value"], "items": item["items"]}
+            for item in sorted_counts(environment_statuses)
+        ],
+        "environmentNextSteps": [
+            {"nextStep": item["value"], "items": item["items"]}
+            for item in sorted_counts(environment_next_steps)
+        ],
     }
 
 
@@ -178,6 +219,7 @@ def build_worklist(
             1 for item in open_items if item.get("captureStatus") == "blocked-by-environment"
         )
         evidence_items = [item for item in open_items if item.get("evidenceSummary")]
+        version_blockers = work_item_blockers(open_items)
         versions.append(
             {
                 "version": version,
@@ -197,6 +239,7 @@ def build_worklist(
                         item["evidenceSummary"].get("existingFiles", 0) for item in evidence_items
                     ),
                 },
+                "blockers": version_blockers,
                 "openItems": open_items,
             }
         )
@@ -215,6 +258,14 @@ def build_worklist(
         "queueSource": queue_source,
         "releaseSuite": progress.get("releaseSuite"),
         "summary": summarize_versions(versions),
+        "blockers": work_item_blockers(
+            [
+                item
+                for version in versions
+                for item in version.get("openItems", [])
+                if isinstance(item, dict)
+            ]
+        ),
         "versions": versions,
         "closureCommands": queue.get("closureCommands", []),
     }
@@ -244,15 +295,36 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         f"- blocked-by-tools: {summary['blockedByTools']}",
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         "",
-        "## Versions",
-        "",
     ]
+    blockers = worklist.get("blockers", {})
+    missing_tool_blockers = blockers.get("missingTools") or []
+    environment_blockers = blockers.get("environment") or []
+    environment_next_steps = blockers.get("environmentNextSteps") or []
+    if missing_tool_blockers or environment_blockers:
+        lines.extend(["## Blockers", ""])
+        for item in missing_tool_blockers[:5]:
+            lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
+        for item in environment_blockers[:5]:
+            lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
+        for item in environment_next_steps[:3]:
+            lines.append(f"- blocker-next-step: {item['nextStep']} ({item['items']} items)")
+        lines.append("")
+    lines.extend(["## Versions", ""])
     for version in worklist["versions"]:
         counts = version["summary"]
         lines.append(
             f"- `{version['version']}` {version['status']} "
             f"done={counts.get('done', 0)} verify={counts.get('verify', 0)} open={counts.get('open', 0)}"
         )
+        version_blockers = version.get("blockers", {})
+        version_missing = version_blockers.get("missingTools") or []
+        version_environment = version_blockers.get("environment") or []
+        if version_missing:
+            tools = ", ".join(f"{item['tool']}:{item['items']}" for item in version_missing[:5])
+            lines.append(f"  blockers: tools=`{tools}`")
+        if version_environment:
+            statuses = ", ".join(f"{item['status']}:{item['items']}" for item in version_environment[:3])
+            lines.append(f"  blockers: environment=`{statuses}`")
         for item in version["openItems"]:
             lines.append(f"  - `{item['captureStatus']}` {item['item']}")
             first_command = (item.get("commands") or [None])[0]
