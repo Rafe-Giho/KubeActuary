@@ -359,6 +359,41 @@ def next_task_queue_consistency(next_task: dict[str, Any] | None, live_queue: di
     }
 
 
+def record_next_task_consistency(
+    next_task: dict[str, Any] | None,
+    record_selected: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(next_task, dict) or not isinstance(record_selected, dict):
+        return None
+    selected = next_task.get("selected") or {}
+    selected_id = selected.get("id")
+    record_id = record_selected.get("id") or record_selected.get("selected")
+    if not selected_id or not record_id:
+        return {
+            "status": "not-checked",
+            "reason": "selected next-task id missing",
+            "selected": selected_id,
+            "recordSelected": record_id,
+        }
+    comparisons = (
+        ("id", selected_id, record_id),
+        ("version", selected.get("version"), record_selected.get("version")),
+        ("kind", selected.get("kind"), record_selected.get("kind")),
+        ("captureStatus", selected.get("captureStatus"), record_selected.get("captureStatus")),
+    )
+    mismatches = [
+        field
+        for field, selected_value, record_value in comparisons
+        if record_value is not None and selected_value != record_value
+    ]
+    return {
+        "status": "matched" if not mismatches else "mismatched",
+        "selected": selected_id,
+        "recordSelected": record_id,
+        "mismatches": mismatches,
+    }
+
+
 def queue_resolved_commands(
     gates: list[dict[str, Any]],
     live_queue: dict[str, Any] | None,
@@ -451,6 +486,16 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         fallback_queue_source,
         fallback_queue_source_origin,
     )
+    if next_task_run is not None:
+        next_task_run["nextTaskConsistency"] = record_next_task_consistency(
+            next_task,
+            next_task_run.get("selected"),
+        )
+    if version_iteration_advance is not None:
+        version_iteration_advance["nextTaskConsistency"] = record_next_task_consistency(
+            next_task,
+            version_iteration_advance.get("nextTask"),
+        )
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -548,6 +593,11 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"next-task-run-queue-source: {next_task_run.get('queueSource')}")
         if next_task_run.get("queueSourceOrigin"):
             lines.append(f"next-task-run-queue-source-origin: {next_task_run.get('queueSourceOrigin')}")
+        consistency = next_task_run.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"next-task-run-consistency: {consistency.get('status')}")
+            if consistency.get("mismatches"):
+                lines.append(f"next-task-run-mismatches: {', '.join(consistency.get('mismatches', []))}")
         lines.append(f"next-task-run-mode: {next_task_run.get('mode')}")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
@@ -575,6 +625,11 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"version-iteration-advance-queue-source: {advance.get('queueSource')}")
         if advance.get("queueSourceOrigin"):
             lines.append(f"version-iteration-advance-queue-source-origin: {advance.get('queueSourceOrigin')}")
+        consistency = advance.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"version-iteration-advance-consistency: {consistency.get('status')}")
+            if consistency.get("mismatches"):
+                lines.append(f"version-iteration-advance-mismatches: {', '.join(consistency.get('mismatches', []))}")
         if advance.get("runId"):
             lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
     return "\n".join(lines) + "\n"
@@ -624,6 +679,11 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- queue source: `{next_task_run.get('queueSource')}`")
         if next_task_run.get("queueSourceOrigin"):
             lines.append(f"- queue source origin: `{next_task_run.get('queueSourceOrigin')}`")
+        consistency = next_task_run.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"- next-task consistency: `{consistency.get('status')}`")
+            if consistency.get("mismatches"):
+                lines.append(f"- next-task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"- ran: {run_summary.get('ran', 0)}")
@@ -649,6 +709,11 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- queue source: `{advance.get('queueSource')}`")
         if advance.get("queueSourceOrigin"):
             lines.append(f"- queue source origin: `{advance.get('queueSourceOrigin')}`")
+        consistency = advance.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"- next-task consistency: `{consistency.get('status')}`")
+            if consistency.get("mismatches"):
+                lines.append(f"- next-task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         if advance.get("runId"):
             lines.append(f"- run id: `{advance.get('runId')}`")
     if status.get("nextCommands"):

@@ -360,6 +360,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 lines.append(f"- next-task-run-queue-source: `{next_task_run.get('queueSource')}`")
             if next_task_run.get("queueSourceOrigin"):
                 lines.append(f"- next-task-run-queue-source-origin: `{next_task_run.get('queueSourceOrigin')}`")
+            consistency = next_task_run.get("nextTaskConsistency") or {}
+            if consistency.get("status"):
+                lines.append(f"- next-task-run-consistency: `{consistency.get('status')}`")
+                if consistency.get("mismatches"):
+                    lines.append(f"- next-task-run-mismatches: `{', '.join(consistency.get('mismatches', []))}`")
             failure = next_task_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- next-task-run-error: `{failure.get('message')}`")
@@ -380,6 +385,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 lines.append(f"- version-iteration-advance-queue-source: `{advance.get('queueSource')}`")
             if advance.get("queueSourceOrigin"):
                 lines.append(f"- version-iteration-advance-queue-source-origin: `{advance.get('queueSourceOrigin')}`")
+            consistency = advance.get("nextTaskConsistency") or {}
+            if consistency.get("status"):
+                lines.append(f"- version-iteration-advance-consistency: `{consistency.get('status')}`")
+                if consistency.get("mismatches"):
+                    lines.append(f"- version-iteration-advance-mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands[:3]:
             lines.append(f"- next: `{command}`")

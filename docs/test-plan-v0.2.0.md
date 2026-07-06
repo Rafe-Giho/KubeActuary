@@ -171,8 +171,9 @@ Expected:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, environment metadata, advance status, queue-source
-  visibility/origin, next-task queue consistency, legacy prepared-record
-  queue-source inference, and idempotent output-exists handling plus
+  visibility/origin, next-task queue consistency, runner/advance record
+  consistency, legacy prepared-record queue-source inference, and idempotent
+  output-exists handling plus
   `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
@@ -308,8 +309,8 @@ Confirm from code and tests:
   directory coverage plus persisted next-task output and file readiness without
   requiring cluster or cloud access, and checks unprepared evidence directory
   guidance for local next-task evidence builds, runner failure summaries,
-  resolved prepared-queue command priority, and probe-first guidance after
-  failed runner attempts or environment blockers;
+  resolved prepared-queue command priority, runner/advance record consistency,
+  and probe-first guidance after failed runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files and skips existing outputs without cluster, cloud, or
   workload writes;

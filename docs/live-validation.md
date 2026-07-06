@@ -253,7 +253,10 @@ and reports the queue-source origin so explicit and inferred status metadata
 remain distinguishable. It also compares the persisted selected next-task
 artifact with the live validation queue and reports whether the id, status,
 kind, and resolved commands still match, making stale next-task artifacts
-visible before another capture attempt.
+visible before another capture attempt. The same status and progress reports
+compare persisted runner and advance records against the current next-task
+artifact, so stale local execution records are visible before repeated
+iteration.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.

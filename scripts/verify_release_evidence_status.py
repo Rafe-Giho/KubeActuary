@@ -368,6 +368,8 @@ def main() -> int:
         errors.append("partial status must preserve next-task-run queue source")
     if next_task_run.get("queueSourceOrigin") != "inferred-live-validation-queue":
         errors.append("partial status must report inferred next-task-run queue source origin")
+    if next_task_run.get("nextTaskConsistency", {}).get("status") != "matched":
+        errors.append("partial status must report matched next-task-run consistency")
     if next_task_run.get("status") != "failed" or next_task_run.get("mode") != "run":
         errors.append("partial status must preserve next-task-run status")
     if next_task_run.get("summary", {}).get("ran") != 2:
@@ -392,6 +394,10 @@ def main() -> int:
         errors.append("partial status must preserve version-iteration-advance queue source")
     if advance.get("queueSourceOrigin") != "inferred-live-validation-queue":
         errors.append("partial status must report inferred version-iteration-advance queue source origin")
+    if advance.get("nextTaskConsistency", {}).get("status") != "mismatched":
+        errors.append("partial status must report stale version-iteration-advance consistency")
+    if advance.get("nextTaskConsistency", {}).get("mismatches") != ["id"]:
+        errors.append("partial status must report version-iteration-advance id mismatch")
     if advance.get("status") != "passed" or advance.get("runId") != "test-advance":
         errors.append("partial status must preserve version-iteration-advance status")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
@@ -422,6 +428,8 @@ def main() -> int:
         errors.append("partial text status must print next-task-run queue source")
     if "next-task-run-queue-source-origin: inferred-live-validation-queue" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run queue source origin")
+    if "next-task-run-consistency: matched" not in partial_text.stdout:
+        errors.append("partial text status must print matched next-task-run consistency")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
@@ -438,6 +446,10 @@ def main() -> int:
         errors.append("partial text status must print advance queue source")
     if "version-iteration-advance-queue-source-origin: inferred-live-validation-queue" not in partial_text.stdout:
         errors.append("partial text status must print advance queue source origin")
+    if "version-iteration-advance-consistency: mismatched" not in partial_text.stdout:
+        errors.append("partial text status must print stale advance consistency")
+    if "version-iteration-advance-mismatches: id" not in partial_text.stdout:
+        errors.append("partial text status must print advance mismatch fields")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
