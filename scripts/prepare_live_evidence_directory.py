@@ -13,11 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.generate_live_validation_queue import build_queue, render_markdown  # noqa: E402
+from scripts.select_next_version_task import build_selection, render_markdown as render_next_task_markdown  # noqa: E402
 
 
 SUBDIRS = ("reports", "raw", "supplemental", ".kubeactuary")
 QUEUE_JSON = "live-validation-queue.json"
 QUEUE_MD = "live-validation-queue.md"
+NEXT_TASK_JSON = "next-version-task.json"
+NEXT_TASK_MD = "next-version-task.md"
 
 
 def readme_text(evidence_dir: Path, queue: dict) -> str:
@@ -37,6 +40,8 @@ def readme_text(evidence_dir: Path, queue: dict) -> str:
             "Use the generated queue files in `.kubeactuary/` to capture reports,",
             "raw command output, and supplemental evidence into the prepared",
             "`reports/`, `raw/`, and `supplemental/` directories.",
+            "Use `.kubeactuary/next-version-task.*` for the deterministic next",
+            "task and its resolved evidence paths.",
             "",
             "Closure commands:",
             "",
@@ -60,14 +65,28 @@ def prepare_directory(evidence_dir: Path) -> dict[str, Path | dict]:
     metadata_dir = evidence_dir / ".kubeactuary"
     queue_json = metadata_dir / QUEUE_JSON
     queue_md = metadata_dir / QUEUE_MD
+    next_task = build_selection(
+        version_filters=[],
+        include_complete=False,
+        probe_environment=False,
+        kubectl="kubectl",
+        evidence_dir=evidence_dir,
+    )
+    next_task_json = metadata_dir / NEXT_TASK_JSON
+    next_task_md = metadata_dir / NEXT_TASK_MD
     readme = evidence_dir / "README.md"
     write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     write_text(queue_md, render_markdown(queue))
+    write_text(next_task_json, json.dumps(next_task, indent=2, sort_keys=True))
+    write_text(next_task_md, render_next_task_markdown(next_task))
     write_text(readme, readme_text(evidence_dir, queue))
     return {
         "queue": queue,
         "queueJson": queue_json,
         "queueMarkdown": queue_md,
+        "nextTask": next_task,
+        "nextTaskJson": next_task_json,
+        "nextTaskMarkdown": next_task_md,
         "readme": readme,
     }
 
@@ -93,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"tool-ready: {summary['toolReady']}/{summary['total']}")
     print("cluster-writes: disabled")
     print(f"queue: {result['queueJson']}")
+    print(f"next-task: {result['nextTaskJson']}")
     return 0
 
 

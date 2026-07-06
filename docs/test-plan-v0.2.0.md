@@ -318,7 +318,8 @@ Confirm from code and tests:
 - live validation queue safety verifier checks placeholder and resolved queue
   commands stay dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,
-  `supplemental/`, and `.kubeactuary/` directories plus queue snapshots;
+  `supplemental/`, and `.kubeactuary/` directories plus queue snapshots and
+  next-task artifacts;
 - live evidence schema verifier validates all supported smoke report schemas;
 - live evidence manifest verifier maps captured reports to release gates and
   records report SHA-256 digests without contacting clusters;

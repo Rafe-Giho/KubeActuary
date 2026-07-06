@@ -82,7 +82,8 @@ Coverage included:
   environment-blocked gates;
 - live validation queue command safety verification for placeholder and
   resolved evidence commands;
-- live evidence directory scaffold generation for repeated evidence capture;
+- live evidence directory scaffold generation for repeated evidence capture,
+  including next-task artifacts;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
@@ -271,7 +272,7 @@ Result:
   verifies environment-blocked gate handling with fake kubectl;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
-  `live-evidence-directory-scaffold: passed`;
+  `live-evidence-directory-scaffold: passed` and verifies next-task artifacts;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;

@@ -18,6 +18,8 @@ TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 LIVE_VALIDATION = ROOT / "docs" / "live-validation.md"
 PREPARE_TOOL = "prepare_live_evidence_directory.py"
 VERIFY_TOOL = "verify_live_evidence_directory_scaffold.py"
+NEXT_TASK_TOOL = "select_next_version_task.py"
+NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 
 
 def run_prepare(path: Path) -> subprocess.CompletedProcess[str]:
@@ -39,9 +41,12 @@ def main() -> int:
         second = run_prepare(evidence_dir)
         queue_json = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
+        next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
+        next_task_md = evidence_dir / ".kubeactuary" / "next-version-task.md"
         readme = evidence_dir / "README.md"
         expected_dirs = [evidence_dir / name for name in ("reports", "raw", "supplemental", ".kubeactuary")]
         queue = json.loads(queue_json.read_text()) if queue_json.is_file() else {}
+        next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -53,7 +58,7 @@ def main() -> int:
         for path in expected_dirs:
             if not path.is_dir():
                 errors.append(f"scaffold missing directory: {path.name}")
-        for path in (queue_json, queue_md, readme):
+        for path in (queue_json, queue_md, next_task_json, next_task_md, readme):
             if not path.is_file():
                 errors.append(f"scaffold missing file: {path.name}")
         if queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":
@@ -73,10 +78,28 @@ def main() -> int:
             errors.append("scaffold queue must resolve supplemental paths")
         if "cluster-writes: `disabled`" not in readme.read_text():
             errors.append("scaffold README must document disabled writes")
+        if "next-version-task" not in readme.read_text():
+            errors.append("scaffold README must point to next-task artifacts")
+        if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
+            errors.append("scaffold next task schemaVersion mismatch")
+        if next_task.get("evidenceDir") != str(evidence_dir):
+            errors.append("scaffold next task must record evidence directory")
+        selected = next_task.get("selected") or {}
+        resolved_next = "\n".join(selected.get("resolvedCommands", []))
+        if selected.get("id") != "01-controller-resource-budget":
+            errors.append("scaffold next task should select the first tool-ready task")
+        if str(evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt") not in resolved_next:
+            errors.append("scaffold next task must resolve raw evidence path")
+        if str(evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json") not in resolved_next:
+            errors.append("scaffold next task must resolve supplemental evidence path")
+        if "<kubectl-top-output.txt>" in resolved_next or "<external-evidence.json>" in resolved_next:
+            errors.append("scaffold next task must not keep placeholders in resolved commands")
+        if "Controller resource budget" not in next_task_md.read_text():
+            errors.append("scaffold next task markdown must summarize selected task")
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()
-        for snippet in (PREPARE_TOOL, VERIFY_TOOL):
+        for snippet in (PREPARE_TOOL, VERIFY_TOOL, NEXT_TASK_TOOL, NEXT_TASK_SCHEMA):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing scaffold detail: {snippet}")
 
@@ -89,6 +112,7 @@ def main() -> int:
     print("live-evidence-directory-scaffold: passed")
     print("directories: 4")
     print("queue-items: 16")
+    print("next-task: selected")
     print("cluster-writes: disabled")
     return 0
 
