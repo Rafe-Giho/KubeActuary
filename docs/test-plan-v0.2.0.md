@@ -214,7 +214,7 @@ Expected:
 - version iteration advance check prints `version-iteration-advance: passed`
   and verifies selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports;
+  reports plus CLI Markdown output;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

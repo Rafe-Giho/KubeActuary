@@ -87,6 +87,7 @@ Evidence collector release:
 - show all release evidence status next commands, next-task files, and
   next-task commands;
 - add CLI Markdown output for release evidence status inspection;
+- add CLI Markdown output for version iteration advance reports;
 - recommend environment probing before further live capture when a runner fails
   before any probe has run;
 - surface selected environment-blocker next steps in release evidence status

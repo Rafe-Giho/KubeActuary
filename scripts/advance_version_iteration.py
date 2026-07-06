@@ -423,7 +423,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
-    parser.add_argument("--format", choices=("text", "json"), default="text")
+    parser.add_argument("--format", choices=("text", "json", "markdown"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
@@ -460,7 +460,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}")
         return 1
 
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n" if args.format == "json" else render_text(result)
+    if args.format == "json":
+        rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
+    elif args.format == "markdown":
+        rendered = render_markdown(result)
+    else:
+        rendered = render_text(result)
     if args.output == "-":
         print(rendered, end="")
     else:

@@ -201,7 +201,7 @@ Expected:
   recording, and
   `.kubeactuary/next-version-task-run.json` runner status plus
   `.kubeactuary/version-iteration-advance.json` workflow status output,
-  including selected blocker status and next-step metadata;
+  including selected blocker status, next-step metadata, and CLI Markdown output;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

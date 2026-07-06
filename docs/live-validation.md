@@ -345,6 +345,7 @@ same queue source used by the selected next-task artifact:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --format markdown
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --missing-tool kind
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --probe-environment

@@ -305,7 +305,7 @@ Result:
 - version iteration advance check prints `version-iteration-advance: passed`
   with blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports;
+  reports plus CLI Markdown output;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

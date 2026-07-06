@@ -67,6 +67,7 @@ def main() -> int:
         blocked_history_dir = tmpdir / "blocked-history"
 
         plan = run_script(ADVANCE, str(evidence_dir), str(history_dir))
+        plan_markdown = run_script(ADVANCE, str(evidence_dir), str(history_dir), "--format", "markdown")
         filtered_plan = run_script(
             ADVANCE,
             str(tmpdir / "filtered-plan-evidence"),
@@ -80,6 +81,16 @@ def main() -> int:
             errors.append(f"advance plan failed: {plan.stderr.strip() or plan.stdout.strip()}")
         if "version-iteration-advance: plan" not in plan.stdout:
             errors.append("advance plan must report plan status")
+        if plan_markdown.returncode != 0:
+            errors.append(f"advance plan Markdown failed: {plan_markdown.stderr.strip() or plan_markdown.stdout.strip()}")
+        for snippet in (
+            "# KubeActuary Version Iteration Advance",
+            "Mode: `plan`",
+            "Status: `plan`",
+            "planned step: prepare live evidence directory with skip-complete evidence",
+        ):
+            if snippet not in plan_markdown.stdout:
+                errors.append(f"advance plan Markdown should include: {snippet}")
         if evidence_dir.exists() or history_dir.exists():
             errors.append("advance plan must not create evidence or history directories")
         if filtered_plan.returncode != 0:
@@ -110,11 +121,35 @@ def main() -> int:
             "json",
             env=run_env,
         )
+        run_markdown = run_script(
+            ADVANCE,
+            str(tmpdir / "markdown-evidence"),
+            str(tmpdir / "markdown-history"),
+            "--run",
+            "--run-id",
+            "markdown-advance",
+            "--created-at",
+            "2026-07-06T00:00:00+00:00",
+            "--format",
+            "markdown",
+            env=run_env,
+        )
         if run.returncode != 0:
             errors.append(f"advance run failed: {run.stderr.strip() or run.stdout.strip()}")
             payload = {}
         else:
             payload = json.loads(run.stdout)
+        if run_markdown.returncode != 0:
+            errors.append(f"advance run Markdown failed: {run_markdown.stderr.strip() or run_markdown.stdout.strip()}")
+        for snippet in (
+            "Mode: `run`",
+            "Status: `passed`",
+            "run id: `markdown-advance`",
+            "history runs: 2",
+            "runner: `passed`",
+        ):
+            if snippet not in run_markdown.stdout:
+                errors.append(f"advance run Markdown should include: {snippet}")
         if payload.get("schemaVersion") != "kube-actuary.version-iteration-advance.v1":
             errors.append("advance schemaVersion mismatch")
         if payload.get("status") != "passed" or payload.get("mode") != "run":

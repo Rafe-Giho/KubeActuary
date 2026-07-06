@@ -442,7 +442,7 @@ scripts/
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
   next-version-task-run.json persisted selected runner status report
-  advance_version_iteration.py selected next-task runner plus before/after history and runner status recorder
+  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history and runner status recorder
   verify_version_iteration_advance.py version iteration advance verifier
   kube-actuary.version-iteration-advance.v1 version iteration advance schema
   version-iteration-advance.json persisted advance workflow status report
@@ -525,6 +525,7 @@ python3 -B scripts/run_next_version_task.py evidence/live
 python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/run_next_version_task.py evidence/live --run --record
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --format markdown
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
