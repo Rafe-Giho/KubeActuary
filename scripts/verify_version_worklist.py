@@ -732,6 +732,16 @@ def main() -> int:
         errors.append("version iteration history status should report latest run")
     if status_summary.get("blockedByEnvironment") != 1 or status_summary.get("diffs") != 1:
         errors.append("version iteration history status should summarize latest blockers and diffs")
+    latest_history_blockers = history_status_payload.get("latestBlockers", {})
+    if not any(
+        item.get("status") == "cluster-unavailable" and item.get("items") == 1
+        for item in latest_history_blockers.get("environment", [])
+    ):
+        errors.append("version iteration history status should preserve latest environment blockers")
+    if "environment-blocker: cluster-unavailable (1 items)" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment blocker summary")
+    if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:
+        errors.append("version iteration history text should show latest blocker drilldown command")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
     evidence_runs = evidence_history_index.get("runs", [])

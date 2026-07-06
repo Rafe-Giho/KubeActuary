@@ -163,6 +163,8 @@ Expected:
 - prepared-queue version iteration packs preserve the queue source, blocker
   summaries, and blocker drilldown commands;
 - prepared-queue version iteration history records and status preserve the queue source;
+- version iteration history status preserves latest blocker summaries and
+  drilldown commands;
 - prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
 - version iteration packs preserve resolved closure commands, blocker
   summaries, blocker drilldown commands, and evidence readiness when

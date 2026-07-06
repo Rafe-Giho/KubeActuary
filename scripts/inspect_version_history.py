@@ -65,12 +65,14 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
     if missing_version_files:
         errors.append(f"run {run_id} missing version files: {', '.join(sorted(missing_version_files))}")
 
+    blockers = worklist.get("blockers", {})
     return {
         "runId": run_id,
         "path": relative_path,
         "worklistSchema": worklist.get("schemaVersion"),
         "queueSource": run.get("queueSource") or worklist.get("queueSource") or "generated",
         "summary": worklist.get("summary", {}),
+        "blockers": blockers if isinstance(blockers, dict) else {},
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
     }
@@ -96,6 +98,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     ]
     latest = inspected_runs[-1] if inspected_runs else None
     latest_summary = latest.get("summary", {}) if latest else {}
+    latest_blockers = latest.get("blockers", {}) if latest else {}
     return {
         "schemaVersion": SCHEMA_VERSION,
         "historyDir": history_dir.as_posix(),
@@ -115,6 +118,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
             "existingEvidenceFiles": latest_summary.get("existingEvidenceFiles", 0),
             "diffs": sum(1 for run in inspected_runs if run.get("diffStatus") == "present"),
         },
+        "latestBlockers": latest_blockers,
         "runs": inspected_runs,
     }
 
@@ -135,6 +139,18 @@ def render_text(status: dict[str, Any]) -> str:
         f"complete-evidence-items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"diffs: {summary['diffs']}",
     ]
+    blockers = status.get("latestBlockers", {})
+    if isinstance(blockers, dict):
+        for item in blockers.get("missingTools", []) or []:
+            lines.append(f"missing-tool-blocker: {item.get('tool')} ({item.get('items')} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"missing-tool-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environment", []) or []:
+            lines.append(f"environment-blocker: {item.get('status')} ({item.get('items')} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"environment-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environmentNextSteps", []) or []:
+            lines.append(f"blocker-next-step: {item.get('nextStep')} ({item.get('items')} items)")
     for error in status["errors"]:
         lines.append(f"error: {error}")
     return "\n".join(lines) + "\n"
