@@ -140,11 +140,11 @@ Coverage included:
   closure checks;
 - release evidence status inspection for partial and complete evidence
   directories plus persisted next-task output, file readiness, and
-  unprepared-directory guidance, with runner failure summaries, resolved
-  prepared-queue command priority, and probe-first follow-up guidance for
-  failed runner and environment-blocker states;
-- next-task evidence build from prepared raw files plus idempotent
-  output-exists handling;
+  unprepared-directory guidance, with evidence-build status, runner failure
+  summaries, resolved prepared-queue command priority, and probe-first
+  follow-up guidance for failed runner and environment-blocker states;
+- next-task evidence build from prepared raw files plus passed and
+  missing-source recorded status reports and idempotent output-exists handling;
 - next-version task runner success, failed-run summary, and recorded report
   verification;
 - version iteration advance records zero-run blocked runner status when the
@@ -293,12 +293,14 @@ Result:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence
   build, next-task-run status, environment metadata, advance status,
-  queue-source visibility/origin, next-task queue consistency, complete
+  queue-source visibility/origin, next-task queue consistency,
+  evidence-build/runner/advance record consistency, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
-  output, next-task evidence build Markdown output, runner/advance record
-  consistency, legacy prepared-record queue-source inference, and idempotent
+  output, next-task evidence build Markdown output, legacy prepared-record
+  queue-source inference, and idempotent
   output-exists handling plus
-  `.kubeactuary/release-evidence-status.{json,md}` recording;
+  `.kubeactuary/release-evidence-status.{json,md}` and
+  `.kubeactuary/next-task-evidence-build.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
   queue-source preservation and zero-run reporting for non-`tool-ready`

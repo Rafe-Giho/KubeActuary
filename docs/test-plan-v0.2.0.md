@@ -202,12 +202,13 @@ Expected:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, environment metadata, advance status, queue-source
-  visibility/origin, next-task queue consistency, runner/advance record
+  visibility/origin, next-task queue consistency, runner/evidence-build/advance record
   consistency, legacy prepared-record queue-source inference, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
   output, next-task evidence build Markdown output, and idempotent
   output-exists handling plus
-  `.kubeactuary/release-evidence-status.{json,md}` recording;
+  `.kubeactuary/release-evidence-status.{json,md}` and
+  `.kubeactuary/next-task-evidence-build.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
   queue-source preservation and zero-run reporting for non-`tool-ready`
@@ -351,8 +352,8 @@ Confirm from code and tests:
   resolved prepared-queue command priority, runner/advance record consistency,
   and probe-first guidance after failed runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
-  from prepared raw files and skips existing outputs without cluster, cloud, or
-  workload writes;
+  from prepared raw files, records passed and missing-source status reports, and
+  skips existing outputs without cluster, cloud, or workload writes;
 - next version task runner verifier validates selected commands, stays
   plan-by-default, and with fake kubectl produces raw and supplemental evidence
   for the selected task, while reporting a prepare command for unprepared

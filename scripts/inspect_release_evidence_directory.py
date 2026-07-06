@@ -24,6 +24,7 @@ SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
 STATUS_REPORT_JSON = "release-evidence-status.json"
 STATUS_REPORT_MD = "release-evidence-status.md"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
@@ -191,6 +192,41 @@ def load_next_task_run(
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
         },
+    }
+
+
+def load_next_task_evidence_build(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "next-task-evidence-build.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
+        raise ValueError(f"{path}: unsupported next-task-evidence-build schemaVersion: {payload.get('schemaVersion')!r}")
+    next_task = payload.get("nextTask") or {}
+    selected = next_task.get("selected") or {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "builtAt": payload.get("builtAt"),
+        "summary": payload.get("summary", {}),
+        "selected": {
+            "id": selected.get("id"),
+            "version": selected.get("version"),
+            "item": selected.get("item"),
+            "kind": selected.get("kind"),
+            "captureStatus": selected.get("captureStatus"),
+        },
+        "records": [
+            {
+                "status": record.get("status"),
+                "kind": record.get("kind"),
+                "source": record.get("source"),
+                "output": record.get("output"),
+            }
+            for record in payload.get("records", [])
+            if isinstance(record, dict)
+        ],
+        "errors": payload.get("errors", []),
     }
 
 
@@ -491,6 +527,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     if next_task is not None:
         next_task["queueConsistency"] = next_task_queue_consistency(next_task, live_queue)
     next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
+    next_task_evidence_build = load_next_task_evidence_build(evidence_dir)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
     version_iteration_advance = load_version_iteration_advance(
@@ -502,6 +539,11 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         next_task_run["nextTaskConsistency"] = record_next_task_consistency(
             next_task,
             next_task_run.get("selected"),
+        )
+    if next_task_evidence_build is not None:
+        next_task_evidence_build["nextTaskConsistency"] = record_next_task_consistency(
+            next_task,
+            next_task_evidence_build.get("selected"),
         )
     if version_iteration_advance is not None:
         version_iteration_advance["nextTaskConsistency"] = record_next_task_consistency(
@@ -526,6 +568,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         },
         "nextTask": next_task,
         "nextTaskRun": next_task_run,
+        "nextTaskEvidenceBuild": next_task_evidence_build,
         "environmentProbe": environment_probe,
         "environmentBlockers": environment_blockers,
         "versionIterationAdvance": version_iteration_advance,
@@ -617,6 +660,19 @@ def render_text(status: dict[str, Any]) -> str:
         failure = next_task_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"next-task-run-error: {failure.get('message')}")
+    next_task_evidence_build = status.get("nextTaskEvidenceBuild")
+    if isinstance(next_task_evidence_build, dict):
+        build_summary = next_task_evidence_build.get("summary", {})
+        lines.append(f"next-task-evidence-build: {build_summary.get('status')}")
+        consistency = next_task_evidence_build.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"next-task-evidence-build-consistency: {consistency.get('status')}")
+            if consistency.get("mismatches"):
+                lines.append(f"next-task-evidence-build-mismatches: {', '.join(consistency.get('mismatches', []))}")
+        if build_summary:
+            lines.append(f"next-task-evidence-build-built: {build_summary.get('built', 0)}")
+            lines.append(f"next-task-evidence-build-skipped: {build_summary.get('skipped', 0)}")
+            lines.append(f"next-task-evidence-build-errors: {build_summary.get('errors', 0)}")
     environment_probe = status.get("environmentProbe")
     if isinstance(environment_probe, dict):
         lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
@@ -707,6 +763,20 @@ def render_markdown(status: dict[str, Any]) -> str:
         failure = next_task_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"- error: `{failure.get('message')}`")
+    next_task_evidence_build = status.get("nextTaskEvidenceBuild")
+    if isinstance(next_task_evidence_build, dict):
+        build_summary = next_task_evidence_build.get("summary", {})
+        lines.extend(["", "## Evidence Build", "", f"- status: `{build_summary.get('status')}`"])
+        consistency = next_task_evidence_build.get("nextTaskConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"- next-task consistency: `{consistency.get('status')}`")
+            if consistency.get("mismatches"):
+                lines.append(f"- next-task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
+        lines.append(f"- built: {build_summary.get('built', 0)}")
+        lines.append(f"- skipped: {build_summary.get('skipped', 0)}")
+        lines.append(f"- errors: {build_summary.get('errors', 0)}")
+        for record in next_task_evidence_build.get("records", []):
+            lines.append(f"- record: `{record.get('status')}` `{record.get('kind')}` `{record.get('output')}`")
     environment_probe = status.get("environmentProbe")
     environment_blockers = status.get("environmentBlockers")
     if isinstance(environment_probe, dict) or isinstance(environment_blockers, dict):

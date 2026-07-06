@@ -257,6 +257,18 @@ def main() -> int:
         recorded_markdown = recorded_md.read_text() if recorded_md.is_file() else ""
         next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
         next_task_build_markdown = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "markdown", "--force")
+        next_task_build_recorded = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json", "--record", "--force")
+        next_task_build_recorded_json = partial_dir / ".kubeactuary" / "next-task-evidence-build.json"
+        next_task_build_recorded_md = partial_dir / ".kubeactuary" / "next-task-evidence-build.md"
+        next_task_build_recorded_output_written = (
+            next_task_build_recorded_json.is_file() and next_task_build_recorded_md.is_file()
+        )
+        next_task_build_recorded_payload = (
+            json.loads(next_task_build_recorded_json.read_text()) if next_task_build_recorded_json.is_file() else {}
+        )
+        next_task_build_recorded_markdown = (
+            next_task_build_recorded_md.read_text() if next_task_build_recorded_md.is_file() else ""
+        )
         next_task_output = partial_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
         next_task_output_written = next_task_output.is_file()
         next_task_build_again = run_script(NEXT_TASK_BUILDER, str(partial_dir))
@@ -303,6 +315,12 @@ def main() -> int:
         invalid = run_script(INSPECTOR, str(invalid_dir))
         unprepared_next_task_build = run_script(NEXT_TASK_BUILDER, str(tmpdir / "unprepared"))
         missing_source_markdown = run_script(NEXT_TASK_BUILDER, str(blocked_dir), "--format", "markdown")
+        missing_source_recorded = run_script(NEXT_TASK_BUILDER, str(blocked_dir), "--format", "json", "--record")
+        missing_source_recorded_json = blocked_dir / ".kubeactuary" / "next-task-evidence-build.json"
+        missing_source_recorded_output_written = missing_source_recorded_json.is_file()
+        missing_source_recorded_payload = (
+            json.loads(missing_source_recorded_json.read_text()) if missing_source_recorded_json.is_file() else {}
+        )
 
     if partial.returncode != 0:
         errors.append(f"partial status failed: {partial.stderr.strip() or partial.stdout.strip()}")
@@ -332,6 +350,27 @@ def main() -> int:
     ):
         if snippet not in next_task_build_markdown.stdout:
             errors.append(f"next-task evidence build Markdown should include: {snippet}")
+    if next_task_build_recorded.returncode != 0:
+        errors.append(
+            "recorded next-task evidence build failed: "
+            f"{next_task_build_recorded.stderr.strip() or next_task_build_recorded.stdout.strip()}"
+        )
+    else:
+        try:
+            next_task_build_recorded_stdout = json.loads(next_task_build_recorded.stdout)
+        except json.JSONDecodeError:
+            errors.append("recorded next-task evidence build stdout must remain JSON")
+            next_task_build_recorded_stdout = {}
+        if next_task_build_recorded_stdout.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
+            errors.append("recorded next-task evidence build stdout schemaVersion mismatch")
+    if not next_task_build_recorded_output_written:
+        errors.append("next-task evidence build --record must write JSON and Markdown reports")
+    if next_task_build_recorded_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
+        errors.append("recorded next-task evidence build file schemaVersion mismatch")
+    if next_task_build_recorded_payload.get("summary", {}).get("status") != "passed":
+        errors.append("recorded next-task evidence build file must preserve passed status")
+    if "# KubeActuary Next Task Evidence Build" not in next_task_build_recorded_markdown:
+        errors.append("recorded next-task evidence build Markdown must include the report title")
     if partial_after_build.returncode != 0:
         errors.append(f"post-build partial status failed: {partial_after_build.stderr.strip() or partial_after_build.stdout.strip()}")
         partial_after_build_payload = {}
@@ -375,6 +414,12 @@ def main() -> int:
     ):
         if snippet not in missing_source_markdown.stdout:
             errors.append(f"missing-source Markdown evidence build should include: {snippet}")
+    if missing_source_recorded.returncode == 0:
+        errors.append("missing-source recorded evidence build must fail")
+    if not missing_source_recorded_output_written:
+        errors.append("missing-source evidence build --record must still write a failure JSON report")
+    if missing_source_recorded_payload.get("summary", {}).get("status") != "failed":
+        errors.append("missing-source evidence build record must preserve failed status")
 
     if partial_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("status schemaVersion mismatch")
@@ -463,6 +508,15 @@ def main() -> int:
     failure = next_task_run.get("failure") or {}
     if failure.get("message") != "error: test cluster unavailable":
         errors.append("partial status must preserve next-task-run failure message")
+    next_task_evidence_build = partial_after_build_payload.get("nextTaskEvidenceBuild") or {}
+    if next_task_evidence_build.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
+        errors.append("post-build status must include next-task evidence build schema")
+    if next_task_evidence_build.get("summary", {}).get("status") != "passed":
+        errors.append("post-build status must preserve next-task evidence build status")
+    if next_task_evidence_build.get("nextTaskConsistency", {}).get("status") != "matched":
+        errors.append("post-build status must report matched next-task evidence build consistency")
+    if len(next_task_evidence_build.get("records", [])) != 1:
+        errors.append("post-build status must include next-task evidence build records")
     environment_probe = partial_payload.get("environmentProbe") or {}
     if environment_probe.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
         errors.append("partial status must include environment-probe schema")
@@ -536,6 +590,10 @@ def main() -> int:
         errors.append("partial text status must print stale advance consistency")
     if "version-iteration-advance-mismatches: id" not in partial_text.stdout:
         errors.append("partial text status must print advance mismatch fields")
+    if "next-task-evidence-build: passed" not in partial_after_build_text.stdout:
+        errors.append("post-build text status must print next-task evidence build status")
+    if "next-task-evidence-build-consistency: matched" not in partial_after_build_text.stdout:
+        errors.append("post-build text status must print next-task evidence build consistency")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
@@ -630,6 +688,7 @@ def main() -> int:
         ENVIRONMENT_BLOCKERS_SCHEMA,
         ADVANCE_SCHEMA,
         "--record",
+        "next-task-evidence-build.json",
         "release-evidence-status.json",
     ):
         if snippet not in README.read_text():

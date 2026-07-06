@@ -21,6 +21,8 @@ from scripts.build_external_evidence import KINDS, build_record  # noqa: E402
 SCHEMA_VERSION = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 BUILDER_SCRIPT = "scripts/build_external_evidence.py"
+BUILD_REPORT_JSON = ".kubeactuary/next-task-evidence-build.json"
+BUILD_REPORT_MD = ".kubeactuary/next-task-evidence-build.md"
 
 
 def rooted(path: str) -> Path:
@@ -193,16 +195,28 @@ def render_markdown(result: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def record_result(evidence_dir: Path, result: dict[str, Any]) -> dict[str, str]:
+    json_path = evidence_dir / BUILD_REPORT_JSON
+    markdown_path = evidence_dir / BUILD_REPORT_MD
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    markdown_path.write_text(render_markdown(result))
+    return {"json": str(json_path), "markdown": str(markdown_path)}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build supplemental evidence for the selected next task.")
     parser.add_argument("evidence_dir", help="prepared evidence directory with .kubeactuary/next-version-task.json")
     parser.add_argument("--force", action="store_true", help="overwrite an existing supplemental evidence output")
+    parser.add_argument("--record", action="store_true", help="write build status JSON and Markdown under .kubeactuary")
     parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
     try:
-        result = build_next_task_evidence(Path(args.evidence_dir), force=args.force)
+        evidence_dir = Path(args.evidence_dir)
+        result = build_next_task_evidence(evidence_dir, force=args.force)
+        recorded = record_result(evidence_dir, result) if args.record else None
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("next-task-evidence: failed")
         print(f"error: {exc}")
@@ -219,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         Path(args.output).write_text(rendered)
         print(f"next-task-evidence: wrote {args.output}")
+    if recorded:
+        print(f"next-task-evidence: recorded {recorded['json']}", file=sys.stderr)
     return 0 if result["summary"]["status"] == "passed" else 1
 
 

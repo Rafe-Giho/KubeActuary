@@ -142,10 +142,13 @@ After a selected task's raw file is captured, `build_next_task_evidence.py`
 can build that task's local supplemental evidence from the resolved
 `build_external_evidence.py` command. It reads prepared local files only and
 does not run cluster, cloud, or workload write commands.
+With `--record`, it also writes
+`.kubeactuary/next-task-evidence-build.json` and Markdown status next to the
+other local iteration records.
 
 ```sh
 python3 -B scripts/build_next_task_evidence.py evidence/live
-python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown
+python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown --record
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 ```
@@ -302,7 +305,10 @@ instead of being suggested as runnable capture commands. Release progress uses
 the same rule for `nextActions.actions[].firstCommand`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
-into local supplemental evidence records.
+into local supplemental evidence records. Add `--record` to persist
+`.kubeactuary/next-task-evidence-build.json` and
+`.kubeactuary/next-task-evidence-build.md`; release evidence status then
+reports the latest build status and selected next-task consistency.
 
 The selected next-task runner validates the persisted
 `kube-actuary.next-version-task.v1` commands before execution. Without `--run`
