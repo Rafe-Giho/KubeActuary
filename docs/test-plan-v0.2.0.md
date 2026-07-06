@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  release progress reporting, version worklist generation, external gate plan generation, external gate evidence evaluation,
+  release progress reporting, version worklist generation, next version task selection, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
   clean generated-artifact verification,
@@ -139,7 +139,7 @@ Expected:
 - conformance suite check prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
-- version worklist check prints `version-worklist: passed`;
+- version worklist check prints `version-worklist: passed` and covers next-task selection;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
@@ -250,8 +250,8 @@ Confirm from code and tests:
   readiness, tool-ready next actions, and optional evidence directory status;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
-  history status inspection, capture-ready items, tool-blocked items,
-  version/open-only filters, and optional environment blockers;
+  history status inspection, next-task selection, capture-ready items,
+  tool-blocked items, version/open-only filters, and optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

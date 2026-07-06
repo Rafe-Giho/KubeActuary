@@ -17,6 +17,7 @@ PREPARE = ROOT / "scripts" / "prepare_version_iteration.py"
 COMPARE = ROOT / "scripts" / "compare_version_iterations.py"
 RECORD = ROOT / "scripts" / "record_version_iteration.py"
 INSPECT_HISTORY = ROOT / "scripts" / "inspect_version_history.py"
+SELECT = ROOT / "scripts" / "select_next_version_task.py"
 README = ROOT / "README.md"
 README_KO = ROOT / "README.ko.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
@@ -25,12 +26,14 @@ PREPARE_TOOL = "prepare_version_iteration.py"
 COMPARE_TOOL = "compare_version_iterations.py"
 RECORD_TOOL = "record_version_iteration.py"
 INSPECT_HISTORY_TOOL = "inspect_version_history.py"
+SELECT_TOOL = "select_next_version_task.py"
 VERIFY_TOOL = "verify_version_worklist.py"
 SCHEMA = "kube-actuary.version-worklist.v1"
 ITERATION_SCHEMA = "kube-actuary.version-iteration.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
 HISTORY_SCHEMA = "kube-actuary.version-iteration-history.v1"
 HISTORY_STATUS_SCHEMA = "kube-actuary.version-iteration-history-status.v1"
+NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 
 
 def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -91,6 +94,18 @@ def run_inspect_history(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def run_select(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(SELECT), *args],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
 def parse_worklist(label: str, result: subprocess.CompletedProcess[str], errors: list[str]) -> dict:
     if result.returncode != 0:
         errors.append(f"{label} failed: {result.stderr.strip() or result.stdout.strip()}")
@@ -135,6 +150,10 @@ def main() -> int:
     multi_version_result = run_generator("--format", "json", "--version", "0.3.3", "--version", "0.4.3")
     open_only_result = run_generator("--format", "json", "--open-only")
     invalid_version_result = run_generator("--version", "9.9.9")
+    next_task_result = run_select("--format", "json")
+    next_task_markdown = run_select("--format", "markdown")
+    next_task_version = run_select("--format", "json", "--version", "0.4.3")
+    next_task_missing = run_select("--format", "json", "--version", "0.4.4")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         output = tmpdir / "worklist.json"
@@ -142,6 +161,10 @@ def main() -> int:
         output_written = output.is_file()
         probe_env = fake_all_tools_env(tmpdir / "tools", cluster_ok=False)
         probe_result = run_generator("--format", "json", "--open-only", "--probe-environment", env=probe_env)
+        probe_next_task = run_select("--format", "json", "--probe-environment", env=probe_env)
+        next_task_output = tmpdir / "next-task.json"
+        written_next_task = run_select("--format", "json", "--output", str(next_task_output))
+        next_task_output_written = next_task_output.is_file()
         iteration_dir = tmpdir / "iteration"
         iteration_result = run_prepare(
             str(iteration_dir),
@@ -222,12 +245,20 @@ def main() -> int:
     multi_version = parse_worklist("multi-version worklist", multi_version_result, errors)
     open_only = parse_worklist("open-only worklist", open_only_result, errors)
     probe_worklist = parse_worklist("probe worklist", probe_result, errors)
+    next_task = parse_worklist("next task", next_task_result, errors)
+    next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
+    next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
+    probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# KubeActuary Version Worklist" not in markdown_result.stdout:
         errors.append("markdown worklist missing heading")
     if written.returncode != 0 or not output_written:
         errors.append("worklist generator must write requested output file")
+    if next_task_markdown.returncode != 0 or "# KubeActuary Next Version Task" not in next_task_markdown.stdout:
+        errors.append("next task selector markdown must render")
+    if written_next_task.returncode != 0 or not next_task_output_written:
+        errors.append("next task selector must write requested output file")
     if iteration_result.returncode != 0:
         errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
     for name, present in iteration_files_present.items():
@@ -370,6 +401,31 @@ def main() -> int:
     if "blocked-by-environment" not in probe_statuses:
         errors.append("probe worklist must mark affected versions blocked-by-environment")
 
+    next_selected = next_task.get("selected") or {}
+    if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
+        errors.append("next task schemaVersion mismatch")
+    if next_task.get("sourceWorklistSchema") != SCHEMA:
+        errors.append("next task should record source worklist schema")
+    if next_task.get("summary", {}).get("candidateItems") != 16:
+        errors.append("next task should search sixteen candidate items by default")
+    if next_selected.get("id") != "01-controller-resource-budget":
+        errors.append("next task should select the first baseline tool-ready item")
+    if next_selected.get("captureStatus") != "tool-ready":
+        errors.append("next task default selection should be tool-ready")
+    filtered_selected = next_task_filtered.get("selected") or {}
+    if filtered_selected.get("version") != "0.4.3" or filtered_selected.get("captureStatus") != "tool-ready":
+        errors.append("filtered next task should select the 0.4.3 tool-ready item")
+    blocked_selected = next_task_tool_blocked.get("selected") or {}
+    if blocked_selected.get("version") != "0.4.4" or blocked_selected.get("captureStatus") != "missing-tools":
+        errors.append("tool-blocked next task should select the 0.4.4 missing-tools item")
+    if "kind" not in blocked_selected.get("missingTools", []):
+        errors.append("tool-blocked next task should preserve missing tools")
+    probe_selected = probe_next_task_payload.get("selected") or {}
+    if probe_next_task_payload.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
+        errors.append("probe next task must report unavailable cluster access")
+    if probe_selected.get("captureStatus") != "tool-ready" or probe_selected.get("kind") != "krew":
+        errors.append("probe next task should select a non-cluster Krew item when the cluster is unavailable")
+
     for path in (README, README_KO, TASKBOARD):
         text = path.read_text()
         for snippet in (
@@ -378,12 +434,14 @@ def main() -> int:
             COMPARE_TOOL,
             RECORD_TOOL,
             INSPECT_HISTORY_TOOL,
+            SELECT_TOOL,
             VERIFY_TOOL,
             SCHEMA,
             ITERATION_SCHEMA,
             DIFF_SCHEMA,
             HISTORY_SCHEMA,
             HISTORY_STATUS_SCHEMA,
+            NEXT_TASK_SCHEMA,
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing version worklist detail: {snippet}")

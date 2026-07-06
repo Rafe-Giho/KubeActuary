@@ -366,12 +366,14 @@ scripts/
   compare_version_iterations.py local version iteration diff generator
   record_version_iteration.py local version iteration history recorder
   inspect_version_history.py local version iteration history inspector
+  select_next_version_task.py local next version task selector
   verify_version_worklist.py version worklist verifier
   kube-actuary.version-worklist.v1 version worklist schema
   kube-actuary.version-iteration.v1 version iteration schema
   kube-actuary.version-iteration-diff.v1 version iteration diff schema
   kube-actuary.version-iteration-history.v1 version iteration history schema
   kube-actuary.version-iteration-history-status.v1 version iteration history status schema
+  kube-actuary.next-version-task.v1 next version task schema
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   verify_external_gate_command_safety.py external gate command safety verifier
@@ -487,6 +489,7 @@ python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iterati
 python3 -B scripts/compare_version_iterations.py /tmp/kubeactuary-before /tmp/kubeactuary-after --format markdown
 python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --probe-environment
 python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history
+python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
