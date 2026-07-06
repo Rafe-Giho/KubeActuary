@@ -266,8 +266,8 @@ Result:
   evidence-aware iteration packs, evidence-aware iteration history,
   prepared live validation queue reuse,
   queue-source visibility,
-  complete worklist blocker summaries, blocker-focused filters, plus
-  missing-tool and next-step visibility,
+  complete worklist blocker summaries, blocker drilldown commands,
+  blocker-focused filters, plus missing-tool and next-step visibility,
   iteration pack queue-source preservation,
   iteration history queue-source preservation,
   scaffold/advance filter propagation,

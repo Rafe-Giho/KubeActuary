@@ -527,6 +527,7 @@ def main() -> int:
             "missing-tool-blocker: `minikube`",
             "missing-tool-blocker: `az`",
             "missing-tool-blocker: `gcloud`",
+            "worklist: `python3 -B scripts/generate_version_worklist.py --format markdown --open-only --capture-status missing-tools --missing-tool kind`",
             "blockers: tools=`helm:2, kind:2, kubectl-krew:2, az:1, gcloud:1, k3s:1, microk8s:1, minikube:1`",
         ):
             if snippet not in markdown_result.stdout:
@@ -781,6 +782,12 @@ def main() -> int:
     blockers = worklist.get("blockers", {})
     if not any(item.get("tool") == "kind" and item.get("items") == 5 for item in blockers.get("missingTools", [])):
         errors.append("default version worklist must summarize repeated kind blockers")
+    kind_blocker = next(
+        (item for item in blockers.get("missingTools", []) if item.get("tool") == "kind"),
+        {},
+    )
+    if "--capture-status missing-tools --missing-tool kind" not in kind_blocker.get("worklistCommand", ""):
+        errors.append("default version worklist must include missing-tool drilldown commands")
     if blockers.get("environment"):
         errors.append("default version worklist must not summarize environment blockers without a probe")
     for expected in ("Current Baseline", "0.2.0", "0.4.4", "0.9.0"):
@@ -890,8 +897,18 @@ def main() -> int:
     if "blocked-by-environment" not in probe_statuses:
         errors.append("probe worklist must mark affected versions blocked-by-environment")
     probe_blockers = probe_worklist.get("blockers", {})
-    if probe_blockers.get("environment") != [{"status": "cluster-unavailable", "items": 14}]:
+    probe_environment_summary = [
+        {"status": item.get("status"), "items": item.get("items")}
+        for item in probe_blockers.get("environment", [])
+    ]
+    if probe_environment_summary != [{"status": "cluster-unavailable", "items": 14}]:
         errors.append("probe worklist must summarize cluster-unavailable blockers")
+    probe_environment_blocker = next(
+        (item for item in probe_blockers.get("environment", []) if item.get("status") == "cluster-unavailable"),
+        {},
+    )
+    if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in probe_environment_blocker.get("worklistCommand", ""):
+        errors.append("probe worklist must include environment drilldown commands")
 
     prepared_summary = prepared_queue_worklist.get("summary", {})
     prepared_selected = prepared_queue_next.get("selected") or {}
@@ -906,8 +923,18 @@ def main() -> int:
     if prepared_summary.get("captureReady") != 2:
         errors.append("prepared evidence-dir worklist must preserve persisted capture-ready items")
     prepared_blockers = prepared_queue_worklist.get("blockers", {})
-    if prepared_blockers.get("environment") != [{"status": "cluster-unavailable", "items": 14}]:
+    prepared_environment_summary = [
+        {"status": item.get("status"), "items": item.get("items")}
+        for item in prepared_blockers.get("environment", [])
+    ]
+    if prepared_environment_summary != [{"status": "cluster-unavailable", "items": 14}]:
         errors.append("prepared evidence-dir worklist must preserve environment blocker summary")
+    prepared_environment_blocker = next(
+        (item for item in prepared_blockers.get("environment", []) if item.get("status") == "cluster-unavailable"),
+        {},
+    )
+    if "--evidence-dir" not in prepared_environment_blocker.get("worklistCommand", ""):
+        errors.append("prepared evidence-dir worklist blocker commands must preserve evidence-dir context")
     prepared_environment_summary = prepared_environment_filter.get("summary", {})
     if prepared_environment_summary.get("openItems") != 14 or prepared_environment_summary.get("blockedByEnvironment") != 14:
         errors.append("prepared environment-status filter should keep fourteen cluster-unavailable items")

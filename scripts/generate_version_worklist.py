@@ -102,7 +102,38 @@ def sorted_counts(counts: Counter[str]) -> list[dict[str, Any]]:
     ]
 
 
-def work_item_blockers(open_items: list[dict[str, Any]]) -> dict[str, Any]:
+def command_string(args: list[str]) -> str:
+    return " ".join(shlex.quote(arg) for arg in args)
+
+
+def blocker_worklist_command(
+    capture_status: str,
+    filter_flag: str,
+    filter_value: str,
+    evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
+) -> str:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+    ]
+    if evidence_dir is not None:
+        args.extend(["--evidence-dir", evidence_dir.as_posix()])
+    for version in version_filters or []:
+        args.extend(["--version", version])
+    args.extend(["--capture-status", capture_status, filter_flag, filter_value])
+    return command_string(args)
+
+
+def work_item_blockers(
+    open_items: list[dict[str, Any]],
+    evidence_dir: Path | None = None,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any]:
     missing_tools = Counter(
         tool
         for item in open_items
@@ -121,11 +152,31 @@ def work_item_blockers(open_items: list[dict[str, Any]]) -> dict[str, Any]:
     )
     return {
         "missingTools": [
-            {"tool": item["value"], "items": item["items"]}
+            {
+                "tool": item["value"],
+                "items": item["items"],
+                "worklistCommand": blocker_worklist_command(
+                    "missing-tools",
+                    "--missing-tool",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                    version_filters=version_filters,
+                ),
+            }
             for item in sorted_counts(missing_tools)
         ],
         "environment": [
-            {"status": item["value"], "items": item["items"]}
+            {
+                "status": item["value"],
+                "items": item["items"],
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-status",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                    version_filters=version_filters,
+                ),
+            }
             for item in sorted_counts(environment_statuses)
         ],
         "environmentNextSteps": [
@@ -251,7 +302,11 @@ def build_worklist(
             1 for item in open_items if item.get("captureStatus") == "blocked-by-environment"
         )
         evidence_items = [item for item in open_items if item.get("evidenceSummary")]
-        version_blockers = work_item_blockers(open_items)
+        version_blockers = work_item_blockers(
+            open_items,
+            evidence_dir=evidence_dir,
+            version_filters=[version],
+        )
         versions.append(
             {
                 "version": version,
@@ -306,7 +361,9 @@ def build_worklist(
                 for version in versions
                 for item in version.get("openItems", [])
                 if isinstance(item, dict)
-            ]
+            ],
+            evidence_dir=evidence_dir,
+            version_filters=version_filters,
         ),
         "versions": versions,
         "closureCommands": queue.get("closureCommands", []),
@@ -359,8 +416,12 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         lines.extend(["## Blockers", ""])
         for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_next_steps:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['items']} items)")
         lines.append("")

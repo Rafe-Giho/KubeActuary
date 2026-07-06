@@ -33,6 +33,7 @@ Evidence collector release:
 - surface the worklist queue source in Markdown/text next-task outputs;
 - surface missing tools and next steps in version worklist Markdown;
 - show all blocker summaries in version worklist Markdown;
+- show filtered worklist commands for version worklist blockers;
 - summarize repeated missing-tool and environment blockers in version worklist
   reports;
 - add capture-status, missing-tool, and environment-status filters to version

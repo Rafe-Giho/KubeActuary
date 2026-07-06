@@ -88,7 +88,9 @@ reuse visible during repeated local verification. Worklist Markdown also prints
 missing tools and next steps per item so blocked local loops remain actionable.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, so repeated validation can focus on the
-shared blocker before re-running evidence commands. Use `--capture-status`,
+shared blocker before re-running evidence commands. Blocker summaries include
+filtered worklist commands that preserve the evidence directory context when
+one is active. Use `--capture-status`,
 `--missing-tool`, and `--environment-status` on worklist, next-task,
 iteration-pack, iteration-history, live-evidence scaffold, and
 version-iteration advance commands to keep a local loop focused on one blocker
