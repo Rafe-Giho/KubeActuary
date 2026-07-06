@@ -306,6 +306,66 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertEqual(report["patchScope"], "status")
         self.assertEqual(report["failed"], 0)
 
+    def test_loop_repeats_read_and_status_dry_run_without_workload_writes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            payload = {"items": [self.capsule([{"id": "intent", "ok": True, "summary": "reviewed", "actor": "reviewer", "attachedAt": "now"}])]}
+            log_path = Path(tmpdir) / "kubectl-calls.json"
+            kubectl = Path(tmpdir) / "kubectl"
+            kubectl.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env python3",
+                        "import json",
+                        "import sys",
+                        "from pathlib import Path",
+                        f"log_path = Path({str(log_path)!r})",
+                        "calls = json.loads(log_path.read_text()) if log_path.exists() else []",
+                        "calls.append(sys.argv[1:])",
+                        "log_path.write_text(json.dumps(calls))",
+                        f"payload = {json.dumps(payload)!r}",
+                        "if sys.argv[1] == 'get':",
+                        "    print(payload)",
+                        "    raise SystemExit(0)",
+                        "if sys.argv[1] == 'patch':",
+                        "    print('status dry-run ok')",
+                        "    raise SystemExit(0)",
+                        "print('unexpected kubectl call', file=sys.stderr)",
+                        "raise SystemExit(9)",
+                    ]
+                )
+            )
+            kubectl.chmod(0o755)
+
+            result = self.run_controller(
+                "loop",
+                "--kubectl",
+                str(kubectl),
+                "--iterations",
+                "2",
+                "--interval-seconds",
+                "0",
+            )
+            calls = json.loads(log_path.read_text())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(calls[0], ["get", "operationcapsules.ops.kubeactuary.dev", "-o", "json", "--all-namespaces"])
+        self.assertEqual(calls[2], ["get", "operationcapsules.ops.kubeactuary.dev", "-o", "json", "--all-namespaces"])
+        for call in (calls[1], calls[3]):
+            self.assertEqual(call[0], "patch")
+            self.assertIn("--subresource", call)
+            self.assertIn("status", call)
+            self.assertIn("--dry-run=server", call)
+            self.assertNotIn("apply", call)
+            self.assertNotIn("delete", call)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["mode"], "server-dry-run-loop")
+        self.assertEqual(report["writeExecution"], "disabled")
+        self.assertEqual(report["readExecution"], "kubectl-get")
+        self.assertEqual(report["patchScope"], "status")
+        self.assertEqual(report["iterations"], 2)
+        self.assertEqual(report["failed"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

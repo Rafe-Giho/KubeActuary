@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (62 checks)
-Ran 95 tests
+verification: passed (63 checks)
+Ran 97 tests
 OK
 ```
 
@@ -61,6 +61,7 @@ Coverage included:
 - controller read-only sync that executes only `kubectl get` for
   OperationCapsules and emits disabled-write status patch plans;
 - controller status apply dry-run with explicit status-only execute mode;
+- controller status loop dry-run with repeated read/status-patch ticks;
 - controller resource budget contract and `kubectl top` measurement parser;
 - lightweight cluster smoke plan and JSON evidence output for kind, minikube,
   MicroK8s, and k3s;
@@ -134,6 +135,7 @@ python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
+python3 -B scripts/verify_controller_loop.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_managed_kubernetes_smoke.py
@@ -197,6 +199,7 @@ Result:
 - controller patch plan check prints `controller-patch-plan: passed`;
 - controller sync check prints `controller-sync: passed`;
 - controller status apply check prints `controller-status-apply: passed`;
+- controller loop check prints `controller-loop: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;

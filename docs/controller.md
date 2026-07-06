@@ -14,12 +14,13 @@ Implemented locally:
 - health, readiness, metrics, and leader-election payload contracts;
 - local `serve` runtime for `/healthz`, `/readyz`, and `/metrics`;
 - optional Deployment seed for the local runtime;
+- dry-run status loop for repeated read/status-patch ticks;
 - resource-budget contract and measurement harness.
 
 Not implemented yet:
 
-- live Kubernetes watch loop;
-- status patch write path.
+- streaming Kubernetes watch loop;
+- default persistent status writes.
 
 ## Watch Boundary
 
@@ -181,9 +182,9 @@ Derived fields:
 - `status.digest`
 - `status.conditions`
 
-## Future Status Patch Boundary
+## Status Patch Boundary
 
-Future live controller work may patch only the `status` subresource of
+Controller status work may patch only the `status` subresource of
 `operationcapsules.ops.kubeactuary.dev`. It must not update `spec`, execute
 `spec.proposedAction.command`, or mutate target workloads directly.
 
@@ -236,6 +237,38 @@ Offline verifier:
 
 ```sh
 python3 -B scripts/verify_controller_sync.py
+```
+
+## Status Loop
+
+The optional `loop` helper repeats the same read/status-patch sequence. It is
+dry-run by default: each generated patch command includes `--dry-run=server`.
+
+```sh
+python3 bin/kube-actuary-controller loop --iterations 2 --interval-seconds 0
+python3 bin/kube-actuary-controller loop --namespace platform
+```
+
+The finite JSON output includes `readExecution: kubectl-get`,
+`writeExecution: disabled`, `patchScope: status`, the iteration count, and the
+per-tick status patch dry-run results. An infinite loop is available only with
+streaming output:
+
+```sh
+python3 bin/kube-actuary-controller loop --iterations 0 --format ndjson
+```
+
+Persistent status writes require the explicit `--execute` flag and remain
+status-only:
+
+```sh
+python3 bin/kube-actuary-controller loop --execute
+```
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_loop.py
 ```
 
 ## Status Apply Dry-Run

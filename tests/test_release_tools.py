@@ -22,6 +22,7 @@ CONTROLLER_DEPLOYMENT = ROOT / "scripts" / "verify_controller_deployment.py"
 CONTROLLER_PATCH_PLAN = ROOT / "scripts" / "verify_controller_patch_plan.py"
 CONTROLLER_SYNC = ROOT / "scripts" / "verify_controller_sync.py"
 CONTROLLER_STATUS_APPLY = ROOT / "scripts" / "verify_controller_status_apply.py"
+CONTROLLER_LOOP = ROOT / "scripts" / "verify_controller_loop.py"
 CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budget.py"
 LIGHTWEIGHT_CLUSTER_SMOKE = ROOT / "scripts" / "verify_lightweight_cluster_smoke.py"
 HELM_CHART = ROOT / "scripts" / "verify_helm_chart.py"
@@ -298,6 +299,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("controller-status-apply: passed", result.stdout)
         self.assertIn("default-mode: server-dry-run", result.stdout)
+        self.assertIn("write-execution: disabled", result.stdout)
+
+    def test_verify_controller_loop(self):
+        result = subprocess.run(
+            [sys.executable, str(CONTROLLER_LOOP)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("controller-loop: passed", result.stdout)
         self.assertIn("write-execution: disabled", result.stdout)
 
     def test_verify_controller_resource_budget(self):

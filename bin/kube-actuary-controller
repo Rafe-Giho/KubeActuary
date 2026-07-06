@@ -74,7 +74,21 @@ def patch_plan(args: argparse.Namespace) -> int:
 
 
 def sync(args: argparse.Namespace) -> int:
-    command = list_command(args.namespace, kubectl=args.kubectl)
+    try:
+        plan = sync_plan(args.namespace, args.kubectl)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if args.format == "commands":
+        for patch in plan["patches"]:
+            print(shlex.join(patch["command"]))
+    else:
+        write_json(plan)
+    return 0
+
+
+def sync_plan(namespace: str | None, kubectl: str) -> dict:
+    command = list_command(namespace, kubectl=kubectl)
     result = subprocess.run(
         command,
         cwd=ROOT,
@@ -85,33 +99,24 @@ def sync(args: argparse.Namespace) -> int:
     )
     if result.returncode != 0:
         message = result.stderr.strip() or f"kubectl get failed with exit code {result.returncode}"
-        print(message, file=sys.stderr)
-        return result.returncode
+        raise RuntimeError(message)
     try:
         document = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        print(f"invalid JSON from kubectl get: {exc}", file=sys.stderr)
-        return 1
+        raise RuntimeError(f"invalid JSON from kubectl get: {exc}") from exc
 
-    plan = status_patch_plan(document, kubectl=args.kubectl)
+    plan = status_patch_plan(document, kubectl=kubectl)
     plan["readExecution"] = "kubectl-get"
     plan["readCommand"] = command
-    if args.format == "commands":
-        for patch in plan["patches"]:
-            print(shlex.join(patch["command"]))
-    else:
-        write_json(plan)
-    return 0
+    return plan
 
 
-def apply_status(args: argparse.Namespace) -> int:
-    document = load_json(args.file)
-    plan = status_patch_plan(document, kubectl=args.kubectl)
+def run_patch_plan(plan: dict, execute: bool) -> dict:
     results = []
     failed = 0
     for patch in plan["patches"]:
         command = list(patch["command"])
-        if not args.execute:
+        if not execute:
             command.append("--dry-run=server")
         result = subprocess.run(
             command,
@@ -135,16 +140,79 @@ def apply_status(args: argparse.Namespace) -> int:
                 "stderr": result.stderr,
             }
         )
-    write_json(
-        {
-            "mode": "status-patch" if args.execute else "server-dry-run",
-            "writeExecution": "enabled-status-only" if args.execute else "disabled",
-            "patchScope": "status",
-            "count": len(results),
-            "failed": failed,
-            "results": results,
-        }
-    )
+    return {
+        "mode": "status-patch" if execute else "server-dry-run",
+        "writeExecution": "enabled-status-only" if execute else "disabled",
+        "patchScope": "status",
+        "count": len(results),
+        "failed": failed,
+        "results": results,
+    }
+
+
+def apply_status(args: argparse.Namespace) -> int:
+    document = load_json(args.file)
+    plan = status_patch_plan(document, kubectl=args.kubectl)
+    report = run_patch_plan(plan, execute=args.execute)
+    write_json(report)
+    return 1 if report["failed"] else 0
+
+
+def controller_loop(args: argparse.Namespace) -> int:
+    if args.iterations < 0:
+        print("--iterations must be >= 0", file=sys.stderr)
+        return 2
+    if args.interval_seconds < 0:
+        print("--interval-seconds must be >= 0", file=sys.stderr)
+        return 2
+    if args.iterations == 0 and args.format == "json":
+        print("--iterations 0 requires --format ndjson", file=sys.stderr)
+        return 2
+
+    failed = 0
+    ticks = []
+    iteration = 0
+    try:
+        while args.iterations == 0 or iteration < args.iterations:
+            iteration += 1
+            plan = sync_plan(args.namespace, args.kubectl)
+            patch_report = run_patch_plan(plan, execute=args.execute)
+            failed += patch_report["failed"]
+            tick = {
+                "iteration": iteration,
+                "readExecution": plan["readExecution"],
+                "readCommand": plan["readCommand"],
+                "mode": patch_report["mode"],
+                "writeExecution": patch_report["writeExecution"],
+                "patchScope": patch_report["patchScope"],
+                "count": patch_report["count"],
+                "failed": patch_report["failed"],
+                "results": patch_report["results"],
+            }
+            if args.format == "ndjson":
+                print(json.dumps(tick, sort_keys=True), flush=True)
+            else:
+                ticks.append(tick)
+            if args.iterations != 0 and iteration >= args.iterations:
+                break
+            time.sleep(args.interval_seconds)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if args.format == "json":
+        write_json(
+            {
+                "mode": "status-patch-loop" if args.execute else "server-dry-run-loop",
+                "writeExecution": "enabled-status-only" if args.execute else "disabled",
+                "readExecution": "kubectl-get",
+                "patchScope": "status",
+                "iterations": len(ticks),
+                "intervalSeconds": args.interval_seconds,
+                "failed": failed,
+                "ticks": ticks,
+            }
+        )
     return 1 if failed else 0
 
 
@@ -267,6 +335,15 @@ def build_parser() -> argparse.ArgumentParser:
     apply_status_parser.add_argument("--kubectl", default="kubectl")
     apply_status_parser.add_argument("--execute", action="store_true", help="execute status subresource patches instead of server dry-run")
     apply_status_parser.set_defaults(func=apply_status)
+
+    loop_parser = sub.add_parser("loop", help="repeat read/status-patch ticks; dry-run by default")
+    loop_parser.add_argument("--namespace", help="limit the read to one namespace")
+    loop_parser.add_argument("--kubectl", default="kubectl")
+    loop_parser.add_argument("--iterations", type=int, default=1, help="number of ticks; 0 runs forever with --format ndjson")
+    loop_parser.add_argument("--interval-seconds", type=float, default=30.0)
+    loop_parser.add_argument("--format", choices=["json", "ndjson"], default="json")
+    loop_parser.add_argument("--execute", action="store_true", help="execute status subresource patches instead of server dry-run")
+    loop_parser.set_defaults(func=controller_loop)
 
     health_parser = sub.add_parser("health", help="emit liveness payload for future /healthz wiring")
     health_parser.add_argument("--started-at", type=int)

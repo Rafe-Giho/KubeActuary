@@ -18,7 +18,7 @@ Expected:
   human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller deployment seed, controller status
   patch plan, controller read-only sync, controller status apply dry-run,
-  controller resource budget,
+  controller loop dry-run, controller resource budget,
   lightweight cluster smoke harness, upstream conformance suite, Helm chart
   contract, managed Kubernetes smoke harness, Kustomize rendering,
   release archives, Krew manifest generation, SBOM/provenance
@@ -64,6 +64,7 @@ python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
+python3 -B scripts/verify_controller_loop.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_managed_kubernetes_smoke.py
@@ -125,6 +126,7 @@ Expected:
 - controller patch plan check prints `controller-patch-plan: passed`;
 - controller sync check prints `controller-sync: passed`;
 - controller status apply check prints `controller-status-apply: passed`;
+- controller loop check prints `controller-loop: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
@@ -228,6 +230,8 @@ Confirm from code and tests:
   status-only patch plans with `writeExecution` disabled;
 - controller status apply defaults to `--dry-run=server` and keeps live status
   writes behind explicit `--execute`;
+- controller loop repeats `kubectl get` and status-only patch ticks while
+  keeping default patches server-side dry-run;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets
   and parses `kubectl top` samples;
 - lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
@@ -314,7 +318,7 @@ Expected:
   release notes dry-run, release taskboard audit, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller
-  sync, controller status apply, controller resource budget, lightweight cluster smoke, digest, CRD render,
+  sync, controller status apply, controller loop, controller resource budget, lightweight cluster smoke, digest, CRD render,
   managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, live
   evidence schema, live evidence manifest, live evidence coverage, project governance, air-gapped bundle, agent help contract, agent examples, Kyverno
