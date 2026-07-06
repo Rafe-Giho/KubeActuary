@@ -261,6 +261,7 @@ Result:
   evidence-aware iteration packs, evidence-aware iteration history,
   prepared live validation queue reuse,
   queue-source visibility,
+  worklist missing-tool and next-step visibility,
   next-task selection,
   evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;

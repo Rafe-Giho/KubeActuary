@@ -205,6 +205,61 @@ def main() -> int:
             "--evidence-dir",
             str(prepared_queue_dir),
         )
+        manual_queue_dir = tmpdir / "manual-prepared-queue"
+        (manual_queue_dir / ".kubeactuary").mkdir(parents=True)
+        (manual_queue_dir / ".kubeactuary" / "live-validation-queue.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.live-validation-queue.v1",
+                    "source": "docs/release-taskboard.md",
+                    "mode": "inventory-only",
+                    "clusterWrites": "disabled",
+                    "summary": {
+                        "total": 2,
+                        "toolReady": 0,
+                        "blockedByTools": 1,
+                        "blockedByEnvironment": 1,
+                        "missingTools": ["kind"],
+                    },
+                    "items": [
+                        {
+                            "id": "01-controller-resource-budget",
+                            "version": "Current Baseline",
+                            "item": "Controller resource budget",
+                            "kind": "controller-resource-budget",
+                            "status": "blocked-by-environment",
+                            "missingTools": [],
+                            "environmentStatus": "cluster-unavailable",
+                            "nextStep": "start or select a disposable cluster, then rerun the probe",
+                            "commands": [
+                                "python3 -B scripts/capture_controller_resource_budget.py --output <kubectl-top-output.txt> --run",
+                            ],
+                        },
+                        {
+                            "id": "02-lightweight-cluster-smoke",
+                            "version": "Current Baseline",
+                            "item": "Lightweight cluster smoke",
+                            "kind": "lightweight-cluster",
+                            "status": "missing-tools",
+                            "missingTools": ["kind"],
+                            "nextStep": "install missing tools or run on a host that has them",
+                            "commands": [
+                                "python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run --output <path>",
+                            ],
+                        },
+                    ],
+                    "closureCommands": [],
+                }
+            )
+            + "\n"
+        )
+        manual_queue_worklist_markdown = run_generator(
+            "--format",
+            "markdown",
+            "--open-only",
+            "--evidence-dir",
+            str(manual_queue_dir),
+        )
         next_task_output = tmpdir / "next-task.json"
         written_next_task = run_select("--format", "json", "--output", str(next_task_output))
         next_task_output_written = next_task_output.is_file()
@@ -385,6 +440,18 @@ def main() -> int:
             or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_worklist_markdown.stdout
         ):
             errors.append("prepared queue worklist Markdown must show prepared queue source")
+        if manual_queue_worklist_markdown.returncode != 0:
+            errors.append(
+                "manual prepared queue worklist Markdown failed: "
+                f"{manual_queue_worklist_markdown.stderr.strip() or manual_queue_worklist_markdown.stdout.strip()}"
+            )
+        for snippet in (
+            "missing tools: `kind`",
+            "next: start or select a disposable cluster, then rerun the probe",
+            "next: install missing tools or run on a host that has them",
+        ):
+            if snippet not in manual_queue_worklist_markdown.stdout:
+                errors.append(f"manual prepared queue worklist Markdown missing item detail: {snippet}")
         if (
             prepared_queue_next_markdown.returncode != 0
             or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_next_markdown.stdout

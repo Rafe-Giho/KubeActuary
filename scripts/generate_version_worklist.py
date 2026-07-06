@@ -258,6 +258,10 @@ def render_markdown(worklist: dict[str, Any]) -> str:
             first_command = (item.get("commands") or [None])[0]
             if item.get("environmentStatus"):
                 lines.append(f"    environment: `{item['environmentStatus']}`")
+            if item.get("missingTools"):
+                lines.append(f"    missing tools: `{', '.join(item['missingTools'])}`")
+            if item.get("nextStep"):
+                lines.append(f"    next: {item['nextStep']}")
             if item.get("evidenceSummary"):
                 evidence = item["evidenceSummary"]
                 lines.append(f"    evidence: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
