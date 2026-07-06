@@ -9,6 +9,8 @@ Run:
 ```sh
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
+python3 -B scripts/generate_live_validation_queue.py --format markdown
+python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -33,6 +35,11 @@ cluster-writes: disabled
 The JSON form includes `gateToolReadiness`, which lists each live gate, the
 required local tools, missing tools, and whether the gate is `tool-ready` from an
 inventory perspective.
+
+The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
+turns the current taskboard gates into an ordered evidence collection queue. It
+does not run the listed commands; it only records each gate's commands, missing
+tools, and closure commands.
 
 ## Open Live Gates
 

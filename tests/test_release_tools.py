@@ -43,6 +43,7 @@ SECURITY_DOCS = ROOT / "scripts" / "verify_security_docs.py"
 API_FREEZE = ROOT / "scripts" / "verify_api_freeze.py"
 DOCS_FREEZE = ROOT / "scripts" / "verify_docs_freeze.py"
 LIVE_VALIDATION_READINESS = ROOT / "scripts" / "verify_live_validation_readiness.py"
+LIVE_VALIDATION_QUEUE = ROOT / "scripts" / "verify_live_validation_queue.py"
 LIVE_EVIDENCE_SCHEMA = ROOT / "scripts" / "verify_live_evidence_schema.py"
 LIVE_EVIDENCE_MANIFEST = ROOT / "scripts" / "verify_live_evidence_manifest.py"
 LIVE_EVIDENCE_COVERAGE = ROOT / "scripts" / "verify_live_evidence_coverage.py"
@@ -121,7 +122,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 71", result.stdout)
+        self.assertIn("checks: 72", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(
@@ -610,6 +611,21 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(report["schemaVersion"], "kube-actuary.live-validation-readiness.v1")
         self.assertEqual(len(report["gateToolReadiness"]), 7)
         self.assertTrue(all("missingTools" in gate for gate in report["gateToolReadiness"]))
+
+    def test_verify_live_validation_queue(self):
+        result = subprocess.run(
+            [sys.executable, str(LIVE_VALIDATION_QUEUE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("live-validation-queue: passed", result.stdout)
+        self.assertIn("tool-ready:", result.stdout)
+        self.assertIn("cluster-writes: disabled", result.stdout)
 
     def test_verify_live_evidence_schema(self):
         result = subprocess.run(

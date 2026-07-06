@@ -27,6 +27,7 @@ Evidence collector release:
 - add external evidence bundle generation for auditable closure artifacts;
 - add release evidence directory builder for repeated local evidence closure;
 - add release evidence status inspector for partial evidence directories;
+- add live validation queue generation for ordered external evidence commands;
 - add GitHub Actions CI for the local verification suite;
 - add release checklist and generated release notes dry-run tooling;
 - render CRD objects with capsule digest annotations, post-checks, and richer

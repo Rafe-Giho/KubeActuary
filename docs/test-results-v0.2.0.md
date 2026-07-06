@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (71 checks)
-Ran 105 tests
+verification: passed (72 checks)
+Ran 106 tests
 OK
 ```
 
@@ -78,6 +78,7 @@ Coverage included:
 - documentation freeze and public examples audit verification;
 - live validation readiness inventory and gate-level tool readiness
   verification;
+- live validation queue generation for ordered evidence commands;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
@@ -173,6 +174,7 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -244,6 +246,7 @@ Result:
 - API freeze check prints `api-freeze: passed`;
 - docs freeze check prints `docs-freeze: passed`;
 - live validation readiness check prints `live-validation-readiness: passed`;
+- live validation queue check prints `live-validation-queue: passed`;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;
