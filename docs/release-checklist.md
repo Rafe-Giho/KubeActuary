@@ -24,6 +24,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -96,6 +97,8 @@ Expected:
   release check count;
 - release progress report verifies versioned task status, external gates, live
   readiness, tool-ready next actions, and optional evidence directory status;
+- version worklist verifies schema `kube-actuary.version-worklist.v1` and
+  groups open work by release version with capture-ready/tool-blocked status;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
 - external gate command safety verifies generated external commands stay
@@ -190,6 +193,7 @@ Expected:
 - [ ] controller dry-run contract check passes.
 - [ ] release taskboard audit check passes.
 - [ ] release progress check passes.
+- [ ] version worklist check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate command safety check passes.
 - [ ] external gate evidence evaluation check passes.

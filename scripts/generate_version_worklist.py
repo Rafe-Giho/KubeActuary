@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Generate a version-grouped worklist from the release taskboard."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.generate_live_validation_queue import build_queue  # noqa: E402
+from scripts.generate_release_progress import build_progress  # noqa: E402
+
+
+SCHEMA_VERSION = "kube-actuary.version-worklist.v1"
+
+
+def queue_lookup(queue: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+    lookup: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in queue.get("items", []):
+        if isinstance(item, dict):
+            lookup[(str(item.get("version")), str(item.get("item")))] = item
+    return lookup
+
+
+def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[str, Any]:
+    if queue_item is None:
+        return {
+            "item": item.get("item"),
+            "status": item.get("status"),
+            "evidence": item.get("evidence"),
+            "captureStatus": "not-external-gate",
+            "missingTools": [],
+            "commands": [],
+        }
+    return {
+        "id": queue_item.get("id"),
+        "item": item.get("item"),
+        "status": item.get("status"),
+        "evidence": item.get("evidence"),
+        "kind": queue_item.get("kind"),
+        "captureStatus": queue_item.get("status"),
+        "missingTools": queue_item.get("missingTools", []),
+        "commands": queue_item.get("commands", []),
+        "nextStep": queue_item.get("nextStep"),
+    }
+
+
+def version_status(open_items: list[dict[str, Any]]) -> str:
+    if not open_items:
+        return "complete"
+    if any(item.get("status") in {"DOING", "TODO"} for item in open_items):
+        return "in-progress"
+    if any(item.get("captureStatus") == "tool-ready" for item in open_items):
+        return "capture-ready"
+    return "missing-tools"
+
+
+def build_worklist() -> dict[str, Any]:
+    progress = build_progress()
+    queue = build_queue()
+    queue_by_key = queue_lookup(queue)
+    versions: list[dict[str, Any]] = []
+    total_open = 0
+    total_capture_ready = 0
+    total_blocked_by_tools = 0
+    for group in progress.get("versions", []):
+        version = str(group.get("version"))
+        open_items = [
+            work_item(item, queue_by_key.get((version, str(item.get("item")))))
+            for item in group.get("openItems", [])
+        ]
+        capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
+        blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
+        total_open += len(open_items)
+        total_capture_ready += capture_ready
+        total_blocked_by_tools += blocked_by_tools
+        versions.append(
+            {
+                "version": version,
+                "status": version_status(open_items),
+                "summary": {
+                    **group.get("summary", {}),
+                    "open": len(open_items),
+                    "captureReady": capture_ready,
+                    "blockedByTools": blocked_by_tools,
+                },
+                "openItems": open_items,
+            }
+        )
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "source": progress.get("source"),
+        "releaseSuite": progress.get("releaseSuite"),
+        "summary": {
+            "versions": len(versions),
+            "openVersions": sum(1 for version in versions if version["status"] != "complete"),
+            "openItems": total_open,
+            "captureReady": total_capture_ready,
+            "blockedByTools": total_blocked_by_tools,
+        },
+        "versions": versions,
+        "closureCommands": queue.get("closureCommands", []),
+    }
+
+
+def render_markdown(worklist: dict[str, Any]) -> str:
+    summary = worklist["summary"]
+    lines = [
+        "# KubeActuary Version Worklist",
+        "",
+        f"Schema: `{worklist['schemaVersion']}`",
+        f"Source: `{worklist['source']}`",
+        "",
+        "## Summary",
+        "",
+        f"- versions: {summary['versions']}",
+        f"- open versions: {summary['openVersions']}",
+        f"- open items: {summary['openItems']}",
+        f"- capture-ready: {summary['captureReady']}",
+        f"- blocked-by-tools: {summary['blockedByTools']}",
+        "",
+        "## Versions",
+        "",
+    ]
+    for version in worklist["versions"]:
+        counts = version["summary"]
+        lines.append(
+            f"- `{version['version']}` {version['status']} "
+            f"done={counts.get('done', 0)} verify={counts.get('verify', 0)} open={counts.get('open', 0)}"
+        )
+        for item in version["openItems"]:
+            lines.append(f"  - `{item['captureStatus']}` {item['item']}")
+            first_command = (item.get("commands") or [None])[0]
+            if first_command:
+                lines.append(f"    command: `{first_command}`")
+    lines.extend(["", "## Closure", ""])
+    for command in worklist["closureCommands"]:
+        lines.append(f"- `{command}`")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Generate KubeActuary version worklist.")
+    parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
+    args = parser.parse_args(argv)
+
+    worklist = build_worklist()
+    if args.format == "json":
+        rendered = json.dumps(worklist, indent=2, sort_keys=True) + "\n"
+    else:
+        rendered = render_markdown(worklist)
+
+    if args.output == "-":
+        print(rendered, end="")
+    else:
+        Path(args.output).write_text(rendered)
+        print(f"version-worklist: wrote {args.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

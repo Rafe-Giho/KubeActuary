@@ -24,6 +24,7 @@ Status legend:
 | Release checklist and notes | DONE | release checklist doc plus generated notes dry-run |
 | Release taskboard audit | DONE | `scripts/verify_release_taskboard.py` verifies statuses, remaining evidence notes, and release check count |
 | Release progress | DONE | `scripts/verify_release_progress.py` verifies versioned release progress reporting |
+| Version worklist | DONE | `scripts/generate_version_worklist.py` and `scripts/verify_version_worklist.py` verify schema `kube-actuary.version-worklist.v1` for version-grouped open work |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate command safety | DONE | `scripts/verify_external_gate_command_safety.py` verifies generated external commands stay dry-run/read-only/evidence-only |
 | External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
@@ -77,7 +78,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (74 checks)
+verification: passed (75 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

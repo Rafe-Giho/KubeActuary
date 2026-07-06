@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (74 checks)
-Ran 108 tests
+verification: passed (75 checks)
+Ran 109 tests
 OK
 ```
 
@@ -112,6 +112,7 @@ Coverage included:
 - release taskboard status and check-count audit;
 - release progress report generation for versioned task tracking and
   tool-ready next actions;
+- version worklist generation for version-grouped open work and capture status;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -147,6 +148,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -222,6 +224,7 @@ Result:
 - conformance suite prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
+- version worklist check prints `version-worklist: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
