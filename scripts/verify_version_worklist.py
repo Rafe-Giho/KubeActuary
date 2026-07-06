@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -20,10 +21,11 @@ VERIFY_TOOL = "verify_version_worklist.py"
 SCHEMA = "kube-actuary.version-worklist.v1"
 
 
-def run_generator(*args: str) -> subprocess.CompletedProcess[str]:
+def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(GENERATOR), *args],
         cwd=ROOT,
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -42,6 +44,31 @@ def parse_worklist(label: str, result: subprocess.CompletedProcess[str], errors:
         return {}
 
 
+def fake_all_tools_env(path: Path, cluster_ok: bool) -> dict[str, str]:
+    path.mkdir()
+    for tool in ("kind", "minikube", "microk8s", "k3s", "helm", "kubectl-krew", "aws", "gcloud", "az"):
+        executable = path / tool
+        executable.write_text("#!/bin/sh\nexit 0\n")
+        executable.chmod(0o755)
+    kubectl = path / "kubectl"
+    cluster_exit = 0 if cluster_ok else 1
+    kubectl.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "args = sys.argv[1:]\n"
+        "if args[:1] == ['version']:\n"
+        "    print('Client Version: fake')\n"
+        "    raise SystemExit(0)\n"
+        "if args[:1] == ['cluster-info']:\n"
+        f"    raise SystemExit({cluster_exit})\n"
+        "raise SystemExit(0)\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{path}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
 def main() -> int:
     errors: list[str] = []
     json_result = run_generator("--format", "json")
@@ -51,14 +78,18 @@ def main() -> int:
     open_only_result = run_generator("--format", "json", "--open-only")
     invalid_version_result = run_generator("--version", "9.9.9")
     with tempfile.TemporaryDirectory() as tmp:
-        output = Path(tmp) / "worklist.json"
+        tmpdir = Path(tmp)
+        output = tmpdir / "worklist.json"
         written = run_generator("--output", str(output))
         output_written = output.is_file()
+        probe_env = fake_all_tools_env(tmpdir / "tools", cluster_ok=False)
+        probe_result = run_generator("--format", "json", "--open-only", "--probe-environment", env=probe_env)
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
     multi_version = parse_worklist("multi-version worklist", multi_version_result, errors)
     open_only = parse_worklist("open-only worklist", open_only_result, errors)
+    probe_worklist = parse_worklist("probe worklist", probe_result, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# KubeActuary Version Worklist" not in markdown_result.stdout:
@@ -81,6 +112,8 @@ def main() -> int:
         errors.append(f"expected 4 capture-ready items, got {summary.get('captureReady')!r}")
     if summary.get("blockedByTools") != 12:
         errors.append(f"expected 12 tool-blocked items, got {summary.get('blockedByTools')!r}")
+    if summary.get("blockedByEnvironment") != 0:
+        errors.append("default version worklist must not probe environment blockers")
     for expected in ("Current Baseline", "0.2.0", "0.4.4", "0.9.0"):
         if expected not in versions:
             errors.append(f"version worklist missing version: {expected}")
@@ -122,6 +155,22 @@ def main() -> int:
         errors.append("open-only filter should return nine open versions and sixteen open items")
     if any(version.get("status") == "complete" for version in open_versions):
         errors.append("open-only filter must not include complete versions")
+
+    probe_summary = probe_worklist.get("summary", {})
+    probe_versions = probe_worklist.get("versions", [])
+    probe_statuses = {version.get("status") for version in probe_versions if isinstance(version, dict)}
+    if probe_worklist.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
+        errors.append("probe worklist must report unavailable cluster access")
+    if probe_summary.get("blockedByTools") != 0:
+        errors.append("fake all-tools version probe should not be blocked by missing tools")
+    if probe_summary.get("blockedByEnvironment") != 14:
+        errors.append(
+            f"expected 14 environment-blocked worklist items, got {probe_summary.get('blockedByEnvironment')!r}"
+        )
+    if probe_summary.get("captureReady") != 2:
+        errors.append("probe worklist should leave the two non-cluster Krew items capture-ready")
+    if "blocked-by-environment" not in probe_statuses:
+        errors.append("probe worklist must mark affected versions blocked-by-environment")
 
     for path in (README, README_KO, TASKBOARD):
         text = path.read_text()

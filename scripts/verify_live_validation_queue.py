@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -21,15 +22,41 @@ VERIFY_TOOL = "verify_live_validation_queue.py"
 SCHEMA = "kube-actuary.live-validation-queue.v1"
 
 
-def run_generator(*args: str) -> subprocess.CompletedProcess[str]:
+def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(GENERATOR), *args],
         cwd=ROOT,
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
     )
+
+
+def fake_tool_dir(path: Path, cluster_ok: bool) -> dict[str, str]:
+    path.mkdir()
+    for tool in ("kind", "minikube", "microk8s", "k3s", "helm", "kubectl-krew", "aws", "gcloud", "az"):
+        executable = path / tool
+        executable.write_text("#!/bin/sh\nexit 0\n")
+        executable.chmod(0o755)
+    kubectl = path / "kubectl"
+    cluster_exit = 0 if cluster_ok else 1
+    kubectl.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "args = sys.argv[1:]\n"
+        "if args[:1] == ['version']:\n"
+        "    print('Client Version: fake')\n"
+        "    raise SystemExit(0)\n"
+        "if args[:1] == ['cluster-info']:\n"
+        f"    raise SystemExit({cluster_exit})\n"
+        "raise SystemExit(0)\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{path}{os.pathsep}{env.get('PATH', '')}"
+    return env
 
 
 def main() -> int:
@@ -38,10 +65,13 @@ def main() -> int:
     markdown_result = run_generator("--format", "markdown")
     path_result = run_generator("--format", "json", "--evidence-dir", "evidence/live")
     with tempfile.TemporaryDirectory() as tmp:
-        output = Path(tmp) / "queue.json"
+        tmpdir = Path(tmp)
+        output = tmpdir / "queue.json"
         written = run_generator("--output", str(output))
         if written.returncode != 0 or not output.is_file():
             errors.append("queue generator must write requested output path")
+        probe_env = fake_tool_dir(tmpdir / "tools", cluster_ok=False)
+        probe_result = run_generator("--format", "json", "--probe-environment", env=probe_env)
 
     if json_result.returncode != 0:
         errors.append(f"json queue failed: {json_result.stderr.strip() or json_result.stdout.strip()}")
@@ -61,6 +91,15 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             errors.append(f"path queue must parse: {exc}")
             path_queue = {}
+    if probe_result.returncode != 0:
+        errors.append(f"probe queue failed: {probe_result.stderr.strip() or probe_result.stdout.strip()}")
+        probe_queue = {}
+    else:
+        try:
+            probe_queue = json.loads(probe_result.stdout)
+        except json.JSONDecodeError as exc:
+            errors.append(f"probe queue must parse: {exc}")
+            probe_queue = {}
 
     if markdown_result.returncode != 0:
         errors.append(f"markdown queue failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
@@ -77,6 +116,8 @@ def main() -> int:
         errors.append(f"expected 16 queue items, got {summary.get('total')!r}")
     if summary.get("toolReady") != 4:
         errors.append(f"expected 4 tool-ready items, got {summary.get('toolReady')!r}")
+    if summary.get("blockedByEnvironment") != 0:
+        errors.append("default queue must not probe environment blockers")
     if len(items) != 16:
         errors.append("queue must list every external gate")
     statuses = {item.get("status") for item in items if isinstance(item, dict)}
@@ -132,6 +173,22 @@ def main() -> int:
     resolved_closure = "\n".join(path_queue.get("resolvedClosureCommands", []))
     if "scripts/build_release_evidence_directory.py evidence/live" not in resolved_closure:
         errors.append("path queue must include resolved release evidence directory closure")
+
+    probe_summary = probe_queue.get("summary", {})
+    probe_items = probe_queue.get("items", [])
+    probe_statuses = {item.get("status") for item in probe_items if isinstance(item, dict)}
+    if probe_queue.get("mode") != "inventory-plus-environment-probe":
+        errors.append("probe queue must record environment-probe mode")
+    if probe_queue.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
+        errors.append("probe queue must report unavailable cluster access")
+    if probe_summary.get("blockedByTools") != 0:
+        errors.append("fake all-tools probe should not be blocked by missing tools")
+    if probe_summary.get("blockedByEnvironment") != 14:
+        errors.append(f"expected 14 environment-blocked items, got {probe_summary.get('blockedByEnvironment')!r}")
+    if probe_summary.get("toolReady") != 2 or "blocked-by-environment" not in probe_statuses:
+        errors.append("probe queue must leave only non-cluster Krew items tool-ready")
+    if not any(item.get("environmentStatus") == "cluster-unavailable" for item in probe_items if isinstance(item, dict)):
+        errors.append("probe queue must annotate cluster-unavailable items")
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()

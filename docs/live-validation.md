@@ -9,7 +9,9 @@ Run:
 ```sh
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
+python3 -B scripts/verify_live_validation_readiness.py --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown
+python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
@@ -36,9 +38,22 @@ tool-ready-gates: <ready>/<total>
 cluster-writes: disabled
 ```
 
+Optional environment probe output:
+
+```text
+environment-probe: available|unavailable|kubectl-unavailable
+blocked-by-environment: <count>
+```
+
 The JSON form includes `gateToolReadiness`, which lists each live gate, the
 required local tools, missing tools, and whether the gate is `tool-ready` from an
 inventory perspective.
+
+With `--probe-environment`, the readiness verifier and queue generator run
+read-only `kubectl` checks to classify current cluster availability. They do not
+create, update, patch, or delete Kubernetes resources. Environment-blocked gates
+are reported as `blocked-by-environment` so local worklists can distinguish
+"tool installed" from "disposable cluster not reachable".
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It

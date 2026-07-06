@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
-import sys
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,14 @@ GATE_TOOL_REQUIREMENTS = (
     ("managed Kubernetes EKS/GKE/AKS smoke", ("kubectl", "aws", "gcloud", "az")),
     ("admission webhook live kind smoke", ("kubectl", "kind")),
 )
+CLUSTER_REQUIRED_GATES = {
+    "CRD live apply/explain smoke",
+    "controller resource budget measurement",
+    "lightweight cluster smoke matrix",
+    "Helm template and install smoke",
+    "managed Kubernetes EKS/GKE/AKS smoke",
+    "admission webhook live kind smoke",
+}
 
 DOC_SNIPPETS = (
     "inventory-only",
@@ -55,6 +64,8 @@ DOC_SNIPPETS = (
     "provider run evidence",
     "cluster-writes: disabled",
     "tool-ready-gates",
+    "--probe-environment",
+    "environment-probe",
 )
 
 TASKBOARD_SNIPPETS = (
@@ -90,25 +101,107 @@ def gate_tool_readiness(tools: dict[str, dict[str, str | None]]) -> list[dict[st
     return readiness
 
 
-def build_report() -> dict[str, Any]:
+def run_probe(name: str, command: list[str]) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        return {
+            "name": name,
+            "command": command,
+            "ok": False,
+            "exitCode": None,
+            "stdout": "",
+            "stderr": str(exc),
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "name": name,
+            "command": command,
+            "ok": False,
+            "exitCode": None,
+            "stdout": exc.stdout or "",
+            "stderr": "timed out",
+        }
+    return {
+        "name": name,
+        "command": command,
+        "ok": result.returncode == 0,
+        "exitCode": result.returncode,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+    }
+
+
+def environment_probe(kubectl: str) -> dict[str, Any]:
+    client = run_probe("kubectl-client", [kubectl, "version", "--client=true"])
+    cluster = run_probe("cluster-info", [kubectl, "cluster-info", "--request-timeout=5s"])
+    if not client["ok"]:
+        cluster_access = "kubectl-unavailable"
+    elif cluster["ok"]:
+        cluster_access = "available"
+    else:
+        cluster_access = "unavailable"
+    return {
+        "enabled": True,
+        "clusterWrites": "disabled",
+        "kubectl": kubectl,
+        "clusterAccess": cluster_access,
+        "checks": [client, cluster],
+    }
+
+
+def add_environment_status(gates: list[dict[str, Any]], probe: dict[str, Any]) -> None:
+    cluster_available = probe.get("clusterAccess") == "available"
+    for gate in gates:
+        if gate.get("gate") not in CLUSTER_REQUIRED_GATES:
+            gate["environmentStatus"] = "not-required"
+        elif cluster_available:
+            gate["environmentStatus"] = "cluster-available"
+        else:
+            gate["environmentStatus"] = "cluster-unavailable"
+
+
+def build_report(probe_environment: bool = False, kubectl: str = "kubectl") -> dict[str, Any]:
     tools = tool_status()
     gates = gate_tool_readiness(tools)
+    probe: dict[str, Any] | None = None
+    if probe_environment:
+        probe = environment_probe(kubectl)
+        add_environment_status(gates, probe)
     available = sum(1 for item in tools.values() if item["status"] == "available")
     ready_gates = sum(1 for gate in gates if gate["status"] == "tool-ready")
-    return {
+    summary = {
+        "toolsAvailable": available,
+        "toolsTotal": len(TOOLS),
+        "liveGates": len(GATES),
+        "toolReadyGates": ready_gates,
+    }
+    if probe is not None:
+        summary["blockedByEnvironment"] = sum(
+            1
+            for gate in gates
+            if gate["status"] == "tool-ready" and gate.get("environmentStatus") == "cluster-unavailable"
+        )
+    report = {
         "schemaVersion": "kube-actuary.live-validation-readiness.v1",
-        "mode": "inventory-only",
+        "mode": "inventory-plus-environment-probe" if probe is not None else "inventory-only",
         "clusterWrites": "disabled",
         "liveGates": list(GATES),
         "gateToolReadiness": gates,
         "tools": tools,
-        "summary": {
-            "toolsAvailable": available,
-            "toolsTotal": len(TOOLS),
-            "liveGates": len(GATES),
-            "toolReadyGates": ready_gates,
-        },
+        "summary": summary,
     }
+    if probe is not None:
+        report["environmentProbe"] = probe
+    return report
 
 
 def verify_docs(errors: list[str]) -> None:
@@ -132,18 +225,20 @@ def verify_taskboard(errors: list[str]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    argv = list(sys.argv[1:] if argv is None else argv)
-    as_json = False
-    if argv == ["--json"]:
-        as_json = True
-    elif argv:
-        print("usage: verify_live_validation_readiness.py [--json]", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(description="Inventory readiness for KubeActuary live validation gates.")
+    parser.add_argument("--json", action="store_true", help="emit the readiness report as JSON")
+    parser.add_argument(
+        "--probe-environment",
+        action="store_true",
+        help="run read-only kubectl checks to classify current cluster availability",
+    )
+    parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
+    args = parser.parse_args(argv)
 
     errors: list[str] = []
     verify_docs(errors)
     verify_taskboard(errors)
-    report = build_report()
+    report = build_report(probe_environment=args.probe_environment, kubectl=args.kubectl)
 
     if errors:
         print("live-validation-readiness: failed")
@@ -151,16 +246,19 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {error}")
         return 1
 
-    if as_json:
+    if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
         return 0
 
     summary = report["summary"]
     print("live-validation-readiness: passed")
-    print("mode: inventory-only")
+    print(f"mode: {report['mode']}")
     print(f"live-gates: {summary['liveGates']}")
     print(f"tool-ready-gates: {summary['toolReadyGates']}/{summary['liveGates']}")
     print(f"tools: {summary['toolsAvailable']}/{summary['toolsTotal']} available")
+    if args.probe_environment:
+        print(f"environment-probe: {report['environmentProbe']['clusterAccess']}")
+        print(f"blocked-by-environment: {summary['blockedByEnvironment']}")
     print("cluster-writes: disabled")
     print(f"evidence-ledger: {DOC.relative_to(ROOT)}")
     return 0

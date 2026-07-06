@@ -76,9 +76,10 @@ Coverage included:
 - security policy, threat model, and disclosure process verification;
 - API freeze and additive compatibility gate verification;
 - documentation freeze and public examples audit verification;
-- live validation readiness inventory and gate-level tool readiness
-  verification;
-- live validation queue generation for ordered evidence commands;
+- live validation readiness inventory, gate-level tool readiness, and optional
+  environment probe verification;
+- live validation queue generation for ordered evidence commands and
+  environment-blocked gates;
 - live validation queue command safety verification for placeholder and
   resolved evidence commands;
 - live evidence directory scaffold generation for repeated evidence capture;
@@ -113,7 +114,7 @@ Coverage included:
 - release progress report generation for versioned task tracking and
   tool-ready next actions;
 - version worklist generation for version-grouped open work, capture status,
-  and version/open-only filters;
+  version/open-only filters, and optional environment blockers;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -226,7 +227,7 @@ Result:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
 - version worklist check prints `version-worklist: passed` and exercises
-  version/open-only filters;
+  version/open-only filters plus optional environment blockers;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
@@ -256,7 +257,8 @@ Result:
 - API freeze check prints `api-freeze: passed`;
 - docs freeze check prints `docs-freeze: passed`;
 - live validation readiness check prints `live-validation-readiness: passed`;
-- live validation queue check prints `live-validation-queue: passed`;
+- live validation queue check prints `live-validation-queue: passed` and
+  verifies environment-blocked gate handling with fake kubectl;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed`;

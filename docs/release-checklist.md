@@ -99,7 +99,7 @@ Expected:
   readiness, tool-ready next actions, and optional evidence directory status;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
-  and exercises version/open-only filters;
+  and exercises version/open-only filters plus optional environment blockers;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
 - external gate command safety verifies generated external commands stay
@@ -144,9 +144,11 @@ Expected:
   schema diff;
 - documentation freeze verifies public docs and examples;
 - live validation readiness inventories external tool availability without
-  running cluster or cloud checks and reports gate-level missing tools;
+  running cluster or cloud checks by default and can probe current cluster
+  availability without writes;
 - live validation queue emits schema `kube-actuary.live-validation-queue.v1`
-  with ordered tool-ready and missing-tool evidence commands;
+  with ordered tool-ready, missing-tool, and environment-blocked evidence
+  commands;
 - live validation queue safety verifies placeholder and resolved queue commands
   remain dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifies the local reports/raw/supplemental

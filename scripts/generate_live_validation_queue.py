@@ -32,12 +32,16 @@ KIND_READINESS_GATES = {
 }
 
 
-def missing_tools_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> list[str]:
-    readiness_by_gate = {
+def readiness_lookup(readiness: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
         item.get("gate"): item
         for item in readiness.get("gateToolReadiness", [])
         if isinstance(item, dict)
     }
+
+
+def missing_tools_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> list[str]:
+    readiness_by_gate = readiness_lookup(readiness)
     readiness_gate_names = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
     return sorted(
         {
@@ -46,6 +50,25 @@ def missing_tools_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> l
             for tool in readiness_by_gate.get(name, {}).get("missingTools", [])
         }
     )
+
+
+def environment_status_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> str | None:
+    if not readiness.get("environmentProbe"):
+        return None
+    readiness_by_gate = readiness_lookup(readiness)
+    readiness_gate_names = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
+    statuses = [
+        readiness_by_gate.get(name, {}).get("environmentStatus")
+        for name in readiness_gate_names
+        if readiness_by_gate.get(name, {}).get("environmentStatus")
+    ]
+    if "cluster-unavailable" in statuses:
+        return "cluster-unavailable"
+    if "cluster-available" in statuses:
+        return "cluster-available"
+    if statuses:
+        return "not-required"
+    return None
 
 
 def evidence_path(evidence_dir: Path, *parts: str) -> str:
@@ -96,8 +119,11 @@ def materialize_command(item: dict[str, Any], command: str, evidence_dir: Path, 
 
 def build_item(gate: dict[str, Any], readiness: dict[str, Any], evidence_dir: Path | None = None) -> dict[str, Any]:
     missing_tools = missing_tools_for_gate(gate, readiness)
+    environment_status = environment_status_for_gate(gate, readiness)
     commands = list(gate.get("recommendedCommands") or [])
     status = "tool-ready" if not missing_tools else "missing-tools"
+    if status == "tool-ready" and environment_status == "cluster-unavailable":
+        status = "blocked-by-environment"
     item = {
         "id": gate.get("id"),
         "version": gate.get("version") or gate.get("section"),
@@ -109,9 +135,13 @@ def build_item(gate: dict[str, Any], readiness: dict[str, Any], evidence_dir: Pa
         "nextStep": (
             "capture evidence with the listed commands"
             if status == "tool-ready"
+            else "start or select a disposable cluster, then rerun the probe"
+            if status == "blocked-by-environment"
             else "install missing tools or run on a host that has them"
         ),
     }
+    if environment_status is not None:
+        item["environmentStatus"] = environment_status
     if evidence_dir is not None:
         item["evidenceDir"] = evidence_dir.as_posix()
         item["resolvedCommands"] = [
@@ -134,26 +164,35 @@ def resolved_closure_commands(evidence_dir: Path) -> list[str]:
     ]
 
 
-def build_queue(evidence_dir: Path | None = None) -> dict[str, Any]:
+def build_queue(
+    evidence_dir: Path | None = None,
+    probe_environment: bool = False,
+    kubectl: str = "kubectl",
+) -> dict[str, Any]:
     plan = build_plan()
-    readiness = build_readiness_report()
+    readiness = build_readiness_report(probe_environment=probe_environment, kubectl=kubectl)
     items = [build_item(gate, readiness, evidence_dir) for gate in plan.get("gates", [])]
     tool_ready = sum(1 for item in items if item["status"] == "tool-ready")
+    blocked_by_environment = sum(1 for item in items if item["status"] == "blocked-by-environment")
+    blocked_by_tools = sum(1 for item in items if item["status"] == "missing-tools")
     missing_tools = sorted({tool for item in items for tool in item["missingTools"]})
     queue = {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(TASKBOARD.relative_to(ROOT)),
-        "mode": "inventory-only",
+        "mode": "inventory-plus-environment-probe" if probe_environment else "inventory-only",
         "clusterWrites": "disabled",
         "summary": {
             "total": len(items),
             "toolReady": tool_ready,
-            "blockedByTools": len(items) - tool_ready,
+            "blockedByTools": blocked_by_tools,
+            "blockedByEnvironment": blocked_by_environment,
             "missingTools": missing_tools,
         },
         "items": items,
         "closureCommands": list(plan.get("closureCommands", [])),
     }
+    if readiness.get("environmentProbe"):
+        queue["environmentProbe"] = readiness["environmentProbe"]
     if evidence_dir is not None:
         queue["evidenceDir"] = evidence_dir.as_posix()
         queue["resolvedClosureCommands"] = resolved_closure_commands(evidence_dir)
@@ -175,10 +214,15 @@ def render_markdown(queue: dict[str, Any]) -> str:
         f"- total: {summary['total']}",
         f"- tool-ready: {summary['toolReady']}",
         f"- blocked-by-tools: {summary['blockedByTools']}",
+        f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         f"- missing-tools: {', '.join(summary['missingTools']) if summary['missingTools'] else 'none'}",
         "",
     ]
-    for heading, status in (("Tool-Ready", "tool-ready"), ("Missing Tools", "missing-tools")):
+    for heading, status in (
+        ("Tool-Ready", "tool-ready"),
+        ("Blocked By Environment", "blocked-by-environment"),
+        ("Missing Tools", "missing-tools"),
+    ):
         lines.extend([f"## {heading}", ""])
         matching = [item for item in queue["items"] if item["status"] == status]
         if not matching:
@@ -189,6 +233,8 @@ def render_markdown(queue: dict[str, Any]) -> str:
             lines.append(f"- `{item['id']}` {item['item']} ({item['version']}, {item['kind']})")
             if item["missingTools"]:
                 lines.append(f"  Missing tools: `{', '.join(item['missingTools'])}`")
+            if item.get("environmentStatus"):
+                lines.append(f"  Environment: `{item['environmentStatus']}`")
             for command in item["commands"]:
                 lines.append(f"  Command: `{command}`")
             for command in item.get("resolvedCommands", []):
@@ -209,11 +255,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary live validation queue.")
     parser.add_argument("--format", choices=["json", "markdown"], default="json")
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
+    parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
+    parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
     evidence_dir = Path(args.evidence_dir) if args.evidence_dir else None
-    queue = build_queue(evidence_dir)
+    queue = build_queue(evidence_dir, probe_environment=args.probe_environment, kubectl=args.kubectl)
     if args.format == "json":
         rendered = json.dumps(queue, indent=2, sort_keys=True) + "\n"
     else:

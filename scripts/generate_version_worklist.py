@@ -38,7 +38,7 @@ def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[s
             "missingTools": [],
             "commands": [],
         }
-    return {
+    record = {
         "id": queue_item.get("id"),
         "item": item.get("item"),
         "status": item.get("status"),
@@ -49,6 +49,9 @@ def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[s
         "commands": queue_item.get("commands", []),
         "nextStep": queue_item.get("nextStep"),
     }
+    if queue_item.get("environmentStatus") is not None:
+        record["environmentStatus"] = queue_item.get("environmentStatus")
+    return record
 
 
 def version_status(open_items: list[dict[str, Any]]) -> str:
@@ -58,6 +61,8 @@ def version_status(open_items: list[dict[str, Any]]) -> str:
         return "in-progress"
     if any(item.get("captureStatus") == "tool-ready" for item in open_items):
         return "capture-ready"
+    if any(item.get("captureStatus") == "blocked-by-environment" for item in open_items):
+        return "blocked-by-environment"
     return "missing-tools"
 
 
@@ -68,12 +73,18 @@ def summarize_versions(versions: list[dict[str, Any]]) -> dict[str, int]:
         "openItems": sum(len(version["openItems"]) for version in versions),
         "captureReady": sum(version["summary"].get("captureReady", 0) for version in versions),
         "blockedByTools": sum(version["summary"].get("blockedByTools", 0) for version in versions),
+        "blockedByEnvironment": sum(version["summary"].get("blockedByEnvironment", 0) for version in versions),
     }
 
 
-def build_worklist(version_filters: list[str] | None = None, open_only: bool = False) -> dict[str, Any]:
+def build_worklist(
+    version_filters: list[str] | None = None,
+    open_only: bool = False,
+    probe_environment: bool = False,
+    kubectl: str = "kubectl",
+) -> dict[str, Any]:
     progress = build_progress()
-    queue = build_queue()
+    queue = build_queue(probe_environment=probe_environment, kubectl=kubectl)
     queue_by_key = queue_lookup(queue)
     versions: list[dict[str, Any]] = []
     for group in progress.get("versions", []):
@@ -84,6 +95,9 @@ def build_worklist(version_filters: list[str] | None = None, open_only: bool = F
         ]
         capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
         blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
+        blocked_by_environment = sum(
+            1 for item in open_items if item.get("captureStatus") == "blocked-by-environment"
+        )
         versions.append(
             {
                 "version": version,
@@ -93,6 +107,7 @@ def build_worklist(version_filters: list[str] | None = None, open_only: bool = F
                     "open": len(open_items),
                     "captureReady": capture_ready,
                     "blockedByTools": blocked_by_tools,
+                    "blockedByEnvironment": blocked_by_environment,
                 },
                 "openItems": open_items,
             }
@@ -106,7 +121,7 @@ def build_worklist(version_filters: list[str] | None = None, open_only: bool = F
         versions = [version for version in versions if version["version"] in requested]
     if open_only:
         versions = [version for version in versions if version["status"] != "complete"]
-    return {
+    worklist = {
         "schemaVersion": SCHEMA_VERSION,
         "source": progress.get("source"),
         "releaseSuite": progress.get("releaseSuite"),
@@ -114,6 +129,9 @@ def build_worklist(version_filters: list[str] | None = None, open_only: bool = F
         "versions": versions,
         "closureCommands": queue.get("closureCommands", []),
     }
+    if queue.get("environmentProbe"):
+        worklist["environmentProbe"] = queue["environmentProbe"]
+    return worklist
 
 
 def render_markdown(worklist: dict[str, Any]) -> str:
@@ -131,6 +149,7 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         f"- open items: {summary['openItems']}",
         f"- capture-ready: {summary['captureReady']}",
         f"- blocked-by-tools: {summary['blockedByTools']}",
+        f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
         "",
         "## Versions",
         "",
@@ -144,6 +163,8 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         for item in version["openItems"]:
             lines.append(f"  - `{item['captureStatus']}` {item['item']}")
             first_command = (item.get("commands") or [None])[0]
+            if item.get("environmentStatus"):
+                lines.append(f"    environment: `{item['environmentStatus']}`")
             if first_command:
                 lines.append(f"    command: `{first_command}`")
     lines.extend(["", "## Closure", ""])
@@ -158,10 +179,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
+    parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
 
     try:
-        worklist = build_worklist(version_filters=args.version, open_only=args.open_only)
+        worklist = build_worklist(
+            version_filters=args.version,
+            open_only=args.open_only,
+            probe_environment=args.probe_environment,
+            kubectl=args.kubectl,
+        )
     except ValueError as exc:
         print("version-worklist: failed", file=sys.stderr)
         print(f"error: {exc}", file=sys.stderr)

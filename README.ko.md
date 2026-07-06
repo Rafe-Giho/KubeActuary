@@ -414,8 +414,8 @@ scripts/
   verify_security_docs.py     security policy and threat model verifier
   verify_api_freeze.py        additive API freeze verifier
   verify_docs_freeze.py       public docs and examples verifier
-  verify_live_validation_readiness.py external validation readiness inventory
-  generate_live_validation_queue.py live validation queue generator
+  verify_live_validation_readiness.py external validation readiness inventory and optional environment probe
+  generate_live_validation_queue.py live validation queue generator with optional environment probe
   verify_live_validation_queue.py live validation queue verifier
   verify_live_validation_queue_safety.py live validation queue command safety verifier
   kube-actuary.live-validation-queue.v1 live validation queue schema
@@ -474,6 +474,7 @@ python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
+python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
@@ -509,6 +510,8 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_live_validation_readiness.py --probe-environment
+python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
 python3 -B scripts/verify_live_evidence_directory_scaffold.py

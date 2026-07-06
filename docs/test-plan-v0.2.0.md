@@ -27,7 +27,8 @@ Expected:
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory with
-  gate-level tool readiness, live validation queue generation, queue command safety,
+  gate-level tool readiness and optional environment probing, live validation
+  queue generation, queue command safety,
   and live evidence directory scaffold generation,
   live evidence schema validation, live evidence manifest generation, live
   evidence coverage validation, project governance, air-gapped manifest generation, agent help schema
@@ -246,7 +247,8 @@ Confirm from code and tests:
 - release progress verifier checks versioned task status, external gates, live
   readiness, tool-ready next actions, and optional evidence directory status;
 - version worklist verifier checks version-grouped open work, capture-ready
-  items, tool-blocked items, and version/open-only filters;
+  items, tool-blocked items, version/open-only filters, and optional
+  environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
@@ -302,10 +304,13 @@ Confirm from code and tests:
 - docs freeze verifier checks public docs, capsule examples, YAML examples, and
   agent runbooks;
 - live validation readiness verifier inventories remaining external validation
-  gates and missing local tools without contacting clusters or cloud APIs;
+  gates and missing local tools without contacting clusters or cloud APIs by
+  default, and verifies optional read-only environment probing with fake
+  kubectl;
 - live validation queue verifier checks schema
   `kube-actuary.live-validation-queue.v1`, ordered evidence commands, and
-  tool-ready or missing-tool status for each external gate;
+  tool-ready, missing-tool, or environment-blocked status for each external
+  gate;
 - live validation queue safety verifier checks placeholder and resolved queue
   commands stay dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,
