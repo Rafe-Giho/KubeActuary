@@ -190,7 +190,8 @@ Expected:
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed` and verifies
   `--skip-complete-evidence` next-task advancement plus optional environment
-  probe persistence and `kube-actuary.environment-blockers.v1` output;
+  probe persistence plus `kube-actuary.environment-probe.v1` and
+  `kube-actuary.environment-blockers.v1` output;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;

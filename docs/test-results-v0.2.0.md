@@ -85,7 +85,8 @@ Coverage included:
   resolved evidence commands;
 - live evidence directory scaffold generation for repeated evidence capture,
   including probe-aware next-task artifacts and `--skip-complete-evidence`
-  advancement plus `kube-actuary.environment-blockers.v1` reports;
+  advancement plus `kube-actuary.environment-probe.v1` and
+  `kube-actuary.environment-blockers.v1` reports;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
 - version iteration advance workflow with probe-aware before/after
@@ -293,7 +294,7 @@ Result:
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed` and verifies next-task artifacts
-  plus completed-evidence advancement;
+  plus completed-evidence advancement and environment probe metadata;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;

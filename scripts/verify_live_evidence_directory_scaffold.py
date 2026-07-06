@@ -21,6 +21,7 @@ PREPARE_TOOL = "prepare_live_evidence_directory.py"
 VERIFY_TOOL = "verify_live_evidence_directory_scaffold.py"
 NEXT_TASK_TOOL = "select_next_version_task.py"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 
 
@@ -73,12 +74,15 @@ def main() -> int:
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
         next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
         next_task_md = evidence_dir / ".kubeactuary" / "next-version-task.md"
+        probe_json = evidence_dir / ".kubeactuary" / "environment-probe.json"
+        probe_md = evidence_dir / ".kubeactuary" / "environment-probe.md"
         blockers_json = evidence_dir / ".kubeactuary" / "environment-blockers.json"
         blockers_md = evidence_dir / ".kubeactuary" / "environment-blockers.md"
         readme = evidence_dir / "README.md"
         expected_dirs = [evidence_dir / name for name in ("reports", "raw", "supplemental", ".kubeactuary")]
         queue = json.loads(queue_json.read_text()) if queue_json.is_file() else {}
         next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
+        probe_report = json.loads(probe_json.read_text()) if probe_json.is_file() else {}
         blockers = json.loads(blockers_json.read_text()) if blockers_json.is_file() else {}
         initial_next_task_md = next_task_md.read_text() if next_task_md.is_file() else ""
         (evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
@@ -89,9 +93,11 @@ def main() -> int:
         advanced_next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
         probe_queue_path = probe_dir / ".kubeactuary" / "live-validation-queue.json"
         probe_next_task_path = probe_dir / ".kubeactuary" / "next-version-task.json"
+        probe_report_path = probe_dir / ".kubeactuary" / "environment-probe.json"
         probe_blockers_path = probe_dir / ".kubeactuary" / "environment-blockers.json"
         probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
         probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
+        probe_report_payload = json.loads(probe_report_path.read_text()) if probe_report_path.is_file() else {}
         probe_blockers = json.loads(probe_blockers_path.read_text()) if probe_blockers_path.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
@@ -114,11 +120,17 @@ def main() -> int:
         for path in expected_dirs:
             if not path.is_dir():
                 errors.append(f"scaffold missing directory: {path.name}")
-        for path in (queue_json, queue_md, next_task_json, next_task_md, blockers_json, blockers_md, readme):
+        for path in (queue_json, queue_md, next_task_json, next_task_md, probe_json, probe_md, blockers_json, blockers_md, readme):
             if not path.is_file():
                 errors.append(f"scaffold missing file: {path.name}")
         if queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":
             errors.append("scaffold queue schemaVersion mismatch")
+        if probe_report.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
+            errors.append("scaffold environment probe schemaVersion mismatch")
+        if probe_report.get("clusterAccess") != "not-run":
+            errors.append("default scaffold environment probe should mark probe not-run")
+        if probe_report.get("summary", {}).get("checks") != 0:
+            errors.append("default scaffold environment probe should have zero checks")
         if blockers.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
             errors.append("scaffold blocker report schemaVersion mismatch")
         if blockers.get("summary", {}).get("clusterAccess") != "not-run":
@@ -142,6 +154,14 @@ def main() -> int:
             errors.append("scaffold README must point to next-task artifacts")
         if probe_queue.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
             errors.append("probe scaffold queue must persist unavailable cluster access")
+        if probe_report_payload.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
+            errors.append("probe scaffold environment probe schemaVersion mismatch")
+        if probe_report_payload.get("clusterAccess") != "unavailable":
+            errors.append("probe scaffold environment probe must record unavailable cluster access")
+        if probe_report_payload.get("summary", {}).get("checks") != 2:
+            errors.append("probe scaffold environment probe must record two checks")
+        if probe_report_payload.get("summary", {}).get("failed") != 1:
+            errors.append("probe scaffold environment probe must record one failed check")
         if probe_blockers.get("schemaVersion") != ENVIRONMENT_BLOCKERS_SCHEMA:
             errors.append("probe scaffold blocker report schemaVersion mismatch")
         if probe_blockers.get("summary", {}).get("clusterAccess") != "unavailable":
@@ -183,6 +203,7 @@ def main() -> int:
             VERIFY_TOOL,
             NEXT_TASK_TOOL,
             NEXT_TASK_SCHEMA,
+            ENVIRONMENT_PROBE_SCHEMA,
             ENVIRONMENT_BLOCKERS_SCHEMA,
             "--skip-complete-evidence",
         ):
@@ -200,6 +221,7 @@ def main() -> int:
     print("queue-items: 16")
     print("next-task: selected")
     print("cluster-writes: disabled")
+    print("environment-probe: metadata")
     return 0
 
 

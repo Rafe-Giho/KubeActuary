@@ -170,7 +170,8 @@ Expected:
 - live evidence directory scaffold verifies the local reports/raw/supplemental
   directory layout, generated queue snapshots, next-task artifacts, and
   `--skip-complete-evidence` artifact advancement, with optional environment
-  probe status and `kube-actuary.environment-blockers.v1` reports;
+  probe status plus `kube-actuary.environment-probe.v1` and
+  `kube-actuary.environment-blockers.v1` reports;
 - next-version task runner verifies selected evidence commands in plan mode and
   fake-run mode before live use;
 - version iteration advance verifies selected-task execution or environment

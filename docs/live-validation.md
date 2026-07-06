@@ -240,8 +240,10 @@ accept `--probe-environment --kubectl <path>`. The probe runs only read-only
 access is unavailable, the prepared next-task artifacts record
 `blocked-by-environment` instead of pretending the live evidence can be
 captured. The scaffold also writes
+`.kubeactuary/environment-probe.json` with schema
+`kube-actuary.environment-probe.v1` for read-only probe details and
 `.kubeactuary/environment-blockers.json` with schema
-`kube-actuary.environment-blockers.v1` plus a Markdown summary for local
+`kube-actuary.environment-blockers.v1`, plus Markdown summaries for local
 operators.
 
 Supported evidence schemas:

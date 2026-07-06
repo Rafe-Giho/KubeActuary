@@ -307,7 +307,7 @@ COMMON_CHECKS = (
     Check(
         "live evidence directory scaffold",
         ("python3", "-B", "scripts/verify_live_evidence_directory_scaffold.py"),
-        contains=("live-evidence-directory-scaffold: passed", "cluster-writes: disabled"),
+        contains=("live-evidence-directory-scaffold: passed", "cluster-writes: disabled", "environment-probe: metadata"),
     ),
     Check(
         "live evidence schema",

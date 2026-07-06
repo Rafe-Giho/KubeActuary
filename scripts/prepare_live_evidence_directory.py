@@ -21,6 +21,9 @@ QUEUE_JSON = "live-validation-queue.json"
 QUEUE_MD = "live-validation-queue.md"
 NEXT_TASK_JSON = "next-version-task.json"
 NEXT_TASK_MD = "next-version-task.md"
+ENVIRONMENT_PROBE_JSON = "environment-probe.json"
+ENVIRONMENT_PROBE_MD = "environment-probe.md"
+ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_JSON = "environment-blockers.json"
 ENVIRONMENT_BLOCKERS_MD = "environment-blockers.md"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
@@ -66,6 +69,57 @@ def readme_text(evidence_dir: Path, queue: dict) -> str:
 
 def write_text(path: Path, text: str) -> None:
     path.write_text(text if text.endswith("\n") else text + "\n")
+
+
+def environment_probe_report(evidence_dir: Path, queue: dict) -> dict:
+    environment_probe = queue.get("environmentProbe") if isinstance(queue.get("environmentProbe"), dict) else {}
+    checks = environment_probe.get("checks", [])
+    return {
+        "schemaVersion": ENVIRONMENT_PROBE_SCHEMA,
+        "evidenceDir": evidence_dir.as_posix(),
+        "clusterWrites": "disabled",
+        "probeEnabled": bool(environment_probe),
+        "kubectl": environment_probe.get("kubectl"),
+        "clusterAccess": environment_probe.get("clusterAccess", "not-run"),
+        "checks": checks,
+        "summary": {
+            "checks": len(checks),
+            "passed": sum(1 for check in checks if isinstance(check, dict) and check.get("ok") is True),
+            "failed": sum(1 for check in checks if isinstance(check, dict) and check.get("ok") is not True),
+        },
+    }
+
+
+def render_environment_probe(report: dict) -> str:
+    summary = report["summary"]
+    lines = [
+        "# KubeActuary Environment Probe",
+        "",
+        f"Schema: `{report['schemaVersion']}`",
+        f"Evidence directory: `{report['evidenceDir']}`",
+        f"Cluster writes: `{report['clusterWrites']}`",
+        f"Probe enabled: {str(report['probeEnabled']).lower()}",
+        f"Cluster access: `{report['clusterAccess']}`",
+        "",
+        "## Summary",
+        "",
+        f"- checks: {summary['checks']}",
+        f"- passed: {summary['passed']}",
+        f"- failed: {summary['failed']}",
+        "",
+        "## Checks",
+        "",
+    ]
+    if report.get("checks"):
+        for check in report["checks"]:
+            status = "passed" if check.get("ok") else "failed"
+            command = " ".join(str(part) for part in check.get("command", []))
+            lines.append(f"- `{status}` {check.get('name')}: `{command}`")
+            if check.get("exitCode") is not None:
+                lines.append(f"  exit code: {check.get('exitCode')}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines) + "\n"
 
 
 def environment_blocker_report(evidence_dir: Path, queue: dict, next_task: dict) -> dict:
@@ -161,6 +215,8 @@ def prepare_directory(
     metadata_dir = evidence_dir / ".kubeactuary"
     queue_json = metadata_dir / QUEUE_JSON
     queue_md = metadata_dir / QUEUE_MD
+    probe_json = metadata_dir / ENVIRONMENT_PROBE_JSON
+    probe_md = metadata_dir / ENVIRONMENT_PROBE_MD
     blockers_json = metadata_dir / ENVIRONMENT_BLOCKERS_JSON
     blockers_md = metadata_dir / ENVIRONMENT_BLOCKERS_MD
     next_task = build_selection(
@@ -174,9 +230,12 @@ def prepare_directory(
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD
     readme = evidence_dir / "README.md"
+    probe = environment_probe_report(evidence_dir, queue)
     blockers = environment_blocker_report(evidence_dir, queue, next_task)
     write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     write_text(queue_md, render_markdown(queue))
+    write_text(probe_json, json.dumps(probe, indent=2, sort_keys=True))
+    write_text(probe_md, render_environment_probe(probe))
     write_text(next_task_json, json.dumps(next_task, indent=2, sort_keys=True))
     write_text(next_task_md, render_next_task_markdown(next_task))
     write_text(blockers_json, json.dumps(blockers, indent=2, sort_keys=True))
@@ -186,6 +245,9 @@ def prepare_directory(
         "queue": queue,
         "queueJson": queue_json,
         "queueMarkdown": queue_md,
+        "environmentProbe": probe,
+        "environmentProbeJson": probe_json,
+        "environmentProbeMarkdown": probe_md,
         "environmentBlockers": blockers,
         "environmentBlockersJson": blockers_json,
         "environmentBlockersMarkdown": blockers_md,
@@ -232,6 +294,7 @@ def main(argv: list[str] | None = None) -> int:
     if queue.get("environmentProbe"):
         print(f"cluster-access: {queue['environmentProbe'].get('clusterAccess')}")
     print(f"queue: {result['queueJson']}")
+    print(f"environment-probe: {result['environmentProbeJson']}")
     print(f"environment-blockers: {result['environmentBlockersJson']}")
     print(f"next-task: {result['nextTaskJson']}")
     next_task = result["nextTask"]

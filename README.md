@@ -433,6 +433,7 @@ scripts/
   verify_live_validation_queue_safety.py live validation queue command safety verifier
   kube-actuary.live-validation-queue.v1 live validation queue schema
   prepare_live_evidence_directory.py live evidence directory scaffold generator with probe-aware next-task advancement
+  kube-actuary.environment-probe.v1 environment probe report schema
   kube-actuary.environment-blockers.v1 environment blocker report schema
   run_next_version_task.py selected next-task plan/run/record helper
   verify_next_version_task_runner.py selected next-task runner verifier
