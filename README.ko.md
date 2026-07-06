@@ -332,6 +332,8 @@ scripts/
   verify_controller_contract.py offline controller contract check
   verify_controller_rbac.py    offline controller RBAC check
   verify_controller_runtime_contract.py offline controller runtime check
+  verify_controller_resource_budget.py offline controller resource budget check
+  measure_controller_resources.py kubectl top budget measurement helper
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -354,6 +356,7 @@ python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
+python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

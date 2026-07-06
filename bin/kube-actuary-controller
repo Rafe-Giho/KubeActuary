@@ -13,7 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from controller.reconcile import reconcile_status, status_patch, watch_command
-from controller.runtime import health_payload, leader_election_config, metrics_text, readiness_payload
+from controller.runtime import (
+    health_payload,
+    leader_election_config,
+    metrics_text,
+    readiness_payload,
+    resource_budget_payload,
+    resource_measure_command,
+)
 
 
 def load_json(path: str) -> dict:
@@ -76,6 +83,16 @@ def leader_election(args: argparse.Namespace) -> int:
     return 0
 
 
+def resource_budget(args: argparse.Namespace) -> int:
+    write_json(resource_budget_payload())
+    return 0
+
+
+def measure_command(args: argparse.Namespace) -> int:
+    print(shlex.join(resource_measure_command(args.namespace)))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Dry-run KubeActuary controller reconcile helpers.",
@@ -112,6 +129,13 @@ def build_parser() -> argparse.ArgumentParser:
     election_parser.add_argument("--lease-name", default="kubeactuary-controller")
     election_parser.add_argument("--identity")
     election_parser.set_defaults(func=leader_election)
+
+    budget_parser = sub.add_parser("resource-budget", help="emit controller CPU and memory budget contract")
+    budget_parser.set_defaults(func=resource_budget)
+
+    measure_parser = sub.add_parser("measure-command", help="print kubectl top command for controller resource checks")
+    measure_parser.add_argument("--namespace", default="kubeactuary-system")
+    measure_parser.set_defaults(func=measure_command)
     return parser
 
 

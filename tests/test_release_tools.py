@@ -13,6 +13,7 @@ CRD_EXPLAIN_QUALITY = ROOT / "scripts" / "verify_crd_explain_quality.py"
 CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
 CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
+CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budget.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -131,6 +132,21 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("controller-runtime: passed", result.stdout)
         self.assertIn("metrics: prometheus-text", result.stdout)
         self.assertIn("leader-election: leases.coordination.k8s.io", result.stdout)
+
+    def test_verify_controller_resource_budget(self):
+        result = subprocess.run(
+            [sys.executable, str(CONTROLLER_RESOURCE_BUDGET)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("controller-resource-budget: passed", result.stdout)
+        self.assertIn("idle-cpu-budget: <50m", result.stdout)
+        self.assertIn("idle-memory-budget: <64Mi", result.stdout)
 
 
 if __name__ == "__main__":

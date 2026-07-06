@@ -25,6 +25,7 @@ python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
+python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -42,6 +43,7 @@ Expected:
   permissions;
 - controller runtime contract emits health, readiness, metrics, and Lease
   configuration without contacting the cluster;
+- controller resource budget contract and measurement parser verify offline;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -57,6 +59,7 @@ Expected:
 - [ ] controller dry-run contract check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
+- [ ] controller resource budget check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

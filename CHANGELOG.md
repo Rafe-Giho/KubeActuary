@@ -28,6 +28,7 @@ Evidence collector release:
   status-only permission checks;
 - add controller health, readiness, metrics, and leader-election runtime
   contracts;
+- add controller resource-budget contract and kubectl-top measurement harness;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

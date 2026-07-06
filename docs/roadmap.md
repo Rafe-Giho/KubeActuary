@@ -94,6 +94,8 @@ Current local progress:
   read/watch and status patch permissions;
 - health, readiness, metrics, and leader-election payload contracts are
   deterministic and offline-verifiable;
+- resource budget target is set to idle <50m CPU and <64Mi memory, with a
+  `kubectl top` measurement harness for live cluster evidence;
 - live controller process, HTTP serving, deployment manifests, and status
   subresource writes remain future work.
 

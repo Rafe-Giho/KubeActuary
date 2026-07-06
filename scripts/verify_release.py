@@ -106,6 +106,16 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "controller resource budget",
+        ("python3", "-B", "scripts/verify_controller_resource_budget.py"),
+        contains=(
+            "controller-resource-budget: passed",
+            "idle-cpu-budget: <50m",
+            "idle-memory-budget: <64Mi",
+            "measurement-harness: kubectl top",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

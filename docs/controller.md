@@ -11,7 +11,8 @@ Implemented locally:
 - status patch generation for fake-client tests and future controller wiring;
 - documented watch command that targets only `OperationCapsule` resources;
 - namespace-scoped and cluster-scoped RBAC manifests;
-- health, readiness, metrics, and leader-election payload contracts.
+- health, readiness, metrics, and leader-election payload contracts;
+- resource-budget contract and measurement harness.
 
 Not implemented yet:
 
@@ -89,6 +90,43 @@ Offline verifier:
 ```sh
 python3 -B scripts/verify_controller_runtime_contract.py
 ```
+
+## Resource Budget
+
+Target:
+
+- idle <50m CPU;
+- <64Mi memory.
+
+Dry-run budget contract:
+
+```sh
+python3 bin/kube-actuary-controller resource-budget
+python3 bin/kube-actuary-controller measure-command
+```
+
+Measurement helper:
+
+```sh
+python3 -B scripts/measure_controller_resources.py
+```
+
+The helper evaluates `kubectl top pod --containers` output against the budget.
+It can also evaluate captured samples:
+
+```sh
+python3 -B scripts/measure_controller_resources.py --sample kubectl-top.txt
+```
+
+The local verifier checks the budget contract and measurement parser with pass
+and fail samples:
+
+```sh
+python3 -B scripts/verify_controller_resource_budget.py
+```
+
+Live kind, minikube, MicroK8s, and k3s measurements are still required before
+claiming measured controller footprint.
 
 ## Dry-Run Reconcile
 

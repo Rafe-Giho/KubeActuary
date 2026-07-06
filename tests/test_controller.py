@@ -138,6 +138,8 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertIn("kubeactuary_controller_reconcile_total 3", result.stdout)
         self.assertIn("kubeactuary_controller_reconcile_errors_total 1", result.stdout)
         self.assertIn('watch_resource="operationcapsules.ops.kubeactuary.dev"', result.stdout)
+        self.assertIn("kubeactuary_controller_idle_cpu_budget_millicores 50", result.stdout)
+        self.assertIn("kubeactuary_controller_idle_memory_budget_mebibytes 64", result.stdout)
 
     def test_leader_election_payload_uses_kubernetes_lease(self):
         result = self.run_controller("leader-election", "--identity", "unit-test")
@@ -148,6 +150,26 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertEqual(payload["namespace"], "kubeactuary-system")
         self.assertEqual(payload["leaseName"], "kubeactuary-controller")
         self.assertEqual(payload["identity"], "unit-test")
+
+    def test_resource_budget_payload_sets_low_overhead_targets(self):
+        result = self.run_controller("resource-budget")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["budget"]["idleCpuMillicoresLessThan"], 50)
+        self.assertEqual(payload["budget"]["idleMemoryMiLessThan"], 64)
+        self.assertEqual(payload["budget"]["requests"], {"cpu": "10m", "memory": "32Mi"})
+        self.assertEqual(payload["budget"]["limits"], {"cpu": "50m", "memory": "64Mi"})
+
+    def test_measure_command_targets_controller_pods_only(self):
+        result = self.run_controller("measure-command")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout.strip(),
+            "kubectl top pod -n kubeactuary-system -l "
+            "app.kubernetes.io/name=kubeactuary,app.kubernetes.io/component=controller --containers",
+        )
 
 
 if __name__ == "__main__":

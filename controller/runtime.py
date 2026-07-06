@@ -17,6 +17,13 @@ COMPONENT = "kube-actuary-controller"
 DEFAULT_NAMESPACE = "kubeactuary-system"
 DEFAULT_LEASE_NAME = "kubeactuary-controller"
 LEASE_RESOURCE = "leases.coordination.k8s.io"
+RESOURCE_BUDGET = {
+    "idleCpuMillicoresLessThan": 50,
+    "idleMemoryMiLessThan": 64,
+    "requests": {"cpu": "10m", "memory": "32Mi"},
+    "limits": {"cpu": "50m", "memory": "64Mi"},
+}
+CONTROLLER_SELECTOR = "app.kubernetes.io/name=kubeactuary,app.kubernetes.io/component=controller"
 
 
 def health_payload(started_at: int | None = None, now: int | None = None) -> dict[str, Any]:
@@ -72,6 +79,18 @@ def metrics_text(
         "# HELP kubeactuary_controller_gate_open_total Capsules reconciled with open gates.",
         "# TYPE kubeactuary_controller_gate_open_total counter",
         f"kubeactuary_controller_gate_open_total {gate_open_total}",
+        "# HELP kubeactuary_controller_idle_cpu_budget_millicores Idle CPU budget target.",
+        "# TYPE kubeactuary_controller_idle_cpu_budget_millicores gauge",
+        (
+            "kubeactuary_controller_idle_cpu_budget_millicores "
+            f"{RESOURCE_BUDGET['idleCpuMillicoresLessThan']}"
+        ),
+        "# HELP kubeactuary_controller_idle_memory_budget_mebibytes Idle memory budget target.",
+        "# TYPE kubeactuary_controller_idle_memory_budget_mebibytes gauge",
+        (
+            "kubeactuary_controller_idle_memory_budget_mebibytes "
+            f"{RESOURCE_BUDGET['idleMemoryMiLessThan']}"
+        ),
     ]
     return "\n".join(lines) + "\n"
 
@@ -91,3 +110,30 @@ def leader_election_config(
         "renewDeadlineSeconds": 10,
         "retryPeriodSeconds": 2,
     }
+
+
+def resource_budget_payload() -> dict[str, Any]:
+    return {
+        "component": COMPONENT,
+        "watchResource": WATCH_RESOURCE,
+        "budget": RESOURCE_BUDGET,
+        "measurement": {
+            "tool": "kubectl top pod",
+            "namespace": DEFAULT_NAMESPACE,
+            "selector": CONTROLLER_SELECTOR,
+            "requiresMetricsServer": True,
+        },
+    }
+
+
+def resource_measure_command(namespace: str = DEFAULT_NAMESPACE) -> list[str]:
+    return [
+        "kubectl",
+        "top",
+        "pod",
+        "-n",
+        namespace,
+        "-l",
+        CONTROLLER_SELECTOR,
+        "--containers",
+    ]
