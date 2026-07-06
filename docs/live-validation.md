@@ -250,10 +250,12 @@ reports covered and uncovered external gates, prints next evidence commands,
 and includes the persisted `kube-actuary.next-version-task.v1` artifact when
 the evidence directory was prepared by the scaffold. It does not require
 complete release closure. For resolved next-task file paths, it reports whether
-the raw input and supplemental output files are present or still missing. When
-the prepared live validation queue is available, `nextCommands` uses the
-queue's resolved evidence paths for all uncovered gates instead of repeating
-placeholder commands. When
+the raw input and supplemental output files are present or still missing, and
+prints every selected next-task command. It also prints every computed next
+command instead of truncating local follow-up work. When the prepared live
+validation queue is available, `nextCommands` uses the queue's resolved
+evidence paths for all uncovered gates instead of repeating placeholder
+commands. When
 present, it also reports the latest `kube-actuary.next-version-task-run.v1`
 runner status from `.kubeactuary/next-version-task-run.json` and the local
 environment probe/blocker metadata from `.kubeactuary/environment-*.json`,

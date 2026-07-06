@@ -21,6 +21,7 @@ README = ROOT / "README.md"
 LIVE_VALIDATION = ROOT / "docs" / "live-validation.md"
 sys.path.insert(0, str(ROOT))
 
+from scripts.inspect_release_evidence_directory import render_markdown, render_text  # noqa: E402
 from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 
@@ -180,6 +181,50 @@ def write_supplemental(evidence_dir: Path, tmpdir: Path) -> None:
 
 def main() -> int:
     errors: list[str] = []
+    synthetic_status = {
+        "schemaVersion": "kube-actuary.release-evidence-status.v1",
+        "evidenceDir": "synthetic-evidence",
+        "summary": {
+            "status": "partial",
+            "liveReports": 0,
+            "supplementalEvidence": 0,
+            "coveredGates": 0,
+            "totalGates": 16,
+            "coverageErrors": 0,
+        },
+        "nextCommands": [f"python3 -B scripts/synthetic_next_{index}.py" for index in range(1, 7)],
+        "nextTask": {
+            "selected": {
+                "id": "synthetic-next-task",
+                "item": "Synthetic next task",
+                "captureStatus": "tool-ready",
+                "files": [
+                    {
+                        "role": "output",
+                        "path": f"evidence/live/raw/synthetic-{index}.txt",
+                        "exists": False,
+                    }
+                    for index in range(1, 6)
+                ],
+                "resolvedCommands": [
+                    f"python3 -B scripts/synthetic_command_{index}.py"
+                    for index in range(1, 4)
+                ],
+            },
+            "summary": {"files": 5, "existingFiles": 0, "missingFiles": 5},
+        },
+    }
+    synthetic_text = render_text(synthetic_status)
+    synthetic_markdown = render_markdown(synthetic_status)
+    for snippet in (
+        "next: python3 -B scripts/synthetic_next_6.py",
+        "next-task-file: missing output evidence/live/raw/synthetic-5.txt",
+        "next-task-command: python3 -B scripts/synthetic_command_3.py",
+    ):
+        if snippet not in synthetic_text:
+            errors.append(f"text evidence status must include all local task details: {snippet}")
+    if "python3 -B scripts/synthetic_next_6.py" not in synthetic_markdown:
+        errors.append("markdown evidence status must include all next commands")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
 

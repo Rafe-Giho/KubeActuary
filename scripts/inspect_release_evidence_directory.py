@@ -572,7 +572,7 @@ def render_text(status: dict[str, Any]) -> str:
         f"coverage-errors: {summary['coverageErrors']}",
         f"next-commands: {len(status['nextCommands'])}",
     ]
-    for command in status["nextCommands"][:5]:
+    for command in status["nextCommands"]:
         lines.append(f"next: {command}")
     next_task = status.get("nextTask")
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
@@ -593,10 +593,10 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(
                 f"next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}"
             )
-        for item in selected.get("files", [])[:4]:
+        for item in selected.get("files", []):
             file_status = "present" if item.get("exists") else "missing"
             lines.append(f"next-task-file: {file_status} {item.get('role')} {item.get('path')}")
-        for command in selected.get("resolvedCommands", [])[:2]:
+        for command in selected.get("resolvedCommands", []):
             lines.append(f"next-task-command: {command}")
     next_task_run = status.get("nextTaskRun")
     if isinstance(next_task_run, dict):
@@ -730,7 +730,7 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- run id: `{advance.get('runId')}`")
     if status.get("nextCommands"):
         lines.extend(["", "## Next Commands", ""])
-        for command in status["nextCommands"][:5]:
+        for command in status["nextCommands"]:
             lines.append(f"- `{command}`")
     return "\n".join(lines) + "\n"
 

@@ -65,6 +65,8 @@ Evidence collector release:
   progress Markdown for local evidence directories;
 - preserve selected next-task runner failure reasons in release evidence status
   and progress output;
+- show all release evidence status next commands, next-task files, and
+  next-task commands;
 - recommend environment probing before further live capture when a runner fails
   before any probe has run;
 - surface selected environment-blocker next steps in release evidence status
