@@ -86,6 +86,7 @@ Evidence collector release:
   and progress output;
 - show all release evidence status next commands, next-task files, and
   next-task commands;
+- show filtered worklist commands for release evidence status blockers;
 - add CLI Markdown output for release evidence status inspection;
 - add CLI Markdown output for version iteration advance reports;
 - add CLI Markdown output for selected next-task runner reports;

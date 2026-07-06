@@ -202,8 +202,9 @@ Expected:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, environment metadata, advance status, queue-source
-  visibility/origin, next-task queue consistency, runner/evidence-build/advance record
-  consistency, legacy prepared-record queue-source inference, complete
+  visibility/origin, next-task queue consistency, blocker drilldown commands,
+  runner/evidence-build/advance record consistency, legacy
+  prepared-record queue-source inference, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
   output, next-task evidence build Markdown output, and idempotent
   output-exists handling plus
@@ -349,8 +350,9 @@ Confirm from code and tests:
   directory coverage plus persisted next-task output and file readiness without
   requiring cluster or cloud access, and checks unprepared evidence directory
   guidance for local next-task evidence builds, runner failure summaries,
-  resolved prepared-queue command priority, runner/advance record consistency,
-  and probe-first guidance after failed runner attempts or environment blockers;
+  resolved prepared-queue command priority, blocker drilldown commands,
+  runner/advance record consistency, and probe-first guidance after failed
+  runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files, records passed and missing-source status reports, and
   skips existing outputs without cluster, cloud, or workload writes;

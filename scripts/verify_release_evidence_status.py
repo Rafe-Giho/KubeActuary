@@ -433,6 +433,12 @@ def main() -> int:
     ):
         if snippet not in partial_markdown.stdout:
             errors.append(f"partial Markdown status should include detail: {snippet}")
+    for snippet in (
+        "## Blockers",
+        "--capture-status missing-tools --missing-tool kind",
+    ):
+        if snippet not in partial_markdown.stdout:
+            errors.append(f"partial Markdown status should include blocker drilldown: {snippet}")
     if recorded_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("recorded status stdout schemaVersion mismatch")
     if "release-evidence-status: recorded" in recorded.stdout:
@@ -508,6 +514,13 @@ def main() -> int:
     failure = next_task_run.get("failure") or {}
     if failure.get("message") != "error: test cluster unavailable":
         errors.append("partial status must preserve next-task-run failure message")
+    blockers = partial_payload.get("blockers") or {}
+    missing_tool_blockers = blockers.get("missingTools") or []
+    if not any(
+        item.get("tool") == "kind" and "--missing-tool kind" in item.get("worklistCommand", "")
+        for item in missing_tool_blockers
+    ):
+        errors.append("partial status must include missing-tool worklist drilldown commands")
     next_task_evidence_build = partial_after_build_payload.get("nextTaskEvidenceBuild") or {}
     if next_task_evidence_build.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("post-build status must include next-task evidence build schema")
@@ -572,6 +585,8 @@ def main() -> int:
         errors.append("partial text status must print matched next-task-run consistency")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
+    if "missing-tool-worklist: python3 -B scripts/generate_version_worklist.py" not in partial_text.stdout:
+        errors.append("partial text status must print missing-tool worklist drilldowns")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
         errors.append("partial text status must print the environment probe next command")
     if f"next: {expected_resolved_capture}" not in partial_text.stdout:
@@ -631,6 +646,13 @@ def main() -> int:
         errors.append("blocked evidence status must preserve unavailable cluster access")
     if blocked_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
         errors.append("blocked evidence status must preserve selected blocker next step")
+    blocked_status_blockers = (blocked_payload.get("blockers") or {}).get("environment") or []
+    if not any(
+        item.get("status") == "cluster-unavailable"
+        and "--environment-status cluster-unavailable" in item.get("worklistCommand", "")
+        for item in blocked_status_blockers
+    ):
+        errors.append("blocked evidence status must include environment worklist drilldown commands")
     if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
         errors.append("blocked evidence status must recommend rerunning the environment probe first")
     if len(blocked_payload.get("nextCommands", [])) != 1:
@@ -654,6 +676,8 @@ def main() -> int:
             errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
+    if "environment-worklist: python3 -B scripts/generate_version_worklist.py" not in blocked_text.stdout:
+        errors.append("blocked text status must print environment worklist drilldowns")
 
     stale_next_task = stale_payload.get("nextTask") or {}
     stale_consistency = stale_next_task.get("queueConsistency") or {}

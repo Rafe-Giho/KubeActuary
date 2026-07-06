@@ -602,7 +602,8 @@ python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 `blocked-by-environment` 또는 `missing-tools`를 zero-run 상태로 기록하고,
 evidence 디렉터리를 갱신하기 전에는 live capture 명령을 재시도하지 않습니다.
 Release evidence status는 `tool-ready` next command만 추천하고,
-blocked 또는 missing-tool action은 blocker summary에 남깁니다. Release
+blocked 또는 missing-tool action은 로컬 worklist drilldown과 함께 blocker
+summary에 남깁니다. Release
 progress JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
 Markdown에는 tool-ready action, 선택된 next-task 파일/명령 상세, evidence
 next command를 모두 표시합니다.

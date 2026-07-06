@@ -7,6 +7,7 @@ import argparse
 import json
 import shlex
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -312,6 +313,87 @@ def load_live_validation_queue(evidence_dir: Path) -> dict[str, Any] | None:
     return payload
 
 
+def command_string(args: list[str]) -> str:
+    return " ".join(shlex.quote(arg) for arg in args)
+
+
+def blocker_worklist_command(capture_status: str, filter_flag: str, filter_value: str, evidence_dir: Path) -> str:
+    return command_string(
+        [
+            "python3",
+            "-B",
+            "scripts/generate_version_worklist.py",
+            "--format",
+            "markdown",
+            "--open-only",
+            "--evidence-dir",
+            evidence_dir.as_posix(),
+            "--capture-status",
+            capture_status,
+            filter_flag,
+            filter_value,
+        ]
+    )
+
+
+def sorted_counts(counter: Counter[str]) -> list[tuple[str, int]]:
+    return sorted(counter.items(), key=lambda item: (-item[1], item[0]))
+
+
+def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -> dict[str, Any] | None:
+    if not isinstance(live_queue, dict):
+        return None
+    items = [item for item in live_queue.get("items", []) if isinstance(item, dict)]
+    missing_tools = Counter(
+        str(tool)
+        for item in items
+        if item.get("status") == "missing-tools"
+        for tool in item.get("missingTools", [])
+    )
+    environment_statuses = Counter(
+        str(item.get("environmentStatus") or "unknown")
+        for item in items
+        if item.get("status") == "blocked-by-environment"
+    )
+    environment_next_steps = Counter(
+        str(item.get("nextStep"))
+        for item in items
+        if item.get("status") == "blocked-by-environment" and item.get("nextStep")
+    )
+    return {
+        "missingTools": [
+            {
+                "tool": tool,
+                "items": count,
+                "worklistCommand": blocker_worklist_command(
+                    "missing-tools",
+                    "--missing-tool",
+                    tool,
+                    evidence_dir,
+                ),
+            }
+            for tool, count in sorted_counts(missing_tools)
+        ],
+        "environment": [
+            {
+                "status": status,
+                "items": count,
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-status",
+                    status,
+                    evidence_dir,
+                ),
+            }
+            for status, count in sorted_counts(environment_statuses)
+        ],
+        "environmentNextSteps": [
+            {"nextStep": next_step, "items": count}
+            for next_step, count in sorted_counts(environment_next_steps)
+        ],
+    }
+
+
 def unique_commands(
     gates: list[dict[str, Any]],
     skip_gate_ids: set[str] | None = None,
@@ -522,6 +604,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     live_queue = load_live_validation_queue(evidence_dir)
+    blockers = live_queue_blockers(live_queue, evidence_dir)
     fallback_queue_source, fallback_queue_source_origin = default_queue_source(live_queue)
     next_task = load_next_task(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     if next_task is not None:
@@ -572,6 +655,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         "environmentProbe": environment_probe,
         "environmentBlockers": environment_blockers,
         "versionIterationAdvance": version_iteration_advance,
+        "blockers": blockers,
         "liveReports": manifest.get("reports", []),
         "supplementalEvidence": [
             {
@@ -686,6 +770,18 @@ def render_text(status: dict[str, Any]) -> str:
         selected_blocker = environment_blockers.get("selected") or {}
         if selected_blocker.get("nextStep"):
             lines.append(f"environment-next: {selected_blocker.get('nextStep')}")
+    blockers = status.get("blockers")
+    if isinstance(blockers, dict):
+        for item in blockers.get("missingTools", []):
+            lines.append(f"missing-tool-blocker: {item.get('tool')} {item.get('items')}")
+            if item.get("worklistCommand"):
+                lines.append(f"missing-tool-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environment", []):
+            lines.append(f"environment-blocker: {item.get('status')} {item.get('items')}")
+            if item.get("worklistCommand"):
+                lines.append(f"environment-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environmentNextSteps", []):
+            lines.append(f"blocker-next-step: {item.get('nextStep')} {item.get('items')}")
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.append(f"version-iteration-advance: {advance.get('status')}")
@@ -789,6 +885,23 @@ def render_markdown(status: dict[str, Any]) -> str:
             selected_blocker = environment_blockers.get("selected") or {}
             if selected_blocker.get("nextStep"):
                 lines.append(f"- next: {selected_blocker.get('nextStep')}")
+    blockers = status.get("blockers")
+    if isinstance(blockers, dict):
+        missing_tool_blockers = blockers.get("missingTools") or []
+        environment_status_blockers = blockers.get("environment") or []
+        environment_next_steps = blockers.get("environmentNextSteps") or []
+        if missing_tool_blockers or environment_status_blockers:
+            lines.extend(["", "## Blockers", ""])
+            for item in missing_tool_blockers:
+                lines.append(f"- missing-tool: `{item.get('tool')}` ({item.get('items')} items)")
+                if item.get("worklistCommand"):
+                    lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+            for item in environment_status_blockers:
+                lines.append(f"- environment: `{item.get('status')}` ({item.get('items')} items)")
+                if item.get("worklistCommand"):
+                    lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+            for item in environment_next_steps:
+                lines.append(f"- next-step: {item.get('nextStep')} ({item.get('items')} items)")
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.extend(["", "## Advance", "", f"- status: `{advance.get('status')}`"])
