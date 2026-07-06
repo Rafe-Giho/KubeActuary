@@ -44,6 +44,7 @@ API_FREEZE = ROOT / "scripts" / "verify_api_freeze.py"
 DOCS_FREEZE = ROOT / "scripts" / "verify_docs_freeze.py"
 LIVE_VALIDATION_READINESS = ROOT / "scripts" / "verify_live_validation_readiness.py"
 LIVE_VALIDATION_QUEUE = ROOT / "scripts" / "verify_live_validation_queue.py"
+LIVE_VALIDATION_QUEUE_SAFETY = ROOT / "scripts" / "verify_live_validation_queue_safety.py"
 LIVE_EVIDENCE_SCHEMA = ROOT / "scripts" / "verify_live_evidence_schema.py"
 LIVE_EVIDENCE_MANIFEST = ROOT / "scripts" / "verify_live_evidence_manifest.py"
 LIVE_EVIDENCE_COVERAGE = ROOT / "scripts" / "verify_live_evidence_coverage.py"
@@ -122,7 +123,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 72", result.stdout)
+        self.assertIn("checks: 73", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(
@@ -626,6 +627,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("live-validation-queue: passed", result.stdout)
         self.assertIn("tool-ready:", result.stdout)
         self.assertIn("cluster-writes: disabled", result.stdout)
+
+    def test_verify_live_validation_queue_safety(self):
+        result = subprocess.run(
+            [sys.executable, str(LIVE_VALIDATION_QUEUE_SAFETY)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("live-validation-queue-safety: passed", result.stdout)
+        self.assertIn("writes: disabled", result.stdout)
 
     def test_verify_live_evidence_schema(self):
         result = subprocess.run(

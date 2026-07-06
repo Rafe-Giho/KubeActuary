@@ -55,6 +55,7 @@ python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_queue.py
+python3 -B scripts/verify_live_validation_queue_safety.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -141,6 +142,8 @@ Expected:
   running cluster or cloud checks and reports gate-level missing tools;
 - live validation queue emits schema `kube-actuary.live-validation-queue.v1`
   with ordered tool-ready and missing-tool evidence commands;
+- live validation queue safety verifies placeholder and resolved queue commands
+  remain dry-run, read-only, or local evidence-only;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records
@@ -216,6 +219,7 @@ Expected:
 - [ ] documentation freeze check passes.
 - [ ] live validation readiness check passes.
 - [ ] live validation queue check passes.
+- [ ] live validation queue safety check passes.
 - [ ] captured live evidence schema check passes.
 - [ ] captured live evidence manifest check passes.
 - [ ] captured live evidence coverage check passes.

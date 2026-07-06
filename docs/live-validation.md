@@ -12,6 +12,7 @@ python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/generate_live_validation_queue.py --format markdown
 python3 -B scripts/generate_live_validation_queue.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_live_validation_queue.py
+python3 -B scripts/verify_live_validation_queue_safety.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -42,7 +43,9 @@ turns the current taskboard gates into an ordered evidence collection queue. It
 does not run the listed commands; it only records each gate's commands, missing
 tools, and closure commands. With `--evidence-dir`, it also emits deterministic
 resolved command paths under `reports/`, `raw/`, `supplemental/`, and
-`.kubeactuary/`.
+`.kubeactuary/`. The queue safety verifier inspects both placeholder and
+resolved queue commands and rejects commands outside the dry-run, read-only, or
+local evidence-helper set.
 
 ## Open Live Gates
 

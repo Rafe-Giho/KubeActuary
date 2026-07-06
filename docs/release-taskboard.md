@@ -61,6 +61,7 @@ Status legend:
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates and missing tools without running them |
 | Live validation queue | DONE | `scripts/generate_live_validation_queue.py` and `scripts/verify_live_validation_queue.py` verify schema `kube-actuary.live-validation-queue.v1` for ordered evidence commands |
+| Live validation queue safety | DONE | `scripts/verify_live_validation_queue_safety.py` verifies placeholder and resolved queue commands stay dry-run/read-only/evidence-only |
 | Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |
 | Live evidence manifest | DONE | `scripts/verify_live_evidence_manifest.py` verifies captured report manifest generation |
 | Live evidence coverage | DONE | `scripts/verify_live_evidence_coverage.py` verifies release-gate and provider coverage rules |
@@ -75,7 +76,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (72 checks)
+verification: passed (73 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

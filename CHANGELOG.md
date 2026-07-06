@@ -29,6 +29,8 @@ Evidence collector release:
 - add release evidence status inspector for partial evidence directories;
 - add live validation queue generation with ordered external evidence commands
   and deterministic evidence-directory paths;
+- add live validation queue command safety verification for placeholder and
+  resolved evidence commands;
 - add GitHub Actions CI for the local verification suite;
 - add release checklist and generated release notes dry-run tooling;
 - render CRD objects with capsule digest annotations, post-checks, and richer
