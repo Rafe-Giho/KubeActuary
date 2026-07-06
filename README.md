@@ -363,6 +363,7 @@ scripts/
   kube-actuary.release-progress.v1 release progress schema
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
+  verify_external_gate_command_safety.py external gate command safety verifier
   evaluate_external_gate_evidence.py external gate evidence evaluator
   verify_external_gate_evidence.py external gate evidence verifier
   build_external_evidence.py supplemental external evidence builder
@@ -461,6 +462,7 @@ python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py

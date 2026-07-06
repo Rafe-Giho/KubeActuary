@@ -25,6 +25,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
@@ -94,6 +95,8 @@ Expected:
   readiness, tool-ready next actions, and optional evidence directory status;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
+- external gate command safety verifies generated external commands stay
+  dry-run, read-only, or local evidence-only;
 - external gate evidence evaluation maps captured smoke manifests and
   supplemental external evidence back to taskboard rows;
 - external evidence builder creates supplemental evidence records from captured
@@ -179,6 +182,7 @@ Expected:
 - [ ] release taskboard audit check passes.
 - [ ] release progress check passes.
 - [ ] external gate plan check passes.
+- [ ] external gate command safety check passes.
 - [ ] external gate evidence evaluation check passes.
 - [ ] external evidence builder check passes.
 - [ ] external evidence bundle check passes.

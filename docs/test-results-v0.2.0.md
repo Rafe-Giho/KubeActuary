@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (70 checks)
-Ran 104 tests
+verification: passed (71 checks)
+Ran 105 tests
 OK
 ```
 
@@ -78,6 +78,8 @@ Coverage included:
 - documentation freeze and public examples audit verification;
 - live validation readiness inventory and gate-level tool readiness
   verification;
+- external gate command safety verification for generated dry-run, read-only,
+  and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
 - live evidence manifest generation for captured smoke reports;
 - live evidence coverage validation for captured smoke report manifests;
@@ -142,6 +144,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
@@ -213,6 +216,8 @@ Result:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
+- external gate command safety check prints `external-gate-command-safety:
+  passed`;
 - external gate evidence check prints `external-gate-evidence: passed`;
 - external evidence builder check prints `external-evidence-builder: passed`;
 - external evidence bundle check prints `external-evidence-bundle: passed`;

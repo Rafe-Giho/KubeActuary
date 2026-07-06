@@ -19,6 +19,8 @@ Evidence collector release:
 - add versioned release progress reports for local task tracking;
 - add tool-ready and missing-tool next actions to release progress reports;
 - add external verification gate plan generation for remaining live evidence;
+- add external gate command safety verification for generated dry-run,
+  read-only, and evidence-only commands;
 - add external gate evidence evaluation against captured smoke manifests and
   supplemental evidence;
 - add supplemental external evidence builder for raw live outputs;

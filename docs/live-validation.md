@@ -13,6 +13,7 @@ python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py

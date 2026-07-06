@@ -62,6 +62,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
@@ -131,6 +132,8 @@ Expected:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
+- external gate command safety check prints `external-gate-command-safety:
+  passed`;
 - external gate evidence check prints `external-gate-evidence: passed`;
 - external evidence builder check prints `external-evidence-builder: passed`;
 - external evidence bundle check prints `external-evidence-bundle: passed`;
@@ -347,7 +350,7 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, release taskboard audit, release progress, external gate plan, external gate evidence,
+  release notes dry-run, release taskboard audit, release progress, external gate plan, external gate command safety, external gate evidence,
   external evidence builder, external evidence bundle, release evidence directory, release evidence status,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,

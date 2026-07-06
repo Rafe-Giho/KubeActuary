@@ -11,6 +11,7 @@ RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 RELEASE_PROGRESS = ROOT / "scripts" / "verify_release_progress.py"
 EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
+EXTERNAL_GATE_COMMAND_SAFETY = ROOT / "scripts" / "verify_external_gate_command_safety.py"
 EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
 EXTERNAL_EVIDENCE_BUILDER = ROOT / "scripts" / "verify_external_evidence_builder.py"
 EXTERNAL_EVIDENCE_BUNDLE = ROOT / "scripts" / "verify_external_evidence_bundle.py"
@@ -120,7 +121,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 70", result.stdout)
+        self.assertIn("checks: 71", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(
@@ -135,6 +136,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("external-gate-plan: passed", result.stdout)
         self.assertIn("verify-gates: 16", result.stdout)
+
+    def test_verify_external_gate_command_safety(self):
+        result = subprocess.run(
+            [sys.executable, str(EXTERNAL_GATE_COMMAND_SAFETY)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("external-gate-command-safety: passed", result.stdout)
+        self.assertIn("writes: disabled", result.stdout)
 
     def test_verify_external_gate_evidence(self):
         result = subprocess.run(

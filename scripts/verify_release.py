@@ -82,12 +82,17 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 70"),
+        contains=("release-progress: passed", "verify: 16", "checks: 71"),
     ),
     Check(
         "external gate plan",
         ("python3", "-B", "scripts/verify_external_gate_plan.py"),
         contains=("external-gate-plan: passed", "verify-gates: 16", "doing: 0"),
+    ),
+    Check(
+        "external gate command safety",
+        ("python3", "-B", "scripts/verify_external_gate_command_safety.py"),
+        contains=("external-gate-command-safety: passed", "writes: disabled"),
     ),
     Check(
         "external gate evidence",
