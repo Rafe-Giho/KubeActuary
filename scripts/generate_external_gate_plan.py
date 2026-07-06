@@ -144,6 +144,7 @@ def build_plan(taskboard: Path = TASKBOARD) -> dict[str, Any]:
             "python3 -B scripts/validate_live_evidence.py <evidence.json> [...]",
             "python3 -B scripts/build_live_evidence_manifest.py <evidence.json> [...] --output <manifest.json>",
             "python3 -B scripts/check_live_evidence_coverage.py <manifest.json>",
+            "python3 -B scripts/build_release_evidence_directory.py <evidence-dir>",
         ],
     }
 

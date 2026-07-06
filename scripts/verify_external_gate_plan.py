@@ -90,6 +90,7 @@ def main() -> int:
         "run_krew_smoke.py --run --output",
         "run_admission_kind_smoke.py --run --output",
         "check_live_evidence_coverage.py <manifest.json>",
+        "build_release_evidence_directory.py <evidence-dir>",
     ):
         if snippet not in commands and snippet not in "\n".join(plan.get("closureCommands", [])):
             errors.append(f"external gate plan missing command: {snippet}")
