@@ -407,7 +407,7 @@ scripts/
   verify_controller_status_apply.py status patch dry-run verifier
   verify_controller_loop.py   controller loop dry-run verifier
   verify_controller_resource_budget.py offline controller resource budget check
-  measure_controller_resources.py kubectl top budget measurement helper
+  measure_controller_resources.py kubectl top budget measurement helper with text/JSON output
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier

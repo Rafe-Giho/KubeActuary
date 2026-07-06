@@ -303,8 +303,8 @@ Confirm from code and tests:
   writes behind explicit `--execute`;
 - controller loop repeats `kubectl get` and status-only patch ticks while
   keeping default patches server-side dry-run;
-- controller resource budget helper sets idle <50m CPU and <64Mi memory targets
-  and parses `kubectl top` samples;
+- controller resource budget helper sets idle <50m CPU and <64Mi memory targets,
+  parses `kubectl top` samples, and emits structured JSON measurement evidence;
 - lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
   evidence output, and covers kind, minikube, MicroK8s, and k3s without default
   writes;

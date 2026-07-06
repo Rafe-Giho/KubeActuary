@@ -31,16 +31,32 @@ def explain_check(text: str) -> tuple[bool, str, list[str]]:
 
 def resource_budget_check(path: Path) -> tuple[bool, str, list[str]]:
     result = subprocess.run(
-        [sys.executable, "-B", str(MEASURE), "--sample", str(path)],
+        [sys.executable, "-B", str(MEASURE), "--sample", str(path), "--format", "json"],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
     )
-    ok = result.returncode == 0
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        payload = {}
+    ok = result.returncode == 0 and payload.get("ok") is True
     summary = "controller resource budget sample passed" if ok else "controller resource budget sample failed"
-    return ok, summary, [line for line in result.stdout.splitlines() if line.strip()]
+    observed = payload.get("observed", {}) if isinstance(payload, dict) else {}
+    budget = payload.get("budget", {}) if isinstance(payload, dict) else {}
+    checks = [
+        f"schema={payload.get('schemaVersion') or 'unavailable'}",
+        f"samples={payload.get('sampleCount') or 0}",
+        f"observed-cpu-millicores={observed.get('cpuMillicores')}",
+        f"observed-memory-mi={observed.get('memoryMi')}",
+        f"budget-cpu-millicores-less-than={budget.get('cpuMillicoresLessThan')}",
+        f"budget-memory-mi-less-than={budget.get('memoryMiLessThan')}",
+    ]
+    if not payload and result.stdout.strip():
+        checks.extend(line for line in result.stdout.splitlines() if line.strip())
+    return ok, summary, checks
 
 
 def controller_loop_check(text: str) -> tuple[bool, str, list[str]]:

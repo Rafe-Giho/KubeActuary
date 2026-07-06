@@ -56,9 +56,21 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         sample = Path(tmpdir) / "kubectl-top.txt"
-        sample.write_text("POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n")
+        sample.write_text(
+            "POD NAME CPU(cores) MEMORY(bytes)\n"
+            "controller-0 controller 12m 41Mi\n"
+            "controller-0 sidecar 8m 28Mi\n"
+        )
         passed = subprocess.run(
             [sys.executable, "-B", str(MEASURE), "--sample", str(sample)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        structured = subprocess.run(
+            [sys.executable, "-B", str(MEASURE), "--sample", str(sample), "--format", "json"],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,
@@ -74,8 +86,23 @@ def main() -> int:
             stderr=subprocess.PIPE,
             check=False,
         )
+    if structured.returncode != 0:
+        errors.append("structured measurement sample did not pass")
+        structured_payload = {}
+    else:
+        structured_payload = json.loads(structured.stdout)
     if passed.returncode != 0 or "resource-measurement: passed" not in passed.stdout:
         errors.append("passing sample did not pass budget measurement")
+    if "sample-count: 2" not in passed.stdout:
+        errors.append("text measurement must report sample count")
+    if structured_payload.get("schemaVersion") != "kube-actuary.controller-resource-measurement.v1":
+        errors.append("structured measurement schema version mismatch")
+    if structured_payload.get("sampleCount") != 2:
+        errors.append("structured measurement must preserve sample count")
+    if structured_payload.get("observed") != {"cpuMillicores": 12, "memoryMi": 41}:
+        errors.append("structured measurement must preserve observed maxima")
+    if structured_payload.get("budget") != {"cpuMillicoresLessThan": 50, "memoryMiLessThan": 64}:
+        errors.append("structured measurement must preserve budget values")
     if failed.returncode == 0 or "resource-measurement: failed" not in failed.stdout:
         errors.append("failing sample did not fail budget measurement")
 
@@ -94,6 +121,7 @@ def main() -> int:
     print("idle-cpu-budget: <50m")
     print("idle-memory-budget: <64Mi")
     print("measurement-harness: kubectl top")
+    print("measurement-format: text,json")
     return 0
 
 

@@ -150,10 +150,13 @@ It can also evaluate captured samples:
 
 ```sh
 python3 -B scripts/measure_controller_resources.py --sample kubectl-top.txt
+python3 -B scripts/measure_controller_resources.py --sample kubectl-top.txt --format json
 ```
 
-The local verifier checks the budget contract and measurement parser with pass
-and fail samples:
+The JSON format uses schema `kube-actuary.controller-resource-measurement.v1`
+and records observed maxima, sample count, and budget limits for supplemental
+evidence. The local verifier checks the budget contract and measurement parser
+with pass and fail samples:
 
 ```sh
 python3 -B scripts/verify_controller_resource_budget.py

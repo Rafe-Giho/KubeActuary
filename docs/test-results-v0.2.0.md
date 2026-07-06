@@ -264,7 +264,8 @@ Result:
 - controller sync check prints `controller-sync: passed`;
 - controller status apply check prints `controller-status-apply: passed`;
 - controller loop check prints `controller-loop: passed`;
-- controller resource budget check prints `controller-resource-budget: passed`;
+- controller resource budget check prints `controller-resource-budget: passed`
+  and verifies text plus JSON measurement output;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;

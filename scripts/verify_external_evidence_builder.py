@@ -85,6 +85,18 @@ def main() -> int:
         source = payload.get("source", {})
         if len(str(source.get("sha256", ""))) != 64:
             errors.append("supplemental evidence source must include sha256")
+        if payload.get("kind") == "controller-resource-budget":
+            checks = payload.get("checks", [])
+            expected_checks = {
+                "schema=kube-actuary.controller-resource-measurement.v1",
+                "samples=1",
+                "observed-cpu-millicores=12",
+                "observed-memory-mi=41",
+                "budget-cpu-millicores-less-than=50",
+                "budget-memory-mi-less-than=64",
+            }
+            if not expected_checks.issubset(set(checks)):
+                errors.append("resource budget evidence must include structured measurement checks")
 
     for snippet in ("build_external_evidence.py", "kube-actuary.external-evidence.v1"):
         if snippet not in README.read_text():
