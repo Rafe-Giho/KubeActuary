@@ -154,6 +154,12 @@ def main() -> int:
         write_advance_record(partial_dir)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
+        recorded = run_script(INSPECTOR, str(partial_dir), "--format", "json", "--record")
+        recorded_json = partial_dir / ".kubeactuary" / "release-evidence-status.json"
+        recorded_md = partial_dir / ".kubeactuary" / "release-evidence-status.md"
+        recorded_output_written = recorded_json.is_file() and recorded_md.is_file()
+        recorded_file_payload = json.loads(recorded_json.read_text()) if recorded_json.is_file() else {}
+        recorded_markdown = recorded_md.read_text() if recorded_md.is_file() else ""
         next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
         next_task_output = partial_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
         next_task_output_written = next_task_output.is_file()
@@ -185,6 +191,11 @@ def main() -> int:
         partial_payload = {}
     else:
         partial_payload = json.loads(partial.stdout)
+    if recorded.returncode != 0:
+        errors.append(f"recorded status failed: {recorded.stderr.strip() or recorded.stdout.strip()}")
+        recorded_payload = {}
+    else:
+        recorded_payload = json.loads(recorded.stdout)
     if next_task_build.returncode != 0:
         errors.append(f"next-task evidence build failed: {next_task_build.stderr.strip() or next_task_build.stdout.strip()}")
         next_task_build_payload = {}
@@ -209,6 +220,18 @@ def main() -> int:
 
     if partial_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("status schemaVersion mismatch")
+    if recorded_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
+        errors.append("recorded status stdout schemaVersion mismatch")
+    if "release-evidence-status: recorded" in recorded.stdout:
+        errors.append("recorded status notice must not corrupt JSON stdout")
+    if not recorded_output_written:
+        errors.append("status inspector --record must write JSON and Markdown reports")
+    if "# KubeActuary Release Evidence Status" not in recorded_markdown:
+        errors.append("recorded status Markdown must include the report title")
+    if recorded_file_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
+        errors.append("recorded status file schemaVersion mismatch")
+    if recorded_file_payload.get("summary", {}).get("status") != "partial":
+        errors.append("recorded status file must preserve partial status")
     if partial_payload.get("summary", {}).get("status") != "partial":
         errors.append("partial evidence directory must report partial")
     if partial_payload.get("summary", {}).get("liveReports") != 1:
@@ -324,6 +347,8 @@ def main() -> int:
         ENVIRONMENT_PROBE_SCHEMA,
         ENVIRONMENT_BLOCKERS_SCHEMA,
         ADVANCE_SCHEMA,
+        "--record",
+        "release-evidence-status.json",
     ):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
@@ -342,6 +367,7 @@ def main() -> int:
     print("next-task-run: ok")
     print("environment: ok")
     print("advance: ok")
+    print("record: metadata")
     return 0
 
 

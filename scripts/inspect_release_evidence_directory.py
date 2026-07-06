@@ -21,6 +21,8 @@ from scripts.evaluate_external_gate_evidence import evaluate, load_supplemental 
 
 
 SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
+STATUS_REPORT_JSON = "release-evidence-status.json"
+STATUS_REPORT_MD = "release-evidence-status.md"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
@@ -307,6 +309,73 @@ def render_text(status: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_markdown(status: dict[str, Any]) -> str:
+    summary = status["summary"]
+    lines = [
+        "# KubeActuary Release Evidence Status",
+        "",
+        f"Schema: `{status['schemaVersion']}`",
+        f"Evidence directory: `{status['evidenceDir']}`",
+        f"Status: `{summary['status']}`",
+        "",
+        "## Summary",
+        "",
+        f"- live reports: {summary['liveReports']}",
+        f"- supplemental evidence: {summary['supplementalEvidence']}",
+        f"- covered gates: {summary['coveredGates']}/{summary['totalGates']}",
+        f"- coverage errors: {summary['coverageErrors']}",
+        "",
+        "## Next Task",
+        "",
+    ]
+    next_task = status.get("nextTask")
+    selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+    if selected:
+        lines.append(f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('captureStatus')})")
+        file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
+        if file_summary:
+            lines.append(f"- files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
+    else:
+        lines.append("- none")
+    next_task_run = status.get("nextTaskRun")
+    if isinstance(next_task_run, dict):
+        lines.extend(["", "## Runner", "", f"- status: `{next_task_run.get('status')}`"])
+        run_summary = next_task_run.get("summary", {})
+        if run_summary:
+            lines.append(f"- ran: {run_summary.get('ran', 0)}")
+    environment_probe = status.get("environmentProbe")
+    environment_blockers = status.get("environmentBlockers")
+    if isinstance(environment_probe, dict) or isinstance(environment_blockers, dict):
+        lines.extend(["", "## Environment", ""])
+        if isinstance(environment_probe, dict):
+            lines.append(f"- probe: `{environment_probe.get('clusterAccess')}`")
+        if isinstance(environment_blockers, dict):
+            blocker_summary = environment_blockers.get("summary", {})
+            lines.append(f"- blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+    advance = status.get("versionIterationAdvance")
+    if isinstance(advance, dict):
+        lines.extend(["", "## Advance", "", f"- status: `{advance.get('status')}`"])
+        if advance.get("runId"):
+            lines.append(f"- run id: `{advance.get('runId')}`")
+    if status.get("nextCommands"):
+        lines.extend(["", "## Next Commands", ""])
+        for command in status["nextCommands"][:5]:
+            lines.append(f"- `{command}`")
+    return "\n".join(lines) + "\n"
+
+
+def record_status(evidence_dir: Path, status: dict[str, Any]) -> dict[str, str]:
+    metadata_dir = evidence_dir / DEFAULT_OUTPUT_DIR
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    json_path = metadata_dir / STATUS_REPORT_JSON
+    markdown_path = metadata_dir / STATUS_REPORT_MD
+    record = {"json": str(json_path), "markdown": str(markdown_path)}
+    status["statusRecord"] = record
+    json_path.write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
+    markdown_path.write_text(render_markdown(status))
+    return record
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Inspect KubeActuary release evidence directory status.")
     parser.add_argument("evidence_dir", help="directory containing captured live and supplemental evidence JSON")
@@ -316,6 +385,7 @@ def main(argv: list[str] | None = None) -> int:
         help=f"artifact output directory, default: <evidence-dir>/{DEFAULT_OUTPUT_DIR}",
     )
     parser.add_argument("--format", choices=["text", "json"], default="text")
+    parser.add_argument("--record", action="store_true", help="write status JSON and Markdown under .kubeactuary")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
@@ -323,6 +393,7 @@ def main(argv: list[str] | None = None) -> int:
     output_dir = Path(args.output_dir) if args.output_dir else evidence_dir / DEFAULT_OUTPUT_DIR
     try:
         status = inspect_directory(evidence_dir, output_dir)
+        record = record_status(evidence_dir, status) if args.record else None
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("release-evidence-status: failed")
         print(f"error: {exc}")
@@ -338,6 +409,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         Path(args.output).write_text(rendered)
         print(f"release-evidence-status: wrote {args.output}")
+    if record:
+        print(f"release-evidence-status: recorded {record['json']}", file=sys.stderr)
     return 0
 
 

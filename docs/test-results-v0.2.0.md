@@ -261,7 +261,8 @@ Result:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence
   build, next-task-run status, environment metadata, advance status, and
-  idempotent output-exists handling;
+  idempotent output-exists handling plus
+  `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording;
 - version iteration advance check prints `version-iteration-advance: passed`

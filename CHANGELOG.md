@@ -41,6 +41,8 @@ Evidence collector release:
 - surface selected runner status from release evidence directory inspection;
 - surface environment probe and blocker metadata from release evidence status;
 - surface version iteration advance status from release evidence inspection;
+- add opt-in release evidence status recording under prepared evidence
+  directories;
 - add local next-task evidence builder for prepared evidence directories;
 - add selected next-version task runner for plan-by-default evidence command
   execution;

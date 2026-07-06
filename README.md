@@ -387,10 +387,11 @@ scripts/
   kube-actuary.external-evidence-bundle.v1 external evidence bundle schema
   build_release_evidence_directory.py release evidence directory builder
   verify_release_evidence_directory.py release evidence directory verifier
-  inspect_release_evidence_directory.py release evidence, next-task, runner, environment, and advance status inspector
+  inspect_release_evidence_directory.py release evidence, next-task, runner, environment, and advance status inspector/recorder
   build_next_task_evidence.py local next-task supplemental evidence builder
   verify_release_evidence_status.py release evidence status verifier
   kube-actuary.release-evidence-status.v1 release evidence status schema
+  release-evidence-status.json persisted release evidence status report
   kube-actuary.next-task-evidence-build.v1 next task evidence build schema
   verify_clean_artifacts.py generated Python cache artifact verifier
   verify_crd_compatibility.py  offline CRD compatibility smoke check

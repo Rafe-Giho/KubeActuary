@@ -195,6 +195,7 @@ Inspect a partial evidence directory while gathering external runs:
 ```sh
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir>
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format json
+python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --record
 ```
 
 The status inspector uses schema `kube-actuary.release-evidence-status.v1`,
@@ -207,7 +208,9 @@ present, it also reports the latest `kube-actuary.next-version-task-run.v1`
 runner status from `.kubeactuary/next-version-task-run.json` and the local
 environment probe/blocker metadata from `.kubeactuary/environment-*.json`,
 plus the latest advance workflow status from
-`.kubeactuary/version-iteration-advance.json`.
+`.kubeactuary/version-iteration-advance.json`. With `--record`, it persists
+the computed status as `.kubeactuary/release-evidence-status.json` and
+`.kubeactuary/release-evidence-status.md`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.
