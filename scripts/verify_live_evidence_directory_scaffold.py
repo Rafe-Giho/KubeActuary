@@ -70,10 +70,13 @@ def main() -> int:
         evidence_dir = Path(tmp) / "evidence"
         probe_dir = Path(tmp) / "probe-evidence"
         filtered_dir = Path(tmp) / "filtered-evidence"
+        version_dir = Path(tmp) / "version-evidence"
         first = run_prepare(evidence_dir)
         second = run_prepare(evidence_dir)
         probe = run_prepare(probe_dir, "--probe-environment", env=fake_tool_env(Path(tmp) / "tools", cluster_ok=False))
         filtered = run_prepare(filtered_dir, "--missing-tool", "kind")
+        versioned = run_prepare(version_dir, "--version", "0.4.3")
+        unknown_version = run_prepare(Path(tmp) / "unknown-version", "--version", "9.9.9")
         queue_json = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
         next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
@@ -100,11 +103,15 @@ def main() -> int:
         probe_report_path = probe_dir / ".kubeactuary" / "environment-probe.json"
         probe_blockers_path = probe_dir / ".kubeactuary" / "environment-blockers.json"
         filtered_next_task_path = filtered_dir / ".kubeactuary" / "next-version-task.json"
+        version_next_task_path = version_dir / ".kubeactuary" / "next-version-task.json"
+        version_next_task_md_path = version_dir / ".kubeactuary" / "next-version-task.md"
         probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
         probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
         probe_report_payload = json.loads(probe_report_path.read_text()) if probe_report_path.is_file() else {}
         probe_blockers = json.loads(probe_blockers_path.read_text()) if probe_blockers_path.is_file() else {}
         filtered_next_task = json.loads(filtered_next_task_path.read_text()) if filtered_next_task_path.is_file() else {}
+        version_next_task = json.loads(version_next_task_path.read_text()) if version_next_task_path.is_file() else {}
+        version_next_task_md = version_next_task_md_path.read_text() if version_next_task_md_path.is_file() else ""
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -119,6 +126,12 @@ def main() -> int:
             errors.append("probe scaffold must report unavailable cluster access")
         if filtered.returncode != 0:
             errors.append(f"filtered scaffold failed: {filtered.stderr.strip() or filtered.stdout.strip()}")
+        if versioned.returncode != 0:
+            errors.append(f"versioned scaffold failed: {versioned.stderr.strip() or versioned.stdout.strip()}")
+        if "version: 0.4.3" not in versioned.stdout:
+            errors.append("versioned scaffold must print selected version filters")
+        if unknown_version.returncode == 0 or "unknown version: 9.9.9" not in unknown_version.stdout:
+            errors.append("versioned scaffold must reject unknown version filters")
         if advanced.returncode != 0:
             errors.append(f"advanced scaffold failed: {advanced.stderr.strip() or advanced.stdout.strip()}")
         if "skip-complete-evidence: true" not in advanced.stdout:
@@ -216,6 +229,15 @@ def main() -> int:
             errors.append("filtered scaffold should select the first kind-blocked task")
         if filtered_selected.get("captureStatus") != "missing-tools":
             errors.append("filtered scaffold should preserve missing-tools capture status")
+        version_selected = version_next_task.get("selected") or {}
+        if version_next_task.get("filters", {}).get("versions") != ["0.4.3"]:
+            errors.append("versioned scaffold must persist version filters")
+        if version_selected.get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+            errors.append("versioned scaffold should select the first open task in v0.4.3")
+        if version_selected.get("version") != "0.4.3":
+            errors.append("versioned scaffold must preserve selected task version")
+        if "0.4.3" not in version_next_task_md:
+            errors.append("versioned scaffold next-task markdown must show the selected version")
         if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
             errors.append("scaffold next task schemaVersion mismatch")
         if next_task.get("evidenceDir") != str(evidence_dir):
@@ -256,6 +278,7 @@ def main() -> int:
             ENVIRONMENT_BLOCKERS_SCHEMA,
             "--skip-complete-evidence",
             "--missing-tool",
+            "--version",
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing scaffold detail: {snippet}")

@@ -219,6 +219,7 @@ def prepare_directory(
     skip_complete_evidence: bool = False,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    version_filters: list[str] | None = None,
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
@@ -238,7 +239,7 @@ def prepare_directory(
     blockers_md = metadata_dir / ENVIRONMENT_BLOCKERS_MD
     write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     next_task = build_selection(
-        version_filters=[],
+        version_filters=list(version_filters or []),
         include_complete=False,
         probe_environment=probe_environment,
         kubectl=kubectl,
@@ -290,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
+    parser.add_argument("--version", action="append", default=[], help="filter next-task selection to a release version; repeatable")
     parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
@@ -303,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
             skip_complete_evidence=args.skip_complete_evidence,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            version_filters=args.version,
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
@@ -321,6 +324,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"tool-ready: {summary['toolReady']}/{summary['total']}")
     print("cluster-writes: disabled")
     print(f"probe-environment: {str(args.probe_environment).lower()}")
+    for version in args.version:
+        print(f"version: {version}")
     if queue.get("environmentProbe"):
         print(f"cluster-access: {queue['environmentProbe'].get('clusterAccess')}")
     print(f"queue: {result['queueJson']}")

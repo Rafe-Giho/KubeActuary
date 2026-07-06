@@ -524,6 +524,7 @@ python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --version 0.4.3
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
 python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown --record
@@ -612,6 +613,9 @@ progress는 준비된 evidence 디렉터리 없이도 같은 read-only environme
 probe를 실행할 수 있고 `--version`으로 리포트 범위를 좁힐 수 있습니다. JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
 Markdown에는 tool-ready action, 선택된 next-task 파일/명령/worklist 상세,
 evidence next command를 모두 표시합니다.
+`prepare_live_evidence_directory.py --version <version>`은 같은 version
+scope를 `.kubeactuary/next-version-task.*` artifact에 적용하면서 cluster
+write는 계속 비활성화합니다.
 
 예제 검증:
 

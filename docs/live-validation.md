@@ -22,6 +22,7 @@ python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --sk
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --version 0.4.3
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
@@ -70,7 +71,9 @@ classify tool-ready actions as environment-blocked when a disposable cluster is
 not reachable. The probe is read-only and uses the same stable reason labels as
 the readiness verifier. Use `--version <version>` to narrow the release progress
 view to one version's rows, external gates, and next actions during repeated
-local validation. It can also inspect `--evidence-dir`. If that
+local validation. `prepare_live_evidence_directory.py --version <version>`
+uses the same scope for the persisted selected next-task artifacts in
+`.kubeactuary/`. It can also inspect `--evidence-dir`. If that
 directory has not been prepared yet, it reports `not-prepared` instead of
 failing and prints the `prepare_live_evidence_directory.py` command needed to
 start the local evidence loop. For prepared directories, the Markdown progress
