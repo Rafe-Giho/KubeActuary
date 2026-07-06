@@ -603,9 +603,9 @@ refreshed. Release evidence status recommends only `tool-ready` next commands;
 blocked or missing-tool actions stay in blocker summaries with local worklist
 drilldowns. Release progress
 uses the same rule for JSON `nextActions` runnable commands, prints every
-tool-ready action, selected next-task file/command detail, and evidence next
-command in Markdown, and links blocker summaries to filtered local worklist
-commands.
+tool-ready action, selected next-task file/command/worklist detail, and
+evidence next command in Markdown, and links blocker summaries to filtered
+local worklist commands.
 
 Validate examples:
 

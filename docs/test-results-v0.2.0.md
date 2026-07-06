@@ -141,9 +141,9 @@ Coverage included:
 - release evidence status inspection for partial and complete evidence
   directories plus persisted next-task output, file readiness, and
   unprepared-directory guidance, with evidence-build status, runner failure
-  summaries, resolved prepared-queue command priority, blocker drilldown
-  commands, and probe-first follow-up guidance for failed runner and
-  environment-blocker states;
+  summaries, resolved prepared-queue command priority, selected next-task
+  worklist drilldowns, blocker drilldown commands, and probe-first follow-up
+  guidance for failed runner and environment-blocker states;
 - next-task evidence build from prepared raw files plus passed and
   missing-source recorded status reports and idempotent output-exists handling;
 - next-version task runner success, failed-run summary, and recorded report
@@ -295,8 +295,8 @@ Result:
   verifies persisted next-task output, file readiness, next-task evidence
   build, next-task-run status, environment metadata, advance status,
   queue-source visibility/origin, next-task queue consistency,
-  blocker drilldown commands, evidence-build/runner/advance record consistency,
-  complete
+  selected next-task worklist drilldowns, blocker drilldown commands,
+  evidence-build/runner/advance record consistency, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
   output, next-task evidence build Markdown output, legacy prepared-record
   queue-source inference, and idempotent

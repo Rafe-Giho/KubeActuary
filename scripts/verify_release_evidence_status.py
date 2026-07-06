@@ -429,6 +429,7 @@ def main() -> int:
         "# KubeActuary Release Evidence Status",
         "file: `present` `output`",
         "command: `python3 -B scripts/capture_controller_resource_budget.py",
+        "--version 'Current Baseline' --capture-status",
         "history runs: 2",
     ):
         if snippet not in partial_markdown.stdout:
@@ -491,6 +492,12 @@ def main() -> int:
         errors.append("partial status must report explicit next-task queue source origin")
     if next_task.get("queueConsistency", {}).get("status") != "matched":
         errors.append("partial status must report matched next-task queue consistency")
+    selected_worklists = next_task.get("worklistCommands", [])
+    if not any(
+        "--version 'Current Baseline' --capture-status" in command
+        for command in selected_worklists
+    ):
+        errors.append("partial status must include selected next-task worklist drilldown")
     next_task_summary = next_task.get("summary", {})
     if next_task_summary.get("files") != 3:
         errors.append("partial status must summarize three selected next-task file references")
@@ -575,6 +582,8 @@ def main() -> int:
         errors.append("partial text status must print next-task queue source origin")
     if "next-task-queue-consistency: matched" not in partial_text.stdout:
         errors.append("partial text status must print matched next-task queue consistency")
+    if "next-task-worklist: python3 -B scripts/generate_version_worklist.py" not in partial_text.stdout:
+        errors.append("partial text status must print selected next-task worklist drilldown")
     if "next-task-run: failed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
     if "next-task-run-queue-source: prepared-live-validation-queue" not in partial_text.stdout:

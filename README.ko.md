@@ -605,8 +605,8 @@ Release evidence status는 `tool-ready` next command만 추천하고,
 blocked 또는 missing-tool action은 로컬 worklist drilldown과 함께 blocker
 summary에 남깁니다. Release
 progress JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
-Markdown에는 tool-ready action, 선택된 next-task 파일/명령 상세, evidence
-next command를 모두 표시합니다.
+Markdown에는 tool-ready action, 선택된 next-task 파일/명령/worklist 상세,
+evidence next command를 모두 표시합니다.
 
 예제 검증:
 

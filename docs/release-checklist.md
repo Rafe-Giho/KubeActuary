@@ -140,8 +140,8 @@ Expected:
   and writes manifest and bundle artifacts without contacting clusters;
 - release evidence status inspector reports partial directory coverage, next
   commands, persisted next-task output, next-task runner status, environment
-  metadata, advance workflow status, blocker drilldown commands, and next-task
-  file readiness without
+  metadata, advance workflow status, selected next-task worklist drilldowns,
+  blocker drilldown commands, and next-task file readiness without
   requiring complete release closure; CLI and recorded Markdown output do not
   truncate local next commands, selected next-task files, or selected next-task
   commands; next commands exclude missing-tool and environment-blocked capture

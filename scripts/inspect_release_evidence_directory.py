@@ -336,6 +336,32 @@ def blocker_worklist_command(capture_status: str, filter_flag: str, filter_value
     )
 
 
+def selected_worklist_commands(selected: dict[str, Any], evidence_dir: Path) -> list[str]:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+        "--evidence-dir",
+        evidence_dir.as_posix(),
+    ]
+    if selected.get("version"):
+        args.extend(["--version", str(selected["version"])])
+    capture_status = selected.get("captureStatus")
+    if capture_status:
+        args.extend(["--capture-status", str(capture_status)])
+    if capture_status == "missing-tools" and selected.get("missingTools"):
+        return [
+            command_string([*args, "--missing-tool", str(tool)])
+            for tool in selected.get("missingTools", [])
+        ]
+    if capture_status == "blocked-by-environment" and selected.get("environmentStatus"):
+        args.extend(["--environment-status", str(selected["environmentStatus"])])
+    return [command_string(args)]
+
+
 def sorted_counts(counter: Counter[str]) -> list[tuple[str, int]]:
     return sorted(counter.items(), key=lambda item: (-item[1], item[0]))
 
@@ -609,6 +635,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     next_task = load_next_task(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     if next_task is not None:
         next_task["queueConsistency"] = next_task_queue_consistency(next_task, live_queue)
+        next_task["worklistCommands"] = selected_worklist_commands(next_task.get("selected", {}), evidence_dir)
     next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     next_task_evidence_build = load_next_task_evidence_build(evidence_dir)
     environment_probe = load_environment_probe(evidence_dir)
@@ -725,6 +752,8 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"next-task-file: {file_status} {item.get('role')} {item.get('path')}")
         for command in selected.get("resolvedCommands", []):
             lines.append(f"next-task-command: {command}")
+        for command in next_task.get("worklistCommands", []):
+            lines.append(f"next-task-worklist: {command}")
     next_task_run = status.get("nextTaskRun")
     if isinstance(next_task_run, dict):
         lines.append(f"next-task-run: {next_task_run.get('status')}")
@@ -839,6 +868,8 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- file: `{file_status}` `{item.get('role')}` `{item.get('path')}`")
         for command in selected.get("resolvedCommands", []):
             lines.append(f"- command: `{command}`")
+        for command in next_task.get("worklistCommands", []):
+            lines.append(f"- worklist: `{command}`")
     else:
         lines.append("- none")
     next_task_run = status.get("nextTaskRun")
