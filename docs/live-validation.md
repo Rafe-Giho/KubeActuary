@@ -370,16 +370,20 @@ same queue source used by the selected next-task artifact:
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --format markdown
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --version 0.4.3
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --missing-tool kind
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --probe-environment
 ```
 
 `prepare_live_evidence_directory.py` and `advance_version_iteration.py` both
-accept `--capture-status`, `--missing-tool`, `--environment-status`, and
-`--environment-reason`, so the
+accept `--version`, `--capture-status`, `--missing-tool`,
+`--environment-status`, and `--environment-reason`, so the
 prepared next-task and before/after history records can stay focused on the
-same blocker class. They also accept `--probe-environment --kubectl <path>`.
+same release version and blocker class.
+`advance_version_iteration.py --version <version>` carries that scope through
+live evidence directory preparation, selected-task execution, and before/after
+history snapshots. They also accept `--probe-environment --kubectl <path>`.
 The probe runs only read-only
 `kubectl version --client=true` and `kubectl cluster-info` checks. When cluster
 access is unavailable, the prepared next-task artifacts record

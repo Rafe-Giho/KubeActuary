@@ -38,13 +38,14 @@ def planned_result(
     history_dir: Path,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    version_filters: list[str] | None = None,
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     selection = build_selection(
-        version_filters=[],
+        version_filters=list(version_filters or []),
         include_complete=False,
         probe_environment=probe_environment,
         kubectl=kubectl,
@@ -141,16 +142,19 @@ def run_advance(
     created_at: str,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    version_filters: list[str] | None = None,
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
 ) -> dict[str, Any]:
+    version_filters = list(version_filters or [])
     prepared = prepare_directory(
         evidence_dir,
         skip_complete_evidence=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        version_filters=version_filters,
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
@@ -162,7 +166,7 @@ def run_advance(
         history_dir,
         run_id=f"{run_id}-before",
         created_at=created_at,
-        version_filters=[],
+        version_filters=version_filters,
         open_only=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
@@ -181,7 +185,7 @@ def run_advance(
             history_dir,
             run_id=f"{run_id}-blocked",
             created_at=created_at,
-            version_filters=[],
+            version_filters=version_filters,
             open_only=True,
             probe_environment=probe_environment,
             kubectl=kubectl,
@@ -242,6 +246,7 @@ def run_advance(
         skip_complete_evidence=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        version_filters=version_filters,
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
@@ -251,7 +256,7 @@ def run_advance(
         history_dir,
         run_id=f"{run_id}-after",
         created_at=created_at,
-        version_filters=[],
+        version_filters=version_filters,
         open_only=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
@@ -308,6 +313,7 @@ def run_advance(
 
 
 def render_text(result: dict[str, Any]) -> str:
+    filters = result.get("filters") or {}
     lines = [
         f"version-iteration-advance: {result['status']}",
         f"mode: {result['mode']}",
@@ -317,6 +323,8 @@ def render_text(result: dict[str, Any]) -> str:
         f"cluster-writes: {result['clusterWrites']}",
         f"probe-environment: {str(result.get('probeEnvironment', False)).lower()}",
     ]
+    for version in filters.get("versions", []):
+        lines.append(f"filter-version: {version}")
     if result["mode"] == "plan":
         selected = result.get("selected", {})
         lines.append(f"selected: {selected.get('id')}")
@@ -369,6 +377,7 @@ def render_text(result: dict[str, Any]) -> str:
 
 
 def render_markdown(result: dict[str, Any]) -> str:
+    filters = result.get("filters") or {}
     lines = [
         "# KubeActuary Version Iteration Advance",
         "",
@@ -379,10 +388,17 @@ def render_markdown(result: dict[str, Any]) -> str:
         f"Evidence directory: `{result['evidenceDir']}`",
         f"History directory: `{result['historyDir']}`",
         f"Cluster writes: `{result['clusterWrites']}`",
-        "",
-        "## Run",
-        "",
     ]
+    if filters.get("versions"):
+        lines.extend(
+            [
+                "",
+                "## Filters",
+                "",
+                f"- versions: `{', '.join(str(version) for version in filters['versions'])}`",
+            ]
+        )
+    lines.extend(["", "## Run", ""])
     if result["mode"] == "run":
         lines.append(f"- run id: `{result.get('runId')}`")
         lines.append(f"- before: `{(result.get('before') or {}).get('runId')}`")
@@ -450,6 +466,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--created-at", help="stable timestamp for tests")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
+    parser.add_argument("--version", action="append", default=[], help="filter next-task selection to a release version; repeatable")
     parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
@@ -471,6 +488,7 @@ def main(argv: list[str] | None = None) -> int:
                 created_at=created_at,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
+                version_filters=args.version,
                 capture_status_filters=args.capture_status,
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,
@@ -483,6 +501,7 @@ def main(argv: list[str] | None = None) -> int:
                 history_dir,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
+                version_filters=args.version,
                 capture_status_filters=args.capture_status,
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,

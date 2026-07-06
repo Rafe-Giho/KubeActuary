@@ -159,8 +159,8 @@ Expected:
 - prepared-queue worklist Markdown shows blocker summaries, missing tools, and
   next steps;
 - worklist, next-task, iteration-pack, iteration-history, live scaffold, and
-  advance commands preserve capture-status, missing-tool, and
-  environment-status and environment-reason filters;
+  advance commands preserve version, capture-status, missing-tool,
+  environment-status, and environment-reason filters;
 - prepared-queue version iteration packs preserve the queue source, blocker
   summaries, and blocker drilldown commands;
 - prepared-queue version iteration history records and status preserve the queue source;
@@ -218,7 +218,7 @@ Expected:
   queue-source preservation and zero-run reporting for non-`tool-ready`
   selected tasks plus CLI Markdown output;
 - version iteration advance check prints `version-iteration-advance: passed`
-  and verifies selected blocker status/next-step preservation
+  and verifies version-scoped selection plus selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
   reports plus selected worklist drilldowns and CLI Markdown output;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
@@ -365,9 +365,9 @@ Confirm from code and tests:
   for the selected task, while reporting a prepare command for unprepared
   evidence directories and preserving failed-run summaries;
 - version iteration advance verifier wraps the selected-task runner with
-  probe-aware before/after evidence-aware history recording and validates the
-  resulting diff or zero-run environment-blocked runner record plus blocked
-  history snapshot and selected worklist drilldowns;
+  version-scoped, probe-aware before/after evidence-aware history recording and
+  validates the resulting diff or zero-run environment-blocked runner record
+  plus blocked history snapshot and selected worklist drilldowns;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

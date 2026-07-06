@@ -77,6 +77,24 @@ def main() -> int:
             "--format",
             "json",
         )
+        version_plan = run_script(
+            ADVANCE,
+            str(tmpdir / "version-plan-evidence"),
+            str(tmpdir / "version-plan-history"),
+            "--version",
+            "0.4.3",
+            "--format",
+            "json",
+        )
+        version_plan_markdown = run_script(
+            ADVANCE,
+            str(tmpdir / "version-plan-md-evidence"),
+            str(tmpdir / "version-plan-md-history"),
+            "--version",
+            "0.4.3",
+            "--format",
+            "markdown",
+        )
         if plan.returncode != 0:
             errors.append(f"advance plan failed: {plan.stderr.strip() or plan.stdout.strip()}")
         if "version-iteration-advance: plan" not in plan.stdout:
@@ -112,6 +130,30 @@ def main() -> int:
             errors.append("filtered advance plan must include selected worklist drilldown")
         if (tmpdir / "filtered-plan-evidence").exists() or (tmpdir / "filtered-plan-history").exists():
             errors.append("filtered advance plan must not create evidence or history directories")
+        if version_plan.returncode != 0:
+            errors.append(f"version advance plan failed: {version_plan.stderr.strip() or version_plan.stdout.strip()}")
+            version_plan_payload = {}
+        else:
+            version_plan_payload = json.loads(version_plan.stdout)
+        if version_plan_markdown.returncode != 0:
+            errors.append(
+                f"version advance plan Markdown failed: {version_plan_markdown.stderr.strip() or version_plan_markdown.stdout.strip()}"
+            )
+        if version_plan_payload.get("filters", {}).get("versions") != ["0.4.3"]:
+            errors.append("version advance plan must persist version filters")
+        if version_plan_payload.get("selected", {}).get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+            errors.append("version advance plan should select the first 0.4.3 task")
+        if version_plan_payload.get("selected", {}).get("version") != "0.4.3":
+            errors.append("version advance plan should preserve selected version")
+        if not any(
+            "--version 0.4.3 --capture-status tool-ready" in command
+            for command in version_plan_payload.get("selected", {}).get("worklistCommands", [])
+        ):
+            errors.append("version advance plan must include version-scoped worklist drilldown")
+        if "- versions: `0.4.3`" not in version_plan_markdown.stdout:
+            errors.append("version advance plan Markdown must show version filters")
+        if (tmpdir / "version-plan-evidence").exists() or (tmpdir / "version-plan-history").exists():
+            errors.append("version advance plan must not create evidence or history directories")
 
         run_env = fake_tool_env(tmpdir / "tools")
         run = run_script(
@@ -252,6 +294,8 @@ def main() -> int:
             "--probe-environment",
             "--kubectl",
             blocked_kubectl,
+            "--version",
+            "0.4.3",
             "--capture-status",
             "blocked-by-environment",
             "--run-id",
@@ -271,6 +315,8 @@ def main() -> int:
             errors.append("probe advance must report blocked-by-environment without running evidence commands")
         if blocked_payload.get("filters", {}).get("captureStatuses") != ["blocked-by-environment"]:
             errors.append("probe-blocked advance must persist capture-status filters")
+        if blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:
+            errors.append("probe-blocked advance must persist version filters")
         if blocked_payload.get("nextTask", {}).get("captureStatus") != "blocked-by-environment":
             errors.append("probe-blocked advance next-task must preserve filtered capture status")
         blocked_next_step = "start or select a disposable cluster, then rerun the probe"
@@ -311,7 +357,7 @@ def main() -> int:
             if blocked_advance_payload.get("nextTask", {}).get("environmentStatus") != "cluster-unavailable":
                 errors.append("probe-blocked advance record must preserve environment status")
             if not any(
-                "--capture-status blocked-by-environment --environment-status cluster-unavailable" in command
+                "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable" in command
                 for command in blocked_advance_payload.get("nextTask", {}).get("worklistCommands", [])
             ):
                 errors.append("probe-blocked advance record must include selected worklist drilldown")

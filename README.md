@@ -532,6 +532,7 @@ python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/run_next_version_task.py evidence/live --run --record
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --format markdown
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --version 0.4.3
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
@@ -615,6 +616,9 @@ local worklist commands.
 `prepare_live_evidence_directory.py --version <version>` applies the same
 version scope to the persisted `.kubeactuary/next-version-task.*` artifacts
 while keeping cluster writes disabled.
+`advance_version_iteration.py --version <version>` carries that same scope
+through live evidence directory preparation, selected-task execution, and
+before/after history snapshots.
 
 Validate examples:
 

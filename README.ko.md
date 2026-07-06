@@ -534,6 +534,7 @@ python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/run_next_version_task.py evidence/live --run --record
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --format markdown
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --version 0.4.3
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
@@ -616,6 +617,9 @@ evidence next command를 모두 표시합니다.
 `prepare_live_evidence_directory.py --version <version>`은 같은 version
 scope를 `.kubeactuary/next-version-task.*` artifact에 적용하면서 cluster
 write는 계속 비활성화합니다.
+`advance_version_iteration.py --version <version>`은 그 scope를 live
+evidence 디렉터리 준비, 선택 task 실행, before/after history snapshot까지
+그대로 전달합니다.
 
 예제 검증:
 

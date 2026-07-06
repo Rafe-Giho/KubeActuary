@@ -84,13 +84,13 @@ Coverage included:
 - live validation queue command safety verification for placeholder and
   resolved evidence commands;
 - live evidence directory scaffold generation for repeated evidence capture,
-  including blocker-filtered and probe-aware next-task artifacts,
+  including version-scoped, blocker-filtered and probe-aware next-task artifacts,
   `--skip-complete-evidence` advancement, plus
   `kube-actuary.environment-probe.v1` and
   `kube-actuary.environment-blockers.v1` reports;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
-- version iteration advance workflow with blocker-focused filters and
+- version iteration advance workflow with version-scoped and blocker-focused filters and
   probe-aware before/after evidence-aware history recording;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
@@ -149,8 +149,8 @@ Coverage included:
 - next-version task runner success, failed-run summary, and recorded report
   verification;
 - version iteration advance records zero-run blocked runner status when the
-  environment probe blocks selected live evidence capture, and keeps a blocked
-  history snapshot as the latest iteration entry;
+  environment probe blocks selected live evidence capture, preserves version
+  filters, and keeps a blocked history snapshot as the latest iteration entry;
 - clean generated-artifact verification for Python cache directories,
   bytecode files, and ignored local evidence state;
 - digest stability across status evidence changes;
@@ -310,7 +310,7 @@ Result:
   queue-source preservation and zero-run reporting for non-`tool-ready`
   selected tasks plus CLI Markdown output;
 - version iteration advance check prints `version-iteration-advance: passed`
-  with blocker status/next-step preservation
+  with version-scoped selection plus blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
   reports plus selected worklist drilldowns and CLI Markdown output;
 - clean artifact check prints `clean-artifacts: passed`;
