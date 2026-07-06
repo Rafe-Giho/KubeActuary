@@ -20,6 +20,7 @@ KUSTOMIZE = ROOT / "scripts" / "verify_kustomize.py"
 RELEASE_ARCHIVES = ROOT / "scripts" / "verify_release_archives.py"
 KREW_MANIFEST = ROOT / "scripts" / "verify_krew_manifest.py"
 SUPPLY_CHAIN = ROOT / "scripts" / "verify_supply_chain.py"
+AIRGAP_BUNDLE = ROOT / "scripts" / "verify_airgap_bundle.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -240,6 +241,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("supply-chain: passed", result.stdout)
         self.assertIn("archive-digests: verified", result.stdout)
+
+    def test_verify_airgap_bundle(self):
+        result = subprocess.run(
+            [sys.executable, str(AIRGAP_BUNDLE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("airgap-bundle: passed", result.stdout)
+        self.assertIn("offline-checklist: present", result.stdout)
 
 
 if __name__ == "__main__":

@@ -37,6 +37,7 @@ Evidence collector release:
   verification;
 - add Krew manifest generator and offline manifest verifier;
 - add deterministic SBOM and SLSA-style provenance generators with verifier;
+- add air-gapped install manifest generator and offline bundle verifier;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

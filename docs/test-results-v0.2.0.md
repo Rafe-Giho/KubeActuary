@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (29 checks)
-Ran 58 tests
+verification: passed (30 checks)
+Ran 59 tests
 OK
 ```
 
@@ -60,6 +60,7 @@ Coverage included:
 - multi-target release archives with SHA-256 sidecars and install smoke;
 - Krew manifest generator with archive digest validation;
 - SBOM and provenance generation with archive digest verification;
+- air-gapped artifact manifest and offline checklist verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -95,6 +96,7 @@ python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
+python3 -B scripts/verify_airgap_bundle.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -122,6 +124,7 @@ Result:
 - release archive check prints `release-archives: passed`;
 - Krew manifest check prints `krew-manifest: passed`;
 - supply-chain check prints `supply-chain: passed`;
+- airgap bundle check prints `airgap-bundle: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

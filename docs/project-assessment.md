@@ -56,7 +56,7 @@ Priority order:
 
 1. Add live install validation for Helm, Krew, and lightweight clusters.
 2. Add a minimal read-only controller that watches only `OperationCapsule`.
-3. Add air-gapped install documentation.
+3. Add release signing on top of deterministic digests and provenance.
 4. Add MCP server wrapper for safe tools.
 5. Add optional admission webhook for AI-originated write identities.
 6. Add policy adapters for Kyverno, OPA, kube-linter, kube-score, and Pluto.

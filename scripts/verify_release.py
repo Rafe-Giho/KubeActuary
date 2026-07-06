@@ -159,6 +159,11 @@ COMMON_CHECKS = (
         contains=("supply-chain: passed", "provenance-subjects: 4", "archive-digests: verified"),
     ),
     Check(
+        "airgap bundle",
+        ("python3", "-B", "scripts/verify_airgap_bundle.py"),
+        contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

@@ -114,7 +114,8 @@ Make KubeActuary installable as a Kubernetes tool:
 - Krew manifest generation is available from release archives. Real Krew install
   validation remains follow-up work.
 - SBOM and provenance generation is deterministic and verifies archive digests.
-- Air-gapped install docs remain follow-up work.
+- Air-gapped install docs and manifest verification list required offline
+  artifacts.
 
 ## v0.6: Policy Adapters
 
