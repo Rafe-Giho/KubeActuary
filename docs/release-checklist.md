@@ -100,6 +100,7 @@ Expected:
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`,
+  compares packs with schema `kube-actuary.version-iteration-diff.v1`,
   and exercises version/open-only filters plus optional environment blockers;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
