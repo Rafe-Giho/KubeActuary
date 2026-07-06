@@ -28,6 +28,7 @@ NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
+LIVE_QUEUE_SCHEMA = "kube-actuary.live-validation-queue.v1"
 NEXT_TASK_FILE_FLAGS = {
     "--sample": "sample",
     "--source": "source",
@@ -215,7 +216,21 @@ def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
-def unique_commands(gates: list[dict[str, Any]], skip_gate_ids: set[str] | None = None) -> list[str]:
+def load_live_validation_queue(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != LIVE_QUEUE_SCHEMA:
+        raise ValueError(f"{path}: unsupported live-validation-queue schemaVersion: {payload.get('schemaVersion')!r}")
+    return payload
+
+
+def unique_commands(
+    gates: list[dict[str, Any]],
+    skip_gate_ids: set[str] | None = None,
+    include_closure: bool = True,
+) -> list[str]:
     commands: list[str] = []
     seen: set[str] = set()
     skip_gate_ids = skip_gate_ids or set()
@@ -226,7 +241,7 @@ def unique_commands(gates: list[dict[str, Any]], skip_gate_ids: set[str] | None 
             if command not in seen:
                 commands.append(command)
                 seen.add(command)
-    if "python3 -B scripts/build_release_evidence_directory.py <evidence-dir>" not in seen:
+    if include_closure and "python3 -B scripts/build_release_evidence_directory.py <evidence-dir>" not in seen:
         commands.append("python3 -B scripts/build_release_evidence_directory.py <evidence-dir>")
     return commands
 
@@ -240,10 +255,55 @@ def selected_resolved_commands(next_task: dict[str, Any] | None) -> list[str]:
     ]
 
 
+def queue_items_by_id(live_queue: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not isinstance(live_queue, dict):
+        return {}
+    return {
+        str(item.get("id")): item
+        for item in live_queue.get("items", [])
+        if isinstance(item, dict) and item.get("id")
+    }
+
+
+def queue_resolved_commands(
+    gates: list[dict[str, Any]],
+    live_queue: dict[str, Any] | None,
+    skip_gate_ids: set[str],
+) -> tuple[list[str], set[str]]:
+    commands: list[str] = []
+    command_gate_ids: set[str] = set()
+    items = queue_items_by_id(live_queue)
+    for gate in gates:
+        gate_id = str(gate.get("id"))
+        if gate_id in skip_gate_ids:
+            continue
+        item = items.get(gate_id)
+        if not item:
+            continue
+        item_commands = item.get("resolvedCommands") or item.get("commands") or []
+        for command in item_commands:
+            if isinstance(command, str) and command not in commands:
+                commands.append(command)
+        if item_commands:
+            command_gate_ids.add(gate_id)
+    return commands, command_gate_ids
+
+
+def queue_closure_commands(live_queue: dict[str, Any] | None) -> list[str]:
+    if not isinstance(live_queue, dict):
+        return []
+    return [
+        command
+        for command in live_queue.get("resolvedClosureCommands", [])
+        if isinstance(command, str)
+    ]
+
+
 def next_commands(
     gates: list[dict[str, Any]],
     evidence_dir: Path,
     next_task: dict[str, Any] | None,
+    live_queue: dict[str, Any] | None,
     environment_probe: dict[str, Any] | None,
     environment_blockers: dict[str, Any] | None,
     next_task_run: dict[str, Any] | None,
@@ -252,7 +312,14 @@ def next_commands(
     resolved = selected_resolved_commands(next_task)
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     skip_gate_ids = {str(selected.get("id"))} if resolved and selected.get("id") else set()
-    for command in [*resolved, *unique_commands(gates, skip_gate_ids)]:
+    queue_commands, queue_gate_ids = queue_resolved_commands(gates, live_queue, skip_gate_ids)
+    closure_commands = queue_closure_commands(live_queue)
+    fallback_commands = unique_commands(
+        gates,
+        skip_gate_ids | queue_gate_ids,
+        include_closure=not closure_commands,
+    )
+    for command in [*resolved, *queue_commands, *fallback_commands, *closure_commands]:
         if command not in commands:
             commands.append(command)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
@@ -282,6 +349,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
     version_iteration_advance = load_version_iteration_advance(evidence_dir)
+    live_queue = load_live_validation_queue(evidence_dir)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -328,6 +396,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
             uncovered,
             evidence_dir,
             next_task,
+            live_queue,
             environment_probe,
             environment_blockers,
             next_task_run,

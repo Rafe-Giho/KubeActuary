@@ -316,6 +316,15 @@ def main() -> int:
         errors.append("partial status must prioritize resolved selected next-task commands after the probe")
     if any("<kubectl-top-output.txt>" in command for command in partial_payload.get("nextCommands", [])[:3]):
         errors.append("partial status must not keep selected next-task placeholders before resolved commands")
+    expected_resolved_kind = (
+        f"python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run "
+        f"--output {partial_dir / 'reports' / '02-lightweight-cluster-smoke-lightweight-kind.json'}"
+    )
+    if expected_resolved_kind not in partial_payload.get("nextCommands", []):
+        errors.append("partial status must use prepared queue resolved commands for non-selected gates")
+    for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
+        if any(placeholder in command for command in partial_payload.get("nextCommands", [])):
+            errors.append(f"partial status must not keep prepared queue placeholder in next commands: {placeholder}")
     next_task = partial_payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
@@ -429,6 +438,15 @@ def main() -> int:
         errors.append("blocked evidence status must prioritize resolved selected next-task command after the probe")
     if any("<kubectl-top-output.txt>" in command for command in blocked_payload.get("nextCommands", [])[:3]):
         errors.append("blocked evidence status must not keep selected next-task placeholders before resolved commands")
+    expected_blocked_kind = (
+        f"python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run "
+        f"--output {blocked_dir / 'reports' / '02-lightweight-cluster-smoke-lightweight-kind.json'}"
+    )
+    if expected_blocked_kind not in blocked_payload.get("nextCommands", []):
+        errors.append("blocked evidence status must use prepared queue resolved commands for non-selected gates")
+    for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
+        if any(placeholder in command for command in blocked_payload.get("nextCommands", [])):
+            errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
 

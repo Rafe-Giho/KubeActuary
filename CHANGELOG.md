@@ -43,7 +43,7 @@ Evidence collector release:
   iteration advance;
 - record a blocked history snapshot as the latest run during probe-blocked
   version iteration advance;
-- prioritize resolved selected next-task commands in release evidence status
+- prioritize resolved prepared-queue commands in release evidence status
   next-command output;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
