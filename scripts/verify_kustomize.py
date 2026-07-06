@@ -21,6 +21,9 @@ CANONICAL_NAMESPACE_RBAC = ROOT / "deploy" / "controller" / "namespace-scoped-rb
 KUSTOMIZE_NAMESPACE_RBAC = NAMESPACE_OVERLAY / "controller" / "namespace-scoped-rbac.yaml"
 CANONICAL_CLUSTER_RBAC = ROOT / "deploy" / "controller" / "cluster-scoped-rbac.yaml"
 KUSTOMIZE_CLUSTER_RBAC = CLUSTER_OVERLAY / "controller" / "cluster-scoped-rbac.yaml"
+CANONICAL_DEPLOYMENT = ROOT / "deploy" / "controller" / "deployment.yaml"
+KUSTOMIZE_NAMESPACE_DEPLOYMENT = NAMESPACE_OVERLAY / "controller" / "deployment.yaml"
+KUSTOMIZE_CLUSTER_DEPLOYMENT = CLUSTER_OVERLAY / "controller" / "deployment.yaml"
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
@@ -68,6 +71,16 @@ def main() -> int:
         "Kustomize cluster RBAC copy differs from canonical RBAC",
         errors,
     )
+    require(
+        KUSTOMIZE_NAMESPACE_DEPLOYMENT.read_text() == CANONICAL_DEPLOYMENT.read_text(),
+        "Kustomize namespace deployment copy differs from canonical deployment",
+        errors,
+    )
+    require(
+        KUSTOMIZE_CLUSTER_DEPLOYMENT.read_text() == CANONICAL_DEPLOYMENT.read_text(),
+        "Kustomize cluster deployment copy differs from canonical deployment",
+        errors,
+    )
 
     base = render(BASE, errors)
     namespace = render(NAMESPACE_OVERLAY, errors)
@@ -86,8 +99,11 @@ def main() -> int:
         (
             "kind: CustomResourceDefinition",
             "kind: ServiceAccount",
+            "kind: Deployment",
             "kind: Role",
             "kind: RoleBinding",
+            "automountServiceAccountToken: false",
+            "readOnlyRootFilesystem: true",
             "- operationcapsules",
             "- operationcapsules/status",
             "- get",
@@ -96,7 +112,7 @@ def main() -> int:
             "- patch",
             "- update",
         ),
-        ("kind: Deployment", "resources: ['*']", "verbs: ['*']", "apiGroups: ['*']"),
+        ("resources: ['*']", "verbs: ['*']", "apiGroups: ['*']", "privileged: true"),
         errors,
     )
     verify_render(
@@ -105,8 +121,11 @@ def main() -> int:
         (
             "kind: CustomResourceDefinition",
             "kind: ServiceAccount",
+            "kind: Deployment",
             "kind: ClusterRole",
             "kind: ClusterRoleBinding",
+            "automountServiceAccountToken: false",
+            "readOnlyRootFilesystem: true",
             "- operationcapsules",
             "- operationcapsules/status",
             "- get",
@@ -115,7 +134,7 @@ def main() -> int:
             "- patch",
             "- update",
         ),
-        ("kind: Deployment", "resources: ['*']", "verbs: ['*']", "apiGroups: ['*']"),
+        ("resources: ['*']", "verbs: ['*']", "apiGroups: ['*']", "privileged: true"),
         errors,
     )
 

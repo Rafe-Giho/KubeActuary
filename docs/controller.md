@@ -12,12 +12,12 @@ Implemented locally:
 - documented watch command that targets only `OperationCapsule` resources;
 - namespace-scoped and cluster-scoped RBAC manifests;
 - health, readiness, metrics, and leader-election payload contracts;
+- local `serve` runtime for `/healthz`, `/readyz`, and `/metrics`;
+- optional Deployment seed for the local runtime;
 - resource-budget contract and measurement harness.
 
 Not implemented yet:
 
-- in-cluster Deployment;
-- live HTTP serving for probes and metrics;
 - live Kubernetes watch loop;
 - status patch write path.
 
@@ -82,13 +82,46 @@ Future live controller wiring should expose:
 - leader election with Kubernetes `Lease` objects from
   `leases.coordination.k8s.io`.
 
-The runtime contract is local and deterministic today. It does not contact a
-cluster, start a server, or create a `Lease`.
+The runtime contract verifier is local and deterministic today. It does not
+contact a cluster, start a server, or create a `Lease`.
 
 Offline verifier:
 
 ```sh
 python3 -B scripts/verify_controller_runtime_contract.py
+```
+
+## Deployment Seed
+
+The optional Deployment seed runs the local `serve` runtime only:
+
+```sh
+python3 bin/kube-actuary-controller serve --host 0.0.0.0 --port 8080
+```
+
+It exposes:
+
+- `/healthz`
+- `/readyz`
+- `/metrics`
+
+Manifests:
+
+```sh
+deploy/controller/deployment.yaml
+charts/kubeactuary/templates/controller-deployment.yaml
+deploy/kustomize/overlays/controller-namespace/controller/deployment.yaml
+deploy/kustomize/overlays/controller-cluster/controller/deployment.yaml
+```
+
+The Deployment seed sets `automountServiceAccountToken: false`, runs as
+non-root, drops Linux capabilities, and keeps the resource limits at `50m` CPU
+and `64Mi` memory. It does not run a live Kubernetes watch loop yet.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_deployment.py
 ```
 
 ## Resource Budget

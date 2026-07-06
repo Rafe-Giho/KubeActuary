@@ -1,7 +1,18 @@
 controller:
   enabled: false
+  image:
+    repository: ghcr.io/kubeactuary/kubeactuary-controller
+    tag: "0.2.0"
+    pullPolicy: IfNotPresent
   namespace: kubeactuary-system
   rbac:
     scope: namespace
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
   serviceAccount:
     name: kubeactuary-controller

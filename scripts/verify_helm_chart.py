@@ -15,6 +15,7 @@ CRD = ROOT / "deploy" / "crds" / "operationcapsules.ops.kubeactuary.dev.yaml"
 CHART_CRD = CHART / "crds" / "operationcapsules.ops.kubeactuary.dev.yaml"
 VALUES = CHART / "values.yaml"
 TEMPLATE = CHART / "templates" / "controller-rbac.yaml"
+DEPLOYMENT_TEMPLATE = CHART / "templates" / "controller-deployment.yaml"
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
@@ -27,6 +28,7 @@ def main() -> int:
     chart_yaml = (CHART / "Chart.yaml").read_text()
     values = VALUES.read_text()
     template = TEMPLATE.read_text()
+    deployment_template = DEPLOYMENT_TEMPLATE.read_text()
 
     require("apiVersion: v2" in chart_yaml, "Chart.yaml must use Helm v2 schema", errors)
     require("name: kubeactuary" in chart_yaml, "Chart.yaml name mismatch", errors)
@@ -36,6 +38,8 @@ def main() -> int:
 
     require("enabled: false" in values, "controller must be disabled by default", errors)
     require("scope: namespace" in values, "namespace-scoped RBAC must be default", errors)
+    require("repository: ghcr.io/kubeactuary/kubeactuary-controller" in values, "controller image repository missing", errors)
+    require("cpu: 10m" in values and "memory: 64Mi" in values, "controller resource budget missing", errors)
 
     for required in (
         "kind: ServiceAccount",
@@ -51,6 +55,15 @@ def main() -> int:
         require(required in template, f"controller RBAC template missing: {required}", errors)
     for forbidden in ('resources: ["*"]', 'apiGroups: ["*"]', 'verbs: ["*"]', "kind: Deployment"):
         require(forbidden not in template, f"controller RBAC template contains forbidden field: {forbidden}", errors)
+    for required in (
+        "kind: Deployment",
+        "automountServiceAccountToken: false",
+        "- serve",
+        "/healthz",
+        "/readyz",
+        "readOnlyRootFilesystem: true",
+    ):
+        require(required in deployment_template, f"controller deployment template missing: {required}", errors)
 
     helm = shutil.which("helm")
     helm_status = "not-found"

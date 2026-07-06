@@ -7,12 +7,14 @@ import argparse
 import json
 import shlex
 import sys
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from controller.reconcile import reconcile_status, status_patch, watch_command
+from controller.reconcile import WATCH_RESOURCE, reconcile_status, status_patch, watch_command
 from controller.runtime import (
     health_payload,
     leader_election_config,
@@ -93,6 +95,50 @@ def measure_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def serve(args: argparse.Namespace) -> int:
+    config = {
+        "host": args.host,
+        "port": args.port,
+        "paths": ["/healthz", "/readyz", "/metrics"],
+        "watchResource": WATCH_RESOURCE,
+        "clusterAccess": "none",
+    }
+    if args.print_config:
+        write_json(config)
+        return 0
+
+    started_at = int(time.time())
+
+    class Handler(BaseHTTPRequestHandler):
+        def send_text(self, status: int, content_type: str, body: str) -> None:
+            encoded = body.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def do_GET(self) -> None:
+            if self.path == "/healthz":
+                body = json.dumps(health_payload(started_at=started_at), sort_keys=True)
+                self.send_text(200, "application/json", body + "\n")
+            elif self.path == "/readyz":
+                body = json.dumps(readiness_payload(rbac_mode=args.rbac_mode), sort_keys=True)
+                self.send_text(200, "application/json", body + "\n")
+            elif self.path == "/metrics":
+                self.send_text(200, "text/plain; version=0.0.4", metrics_text())
+            else:
+                self.send_text(404, "text/plain", "not found\n")
+
+        def log_message(self, _format: str, *_args: object) -> None:
+            return
+
+    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    print(f"kube-actuary-controller serve http://{args.host}:{args.port}", flush=True)
+    server.serve_forever()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Dry-run KubeActuary controller reconcile helpers.",
@@ -136,6 +182,13 @@ def build_parser() -> argparse.ArgumentParser:
     measure_parser = sub.add_parser("measure-command", help="print kubectl top command for controller resource checks")
     measure_parser.add_argument("--namespace", default="kubeactuary-system")
     measure_parser.set_defaults(func=measure_command)
+
+    serve_parser = sub.add_parser("serve", help="serve local controller health, readiness, and metrics endpoints")
+    serve_parser.add_argument("--host", default="127.0.0.1")
+    serve_parser.add_argument("--port", type=int, default=8080)
+    serve_parser.add_argument("--rbac-mode", choices=["namespace", "cluster"], default="namespace")
+    serve_parser.add_argument("--print-config", action="store_true", help="print server config and exit")
+    serve_parser.set_defaults(func=serve)
     return parser
 
 

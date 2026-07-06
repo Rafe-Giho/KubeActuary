@@ -171,6 +171,15 @@ class ControllerReconcileTests(unittest.TestCase):
             "app.kubernetes.io/name=kubeactuary,app.kubernetes.io/component=controller --containers",
         )
 
+    def test_serve_print_config_has_no_cluster_access(self):
+        result = self.run_controller("serve", "--print-config")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["clusterAccess"], "none")
+        self.assertEqual(payload["watchResource"], "operationcapsules.ops.kubeactuary.dev")
+        self.assertEqual(payload["paths"], ["/healthz", "/readyz", "/metrics"])
+
 
 if __name__ == "__main__":
     unittest.main()

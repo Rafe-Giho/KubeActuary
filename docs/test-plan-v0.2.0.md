@@ -16,9 +16,9 @@ Expected:
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
-  controller runtime contract, controller resource budget, lightweight cluster
-  smoke harness, upstream conformance suite, Helm chart contract, Kustomize
-  rendering, release archives, Krew manifest generation, SBOM/provenance
+  controller runtime contract, controller deployment seed, controller resource
+  budget, lightweight cluster smoke harness, upstream conformance suite, Helm
+  chart contract, Kustomize rendering, release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory,
   project governance, air-gapped manifest generation, agent help schema
@@ -54,6 +54,7 @@ python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
+python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -100,6 +101,7 @@ Expected:
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
 - controller runtime check prints `controller-runtime: passed`;
+- controller deployment check prints `controller-deployment: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
@@ -186,6 +188,8 @@ Confirm from code and tests:
   permissions;
 - controller runtime helper emits health, readiness, metrics, and
   leader-election Lease configuration without contacting the cluster;
+- controller Deployment seed runs only the local `serve` runtime and includes
+  probes, resource limits, and hardened security defaults;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets
   and parses `kubectl top` samples;
 - lightweight cluster smoke helper uses server-side dry-run plans and covers
@@ -255,7 +259,7 @@ Expected:
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
-  controller runtime, controller resource budget, lightweight cluster smoke, digest, CRD render,
+  controller runtime, controller deployment, controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, project
   governance, air-gapped bundle, agent help contract, agent examples, Kyverno

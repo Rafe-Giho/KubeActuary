@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - ../../base
   - controller/cluster-scoped-rbac.yaml
+  - controller/deployment.yaml

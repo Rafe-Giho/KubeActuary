@@ -121,6 +121,11 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "controller deployment",
+        ("python3", "-B", "scripts/verify_controller_deployment.py"),
+        contains=("controller-deployment: passed", "runtime: serve", "probes: healthz, readyz"),
+    ),
+    Check(
         "controller resource budget",
         ("python3", "-B", "scripts/verify_controller_resource_budget.py"),
         contains=(

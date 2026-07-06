@@ -302,6 +302,7 @@ deploy/crds/
   fixtures/                    CRD upgrade and rollback fixtures
 deploy/controller/
   *-rbac.yaml                  optional controller RBAC manifests
+  deployment.yaml              optional controller runtime Deployment seed
 deploy/admission/
   validatingwebhookconfiguration.yaml optional admission webhook prototype
 deploy/kustomize/
@@ -357,6 +358,7 @@ scripts/
   verify_controller_contract.py offline controller contract check
   verify_controller_rbac.py    offline controller RBAC check
   verify_controller_runtime_contract.py offline controller runtime check
+  verify_controller_deployment.py optional controller Deployment seed check
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness
@@ -422,6 +424,7 @@ python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
+python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
