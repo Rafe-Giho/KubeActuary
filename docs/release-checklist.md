@@ -29,6 +29,7 @@ python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
+python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/run_helm_smoke.py
@@ -85,6 +86,8 @@ Expected:
 - controller patch plan verifies status-only patches without executing writes;
 - controller sync verifies a read-only OperationCapsule list call and disabled
   write execution;
+- controller status apply verifies server-side dry-run by default and
+  status-only `--execute` shape;
 - controller resource budget contract and measurement parser verify offline;
 - lightweight cluster smoke plan and JSON evidence output verify offline;
 - Helm chart contract and dry-run smoke evidence format verify offline;
@@ -139,6 +142,7 @@ Expected:
 - [ ] controller deployment seed check passes.
 - [ ] controller status patch plan check passes.
 - [ ] controller read-only sync check passes.
+- [ ] controller status apply dry-run check passes.
 - [ ] controller resource budget check passes.
 - [ ] lightweight cluster smoke plan and evidence-output check passes.
 - [ ] upstream N/N-1/N-2 conformance suite passes.

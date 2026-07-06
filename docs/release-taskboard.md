@@ -34,6 +34,7 @@ Status legend:
 | Controller deployment seed | DONE | `scripts/verify_controller_deployment.py` verifies optional Deployment runtime defaults |
 | Controller status patch plan | DONE | `scripts/verify_controller_patch_plan.py` verifies status-only patch plans without executing writes |
 | Controller read-only sync | DONE | `scripts/verify_controller_sync.py` verifies `kubectl get` plus disabled write execution |
+| Controller status apply dry-run | DONE | `scripts/verify_controller_status_apply.py` verifies default server dry-run and explicit status-only execute shape |
 | Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
 | Lightweight cluster smoke | VERIFY | offline smoke plan and JSON evidence-output verifier added; live matrix evidence still needed |
 | Helm chart | VERIFY | chart seed, dry-run smoke harness, and offline verifier added; live Helm run not executed because Helm is not installed |
@@ -50,7 +51,7 @@ Status legend:
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates without running them |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
-| Controller | DOING | Optional `serve` runtime, Deployment seed, status patch plan, and read-only sync exist; live status apply loop remains |
+| Controller | DOING | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, and status apply dry-run exist; persistent live status loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
 | Admission/audit | DOING | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; live kind webhook smoke remains |
@@ -59,7 +60,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (56 checks)
+verification: passed (57 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -107,6 +108,7 @@ patches status. It must not scan the cluster or execute writes.
 | 0.4.2 | Optional controller Deployment seed | DONE | `scripts/verify_controller_deployment.py`; live image/pod smoke remains v0.4.4 |
 | 0.4.2 | Status patch plan for watched capsules | DONE | `scripts/verify_controller_patch_plan.py`; live patch execution remains v0.4.4 |
 | 0.4.2 | Read-only sync from watched capsules | DONE | `scripts/verify_controller_sync.py`; live status apply loop remains v0.4.4 |
+| 0.4.3 | Status apply dry-run for watched capsules | DONE | `scripts/verify_controller_status_apply.py`; persistent live loop remains v0.4.4 |
 | 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | VERIFY | `scripts/verify_controller_resource_budget.py`; live kind/minikube/k3s measurement still required |
 | 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | VERIFY | `scripts/verify_lightweight_cluster_smoke.py` verifies plan and evidence JSON; live matrix evidence still required |
 

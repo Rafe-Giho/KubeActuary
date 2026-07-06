@@ -104,6 +104,50 @@ def sync(args: argparse.Namespace) -> int:
     return 0
 
 
+def apply_status(args: argparse.Namespace) -> int:
+    document = load_json(args.file)
+    plan = status_patch_plan(document, kubectl=args.kubectl)
+    results = []
+    failed = 0
+    for patch in plan["patches"]:
+        command = list(patch["command"])
+        if not args.execute:
+            command.append("--dry-run=server")
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        ok = result.returncode == 0
+        if not ok:
+            failed += 1
+        results.append(
+            {
+                "name": patch["name"],
+                "namespace": patch["namespace"],
+                "command": command,
+                "exitCode": result.returncode,
+                "ok": ok,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        )
+    write_json(
+        {
+            "mode": "status-patch" if args.execute else "server-dry-run",
+            "writeExecution": "enabled-status-only" if args.execute else "disabled",
+            "patchScope": "status",
+            "count": len(results),
+            "failed": failed,
+            "results": results,
+        }
+    )
+    return 1 if failed else 0
+
+
 def health(args: argparse.Namespace) -> int:
     write_json(health_payload(started_at=args.started_at, now=args.now))
     return 0
@@ -217,6 +261,12 @@ def build_parser() -> argparse.ArgumentParser:
     sync_parser.add_argument("--format", choices=["json", "commands"], default="json")
     sync_parser.add_argument("--kubectl", default="kubectl")
     sync_parser.set_defaults(func=sync)
+
+    apply_status_parser = sub.add_parser("apply-status", help="run status patch server dry-run, or execute status-only writes explicitly")
+    apply_status_parser.add_argument("file", help="OperationCapsule JSON object/list file, or - for stdin")
+    apply_status_parser.add_argument("--kubectl", default="kubectl")
+    apply_status_parser.add_argument("--execute", action="store_true", help="execute status subresource patches instead of server dry-run")
+    apply_status_parser.set_defaults(func=apply_status)
 
     health_parser = sub.add_parser("health", help="emit liveness payload for future /healthz wiring")
     health_parser.add_argument("--started-at", type=int)

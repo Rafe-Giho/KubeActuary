@@ -98,8 +98,10 @@ Current local progress:
   `kubectl top` measurement harness for live cluster evidence;
 - lightweight cluster smoke harness prints or runs the kind, minikube, MicroK8s,
   and k3s server-side dry-run plan and can write JSON run evidence;
-- live controller process, HTTP serving, deployment manifests, status
-  subresource writes, and live matrix evidence remain future work.
+- status apply helper defaults to server-side dry-run, with persistent
+  status-only writes behind an explicit `--execute` flag;
+- live controller process, HTTP serving, deployment manifests, persistent status
+  subresource loop, and live matrix evidence remain future work.
 
 ## v0.5: Packaging and Installation
 

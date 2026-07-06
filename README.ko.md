@@ -367,6 +367,7 @@ scripts/
   verify_controller_deployment.py optional controller Deployment seed check
   verify_controller_patch_plan.py status patch plan verifier
   verify_controller_sync.py       read-only controller sync verifier
+  verify_controller_status_apply.py status patch dry-run verifier
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
@@ -441,6 +442,7 @@ python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
+python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/run_helm_smoke.py

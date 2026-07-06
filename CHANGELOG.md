@@ -31,6 +31,7 @@ Evidence collector release:
 - add optional controller runtime Deployment seed and verifier;
 - add controller status patch planner with status-only verifier;
 - add read-only controller sync planning with disabled write execution;
+- add controller status patch dry-run helper with explicit status-only execute mode;
 - add controller resource-budget contract and kubectl-top measurement harness;
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
   k3s with JSON evidence output for live runs;

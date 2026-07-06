@@ -237,3 +237,32 @@ Offline verifier:
 ```sh
 python3 -B scripts/verify_controller_sync.py
 ```
+
+## Status Apply Dry-Run
+
+`apply-status` is the first execution-shaped helper for status patches. Its
+default mode is still non-persistent: it adds `--dry-run=server` to every
+generated `kubectl patch` command.
+
+```sh
+python3 bin/kube-actuary-controller apply-status operationcapsules.json
+```
+
+The command may patch only the `status` subresource of
+`operationcapsules.ops.kubeactuary.dev`. It must not mutate `spec`, execute a
+capsule's proposed workload command, or apply/delete workload resources.
+
+Live status writes require an explicit flag:
+
+```sh
+python3 bin/kube-actuary-controller apply-status operationcapsules.json --execute
+```
+
+That mode is status-only but persistent. Keep it behind live validation and RBAC
+gates; it is not part of the default local release path.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_status_apply.py
+```

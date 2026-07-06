@@ -258,6 +258,54 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertEqual(set(plan["patches"][0]["patch"]), {"status"})
         self.assertIn("patch", plan["patches"][0]["command"])
 
+    def test_apply_status_defaults_to_server_dry_run(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "operationcapsule.json"
+            path.write_text(json.dumps(self.capsule([{"id": "intent", "ok": True, "summary": "reviewed", "actor": "reviewer", "attachedAt": "now"}])))
+            log_path = Path(tmpdir) / "kubectl-calls.json"
+            kubectl = Path(tmpdir) / "kubectl"
+            kubectl.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env python3",
+                        "import json",
+                        "import sys",
+                        "from pathlib import Path",
+                        f"log_path = Path({str(log_path)!r})",
+                        "calls = json.loads(log_path.read_text()) if log_path.exists() else []",
+                        "calls.append(sys.argv[1:])",
+                        "log_path.write_text(json.dumps(calls))",
+                        "if sys.argv[1] == 'patch':",
+                        "    print('status patch ok')",
+                        "    raise SystemExit(0)",
+                        "print('unexpected kubectl call', file=sys.stderr)",
+                        "raise SystemExit(9)",
+                    ]
+                )
+            )
+            kubectl.chmod(0o755)
+
+            dry_run = self.run_controller("apply-status", str(path), "--kubectl", str(kubectl))
+            execute = self.run_controller("apply-status", str(path), "--kubectl", str(kubectl), "--execute")
+            calls = json.loads(log_path.read_text())
+
+        self.assertEqual(dry_run.returncode, 0, dry_run.stderr)
+        self.assertEqual(execute.returncode, 0, execute.stderr)
+        self.assertIn("--dry-run=server", calls[0])
+        self.assertNotIn("--dry-run=server", calls[1])
+        for call in calls:
+            self.assertEqual(call[0], "patch")
+            self.assertIn("operationcapsules.ops.kubeactuary.dev", call)
+            self.assertIn("--subresource", call)
+            self.assertIn("status", call)
+            self.assertNotIn("apply", call)
+            self.assertNotIn("delete", call)
+        report = json.loads(dry_run.stdout)
+        self.assertEqual(report["mode"], "server-dry-run")
+        self.assertEqual(report["writeExecution"], "disabled")
+        self.assertEqual(report["patchScope"], "status")
+        self.assertEqual(report["failed"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

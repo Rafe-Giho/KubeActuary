@@ -136,6 +136,11 @@ COMMON_CHECKS = (
         contains=("controller-sync: passed", "read: operationcapsules", "write-execution: disabled"),
     ),
     Check(
+        "controller status apply",
+        ("python3", "-B", "scripts/verify_controller_status_apply.py"),
+        contains=("controller-status-apply: passed", "default-mode: server-dry-run", "write-execution: disabled"),
+    ),
+    Check(
         "controller resource budget",
         ("python3", "-B", "scripts/verify_controller_resource_budget.py"),
         contains=(
