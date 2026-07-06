@@ -123,7 +123,7 @@ COMMON_CHECKS = (
     Check(
         "release evidence status",
         ("python3", "-B", "scripts/verify_release_evidence_status.py"),
-        contains=("release-evidence-status: passed", "complete: ok", "environment: ok"),
+        contains=("release-evidence-status: passed", "complete: ok", "advance: ok"),
     ),
     Check(
         "next version task runner",

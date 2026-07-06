@@ -28,6 +28,7 @@ NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
+ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
 LIGHTWEIGHT_PROVIDERS = ("kind", "minikube", "microk8s", "k3s")
 MANAGED_PROVIDERS = ("eks", "gke", "aks")
 SINGLE_REPORT_SCHEMAS = (
@@ -82,6 +83,26 @@ def write_next_task_run(evidence_dir: Path) -> None:
     )
 
 
+def write_advance_record(evidence_dir: Path) -> None:
+    write_payload(
+        evidence_dir / ".kubeactuary" / "version-iteration-advance.json",
+        {
+            "schemaVersion": ADVANCE_SCHEMA,
+            "mode": "run",
+            "status": "passed",
+            "clusterWrites": "disabled-or-server-side-dry-run-only",
+            "runId": "test-advance",
+            "createdAt": "2026-07-06T00:00:00+00:00",
+            "runner": {"status": "passed"},
+            "nextTask": {
+                "selected": "06-controller",
+                "skippedCompleteEvidence": 1,
+            },
+            "history": {"runs": 2},
+        },
+    )
+
+
 def write_full_matrix(evidence_dir: Path) -> None:
     for provider in LIGHTWEIGHT_PROVIDERS:
         payload = sample("kube-actuary.lightweight-smoke.v1")
@@ -130,6 +151,7 @@ def main() -> int:
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
         )
         write_next_task_run(partial_dir)
+        write_advance_record(partial_dir)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
         next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
@@ -223,6 +245,11 @@ def main() -> int:
         errors.append("partial status must include environment-blockers schema")
     if environment_blockers.get("summary", {}).get("blockedByEnvironment") != 0:
         errors.append("partial status must summarize environment blockers")
+    advance = partial_payload.get("versionIterationAdvance") or {}
+    if advance.get("schemaVersion") != ADVANCE_SCHEMA:
+        errors.append("partial status must include version-iteration-advance schema")
+    if advance.get("status") != "passed" or advance.get("runId") != "test-advance":
+        errors.append("partial status must preserve version-iteration-advance status")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
@@ -245,6 +272,8 @@ def main() -> int:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:
         errors.append("partial text status must print environment blocker count")
+    if "version-iteration-advance: passed" not in partial_text.stdout:
+        errors.append("partial text status must print advance status")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
@@ -294,6 +323,7 @@ def main() -> int:
         NEXT_TASK_RUN_SCHEMA,
         ENVIRONMENT_PROBE_SCHEMA,
         ENVIRONMENT_BLOCKERS_SCHEMA,
+        ADVANCE_SCHEMA,
     ):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
@@ -311,6 +341,7 @@ def main() -> int:
     print("complete: ok")
     print("next-task-run: ok")
     print("environment: ok")
+    print("advance: ok")
     return 0
 
 

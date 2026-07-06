@@ -25,6 +25,7 @@ NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
+ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
 NEXT_TASK_FILE_FLAGS = {
     "--sample": "sample",
     "--source": "source",
@@ -152,6 +153,33 @@ def load_environment_blockers(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
+def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "version-iteration-advance.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != ADVANCE_SCHEMA:
+        raise ValueError(f"{path}: unsupported version-iteration-advance schemaVersion: {payload.get('schemaVersion')!r}")
+    runner = payload.get("runner") or {}
+    next_task = payload.get("nextTask") or {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "mode": payload.get("mode"),
+        "status": payload.get("status"),
+        "clusterWrites": payload.get("clusterWrites"),
+        "runId": payload.get("runId"),
+        "createdAt": payload.get("createdAt"),
+        "runnerStatus": runner.get("status"),
+        "nextTask": {
+            "selected": next_task.get("selected"),
+            "captureStatus": next_task.get("captureStatus"),
+            "skippedCompleteEvidence": next_task.get("skippedCompleteEvidence"),
+        },
+        "history": payload.get("history", {}),
+    }
+
+
 def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
     commands: list[str] = []
     seen: set[str] = set()
@@ -180,6 +208,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     next_task_run = load_next_task_run(evidence_dir)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
+    version_iteration_advance = load_version_iteration_advance(evidence_dir)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -200,6 +229,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         "nextTaskRun": next_task_run,
         "environmentProbe": environment_probe,
         "environmentBlockers": environment_blockers,
+        "versionIterationAdvance": version_iteration_advance,
         "liveReports": manifest.get("reports", []),
         "supplementalEvidence": [
             {
@@ -269,6 +299,11 @@ def render_text(status: dict[str, Any]) -> str:
     if isinstance(environment_blockers, dict):
         blocker_summary = environment_blockers.get("summary", {})
         lines.append(f"environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+    advance = status.get("versionIterationAdvance")
+    if isinstance(advance, dict):
+        lines.append(f"version-iteration-advance: {advance.get('status')}")
+        if advance.get("runId"):
+            lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
     return "\n".join(lines) + "\n"
 
 
