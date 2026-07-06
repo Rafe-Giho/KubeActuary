@@ -177,6 +177,8 @@ def main() -> int:
             errors.append("advance must refresh next-task artifacts past completed evidence")
         if payload.get("history", {}).get("runs") != 2:
             errors.append("advance history status must include two runs")
+        if payload.get("history", {}).get("latestQueueSource") != "prepared-live-validation-queue":
+            errors.append("advance history status must preserve prepared queue source")
 
         raw = evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt"
         supplemental = evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
@@ -259,6 +261,8 @@ def main() -> int:
             errors.append("probe-blocked advance must record before and blocked history runs")
         if blocked_payload.get("history", {}).get("latestRunId") != "blocked-advance-blocked":
             errors.append("probe-blocked advance history must make the blocked snapshot latest")
+        if blocked_payload.get("history", {}).get("latestQueueSource") != "prepared-live-validation-queue":
+            errors.append("probe-blocked advance history must preserve prepared queue source")
         if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
             errors.append("probe-blocked advance must not capture raw evidence")
 

@@ -161,6 +161,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=True,
     )
     selected = prepared_next_task.get("selected") or {}
     if probe_environment and selected.get("captureStatus") != "tool-ready":
@@ -178,6 +179,7 @@ def run_advance(
             capture_status_filters=capture_status_filters,
             missing_tool_filters=missing_tool_filters,
             environment_status_filters=environment_status_filters,
+            prefer_prepared_queue=True,
         )
         history = inspect_history(history_dir)
         return {
@@ -241,6 +243,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=True,
     )
     history = inspect_history(history_dir)
     status = "passed" if runner.get("status") == "passed" and history.get("valid") is True else "failed"

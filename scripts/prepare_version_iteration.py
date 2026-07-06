@@ -149,6 +149,7 @@ def prepare_iteration_pack(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     worklist = build_worklist(
         version_filters=version_filters,
@@ -159,6 +160,7 @@ def prepare_iteration_pack(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=prefer_prepared_queue,
     )
     versions_dir = output_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)

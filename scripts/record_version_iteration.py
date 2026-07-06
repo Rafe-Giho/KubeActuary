@@ -99,6 +99,7 @@ def record_iteration(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     history_dir.mkdir(parents=True, exist_ok=True)
     index = load_index(history_dir)
@@ -117,6 +118,7 @@ def record_iteration(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=prefer_prepared_queue,
     )
 
     previous = latest_run(index)
