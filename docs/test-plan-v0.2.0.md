@@ -226,7 +226,8 @@ Expected:
 - version iteration advance check prints `version-iteration-advance: passed`
   and verifies version-scoped selection plus selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus selected worklist drilldowns and CLI Markdown output;
+  reports plus latest blocker streaks, selected worklist drilldowns, and CLI
+  Markdown output;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -363,7 +364,8 @@ Confirm from code and tests:
   guidance for local next-task evidence builds, runner failure summaries,
   resolved prepared-queue command priority, selected next-task worklist
   drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, runner/advance record consistency,
-  and probe-first guidance after failed runner attempts or environment blockers;
+  advance blocker streak preservation, and probe-first guidance after failed
+  runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files, records passed and missing-source status reports, and
   skips existing outputs without cluster, cloud, or workload writes;
@@ -374,7 +376,8 @@ Confirm from code and tests:
 - version iteration advance verifier wraps the selected-task runner with
   version-scoped, probe-aware before/after evidence-aware history recording and
   validates the resulting diff or zero-run environment-blocked runner record
-  plus blocked history snapshot and selected worklist drilldowns;
+  plus blocked history snapshot, latest blocker streaks, and selected worklist
+  drilldowns;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

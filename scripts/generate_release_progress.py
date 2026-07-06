@@ -786,6 +786,14 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 lines.append(f"- version-iteration-advance-consistency: `{consistency.get('status')}`")
                 if consistency.get("mismatches"):
                     lines.append(f"- version-iteration-advance-mismatches: `{', '.join(consistency.get('mismatches', []))}`")
+            blocker_streak = advance.get("latestBlockerStreak")
+            if isinstance(blocker_streak, dict):
+                signature = blocker_streak.get("signature", {})
+                if not isinstance(signature, dict):
+                    signature = {}
+                lines.append(f"- version-iteration-advance-blocker-streak: `{blocker_streak.get('streak')}`")
+                lines.append(f"- version-iteration-advance-blocker-status: `{blocker_streak.get('status')}`")
+                lines.append(f"- version-iteration-advance-blocker-id: `{signature.get('id')}`")
         next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands:
             lines.append(f"- next: `{command}`")
@@ -922,6 +930,14 @@ def render_text(progress: dict[str, Any]) -> str:
             lines.append(f"version-iteration-advance: {advance.get('status')}")
             if advance.get("runId"):
                 lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
+            blocker_streak = advance.get("latestBlockerStreak")
+            if isinstance(blocker_streak, dict):
+                signature = blocker_streak.get("signature", {})
+                if not isinstance(signature, dict):
+                    signature = {}
+                lines.append(f"version-iteration-advance-blocker-streak: {blocker_streak.get('streak')}")
+                lines.append(f"version-iteration-advance-blocker-status: {blocker_streak.get('status')}")
+                lines.append(f"version-iteration-advance-blocker-id: {signature.get('id')}")
         for command in evidence_status.get("nextCommands", []):
             lines.append(f"next: {command}")
 

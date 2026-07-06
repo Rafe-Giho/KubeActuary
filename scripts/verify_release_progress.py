@@ -212,6 +212,17 @@ def main() -> int:
                     "skippedCompleteEvidence": 0,
                 },
                 "history": {"runs": 1},
+                "latestBlockerStreak": {
+                    "status": "repeated",
+                    "streak": 2,
+                    "firstRunId": "test-before",
+                    "latestRunId": "test-progress",
+                    "signature": {
+                        "id": "01-controller-resource-budget",
+                        "captureStatus": "blocked-by-environment",
+                        "environmentReason": "connection-refused",
+                    },
+                },
             },
         )
         history_evidence_dir = tmpdir / "history-evidence"
@@ -511,6 +522,8 @@ def main() -> int:
             "version-iteration-advance-queue-source: `prepared-live-validation-queue`",
             "version-iteration-advance-queue-source-origin: `inferred-live-validation-queue`",
             "version-iteration-advance-consistency: `matched`",
+            "version-iteration-advance-blocker-streak: `2`",
+            "version-iteration-advance-blocker-status: `repeated`",
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
@@ -533,6 +546,8 @@ def main() -> int:
             "next-task: 01-controller-resource-budget tool-ready",
             "next-task-run: failed run",
             "version-iteration-advance: failed",
+            "version-iteration-advance-blocker-streak: 2",
+            "version-iteration-advance-blocker-status: repeated",
             "next: python3 -B scripts/prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_text.stdout:

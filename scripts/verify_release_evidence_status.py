@@ -143,6 +143,17 @@ def write_advance_record(evidence_dir: Path) -> None:
                 "skippedCompleteEvidence": 1,
             },
             "history": {"runs": 2},
+            "latestBlockerStreak": {
+                "status": "repeated",
+                "streak": 2,
+                "firstRunId": "test-before",
+                "latestRunId": "test-advance",
+                "signature": {
+                    "id": "06-controller",
+                    "captureStatus": "blocked-by-environment",
+                    "environmentReason": "test-blocker",
+                },
+            },
         },
     )
 
@@ -652,6 +663,9 @@ def main() -> int:
         errors.append("partial status must report version-iteration-advance id mismatch")
     if advance.get("status") != "passed" or advance.get("runId") != "test-advance":
         errors.append("partial status must preserve version-iteration-advance status")
+    advance_streak = advance.get("latestBlockerStreak") or {}
+    if advance_streak.get("streak") != 2 or advance_streak.get("status") != "repeated":
+        errors.append("partial status must preserve version-iteration-advance blocker streak")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
@@ -706,6 +720,10 @@ def main() -> int:
         errors.append("partial text status must print stale advance consistency")
     if "version-iteration-advance-mismatches: id" not in partial_text.stdout:
         errors.append("partial text status must print advance mismatch fields")
+    if "version-iteration-advance-blocker-streak: 2" not in partial_text.stdout:
+        errors.append("partial text status must print advance blocker streak")
+    if "version-iteration-advance-blocker-status: repeated" not in partial_text.stdout:
+        errors.append("partial text status must print advance blocker status")
     if "next-task-evidence-build: passed" not in partial_after_build_text.stdout:
         errors.append("post-build text status must print next-task evidence build status")
     if "next-task-evidence-build-consistency: matched" not in partial_after_build_text.stdout:

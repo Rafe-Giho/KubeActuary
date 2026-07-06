@@ -151,7 +151,8 @@ Coverage included:
   verification;
 - version iteration advance records zero-run blocked runner status when the
   environment probe blocks selected live evidence capture, preserves version
-  filters, and keeps a blocked history snapshot as the latest iteration entry;
+  filters, keeps a blocked history snapshot as the latest iteration entry, and
+  preserves the latest blocker streak in the advance report;
 - clean generated-artifact verification for Python cache directories,
   bytecode files, and ignored local evidence state;
 - digest stability across status evidence changes;
@@ -315,7 +316,8 @@ Result:
 - version iteration advance check prints `version-iteration-advance: passed`
   with version-scoped selection plus blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus selected worklist drilldowns and CLI Markdown output;
+  reports plus latest blocker streaks, selected worklist drilldowns, and CLI
+  Markdown output;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

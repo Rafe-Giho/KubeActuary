@@ -351,6 +351,7 @@ def load_version_iteration_advance(
             "skippedCompleteEvidence": next_task.get("skippedCompleteEvidence"),
         },
         "history": payload.get("history", {}),
+        "latestBlockerStreak": payload.get("latestBlockerStreak"),
     }
 
 
@@ -975,6 +976,16 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"version-iteration-advance-consistency: {consistency.get('status')}")
             if consistency.get("mismatches"):
                 lines.append(f"version-iteration-advance-mismatches: {', '.join(consistency.get('mismatches', []))}")
+        blocker_streak = advance.get("latestBlockerStreak")
+        if isinstance(blocker_streak, dict):
+            signature = blocker_streak.get("signature", {})
+            if not isinstance(signature, dict):
+                signature = {}
+            lines.append(f"version-iteration-advance-blocker-streak: {blocker_streak.get('streak')}")
+            lines.append(f"version-iteration-advance-blocker-status: {blocker_streak.get('status')}")
+            lines.append(f"version-iteration-advance-blocker-id: {signature.get('id')}")
+            if signature.get("environmentReason"):
+                lines.append(f"version-iteration-advance-blocker-reason: {signature.get('environmentReason')}")
         if advance.get("runId"):
             lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
     return "\n".join(lines) + "\n"
@@ -1106,6 +1117,18 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- next-task consistency: `{consistency.get('status')}`")
             if consistency.get("mismatches"):
                 lines.append(f"- next-task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
+        blocker_streak = advance.get("latestBlockerStreak")
+        if isinstance(blocker_streak, dict):
+            signature = blocker_streak.get("signature", {})
+            if not isinstance(signature, dict):
+                signature = {}
+            lines.append(
+                f"- latest blocker streak: `{blocker_streak.get('streak')}` "
+                f"({blocker_streak.get('status')})"
+            )
+            lines.append(f"- latest blocker task: `{signature.get('id')}`")
+            if signature.get("environmentReason"):
+                lines.append(f"- latest blocker reason: `{signature.get('environmentReason')}`")
         if advance.get("runId"):
             lines.append(f"- run id: `{advance.get('runId')}`")
         history = advance.get("history", {})

@@ -324,6 +324,14 @@ def main() -> int:
             errors.append("probe-blocked advance next-task must preserve environment status")
         if blocked_payload.get("nextTask", {}).get("nextStep") != blocked_next_step:
             errors.append("probe-blocked advance next-task must preserve the blocker next step")
+        blocked_streak = blocked_payload.get("latestBlockerStreak") or {}
+        blocked_streak_signature = blocked_streak.get("signature") or {}
+        if blocked_streak.get("streak") != 2 or blocked_streak.get("status") != "repeated":
+            errors.append("probe-blocked advance must preserve latest repeated blocker streak")
+        if blocked_streak_signature.get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+            errors.append("probe-blocked advance must preserve blocker streak task id")
+        if blocked_streak_signature.get("environmentReason") != "command-failed":
+            errors.append("probe-blocked advance must preserve blocker streak reason")
         if blocked_payload.get("after", {}).get("runId") != "blocked-advance-blocked":
             errors.append("probe-blocked advance must record a blocked follow-up history snapshot")
         blocked_diff = blocked_payload.get("after", {}).get("diffSummary", {})
@@ -356,6 +364,9 @@ def main() -> int:
                 errors.append("probe-blocked advance record must preserve blocked status")
             if blocked_advance_payload.get("nextTask", {}).get("environmentStatus") != "cluster-unavailable":
                 errors.append("probe-blocked advance record must preserve environment status")
+            blocked_record_streak = blocked_advance_payload.get("latestBlockerStreak") or {}
+            if blocked_record_streak.get("streak") != 2 or blocked_record_streak.get("status") != "repeated":
+                errors.append("probe-blocked advance record must preserve latest blocker streak")
             if not any(
                 "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable" in command
                 for command in blocked_advance_payload.get("nextTask", {}).get("worklistCommands", [])
@@ -365,6 +376,8 @@ def main() -> int:
                 errors.append("probe-blocked advance Markdown must show environment status")
             if f"next task next step: {blocked_next_step}" not in blocked_advance_md_text:
                 errors.append("probe-blocked advance Markdown must show the blocker next step")
+            if "latest blocker streak: `2` (repeated)" not in blocked_advance_md_text:
+                errors.append("probe-blocked advance Markdown must show latest blocker streak")
             if "next task worklist: `python3 -B scripts/generate_version_worklist.py" not in blocked_advance_md_text:
                 errors.append("probe-blocked advance Markdown must show selected worklist drilldown")
         if blocked_payload.get("history", {}).get("runs") != 2:
@@ -386,6 +399,8 @@ def main() -> int:
                 "next-command: python3 -B scripts/advance_version_iteration.py",
                 "--version 0.4.3 --probe-environment",
                 "--capture-status blocked-by-environment --run",
+                "latest-blocker-streak: 2",
+                "latest-blocker-status: repeated",
             ):
                 if snippet not in blocked_history_status.stdout:
                     errors.append(f"probe-blocked history next command must preserve filters: {snippet}")

@@ -135,6 +135,11 @@ def blocked_runner_result(
     }
 
 
+def history_blocker_streak(history: dict[str, Any]) -> dict[str, Any] | None:
+    streak = history.get("latestBlockerStreak")
+    return streak if isinstance(streak, dict) else None
+
+
 def run_advance(
     evidence_dir: Path,
     history_dir: Path,
@@ -238,6 +243,7 @@ def run_advance(
                 ),
             },
             "history": history.get("summary", {}),
+            "latestBlockerStreak": history_blocker_streak(history),
         }
     runner = run_next_task(evidence_dir, run=True)
     runner_record = record_next_task_run(evidence_dir, runner)
@@ -309,6 +315,7 @@ def run_advance(
             "skippedCompleteEvidence": next_task.get("summary", {}).get("skippedCompleteEvidence", 0),
         },
         "history": history.get("summary", {}),
+        "latestBlockerStreak": history_blocker_streak(history),
     }
 
 
@@ -355,6 +362,16 @@ def render_text(result: dict[str, Any]) -> str:
         if result.get("runnerRecord"):
             lines.append(f"runner-record: {result['runnerRecord'].get('json')}")
         lines.append(f"history-runs: {result['history'].get('runs')}")
+        blocker_streak = result.get("latestBlockerStreak")
+        if isinstance(blocker_streak, dict):
+            signature = blocker_streak.get("signature", {})
+            if not isinstance(signature, dict):
+                signature = {}
+            lines.append(f"latest-blocker-streak: {blocker_streak.get('streak')}")
+            lines.append(f"latest-blocker-status: {blocker_streak.get('status')}")
+            lines.append(f"latest-blocker-id: {signature.get('id')}")
+            if signature.get("environmentReason"):
+                lines.append(f"latest-blocker-reason: {signature.get('environmentReason')}")
         lines.append(f"next-task: {result['nextTask'].get('selected')}")
         if result["nextTask"].get("captureStatus"):
             lines.append(f"next-task-status: {result['nextTask'].get('captureStatus')}")
@@ -424,6 +441,18 @@ def render_markdown(result: dict[str, Any]) -> str:
         for command in next_task.get("worklistCommands", []):
             lines.append(f"- next task worklist: `{command}`")
         lines.append(f"- history runs: {result.get('history', {}).get('runs')}")
+        blocker_streak = result.get("latestBlockerStreak")
+        if isinstance(blocker_streak, dict):
+            signature = blocker_streak.get("signature", {})
+            if not isinstance(signature, dict):
+                signature = {}
+            lines.append(
+                f"- latest blocker streak: `{blocker_streak.get('streak')}` "
+                f"({blocker_streak.get('status')})"
+            )
+            lines.append(f"- latest blocker task: `{signature.get('id')}`")
+            if signature.get("environmentReason"):
+                lines.append(f"- latest blocker reason: `{signature.get('environmentReason')}`")
     else:
         selected = result.get("selected") or {}
         lines.append(f"- selected: `{selected.get('id')}`")
