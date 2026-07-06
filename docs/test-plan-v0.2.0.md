@@ -16,8 +16,8 @@ Expected:
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
-  controller runtime contract, controller resource budget, and full manifest
-  gate behavior;
+  controller runtime contract, controller resource budget, lightweight cluster
+  smoke harness, and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -43,6 +43,7 @@ python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
+python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -62,6 +63,7 @@ Expected:
 - controller RBAC check prints `controller-rbac: passed`;
 - controller runtime check prints `controller-runtime: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
+- lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -120,6 +122,8 @@ Confirm from code and tests:
   leader-election Lease configuration without contacting the cluster;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets
   and parses `kubectl top` samples;
+- lightweight cluster smoke helper uses server-side dry-run plans and covers
+  kind, minikube, MicroK8s, and k3s without default writes;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -136,5 +140,5 @@ Expected:
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, controller contract, controller RBAC, controller runtime,
-  controller resource budget, digest, CRD render, gate behavior, JSON/YAML
-  parsing, and `git diff --check`.
+  controller resource budget, lightweight cluster smoke, digest, CRD render,
+  gate behavior, JSON/YAML parsing, and `git diff --check`.

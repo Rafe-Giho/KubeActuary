@@ -116,6 +116,15 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "lightweight cluster smoke",
+        ("python3", "-B", "scripts/verify_lightweight_cluster_smoke.py"),
+        contains=(
+            "lightweight-cluster-smoke: passed",
+            "providers: kind, minikube, microk8s, k3s",
+            "mode: offline-plan",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

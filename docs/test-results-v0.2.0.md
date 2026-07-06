@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (23 checks)
-Ran 52 tests
+verification: passed (24 checks)
+Ran 53 tests
 OK
 ```
 
@@ -54,6 +54,7 @@ Coverage included:
 - controller runtime contract emits health, readiness, Prometheus metrics, and
   leader-election Lease configuration;
 - controller resource budget contract and `kubectl top` measurement parser;
+- lightweight cluster smoke plan for kind, minikube, MicroK8s, and k3s;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -83,6 +84,7 @@ python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
+python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -104,6 +106,7 @@ Result:
 - controller RBAC check prints `controller-rbac: passed`;
 - controller runtime check prints `controller-runtime: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
+- lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

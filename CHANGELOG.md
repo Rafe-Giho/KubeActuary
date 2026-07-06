@@ -29,6 +29,8 @@ Evidence collector release:
 - add controller health, readiness, metrics, and leader-election runtime
   contracts;
 - add controller resource-budget contract and kubectl-top measurement harness;
+- add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
+  k3s;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

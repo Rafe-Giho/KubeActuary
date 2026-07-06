@@ -304,6 +304,7 @@ docs/
   project-assessment.md        maturity assessment
   release-checklist.md         release gate checklist
   release-taskboard.md         local v1.0 taskboard
+  lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes and managed-service compatibility
   crd-upgrade-rollback.md      CRD fixture upgrade and rollback runbook
   controller.md                low-overhead controller design and contract
@@ -332,6 +333,8 @@ scripts/
   verify_controller_runtime_contract.py offline controller runtime check
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
+  run_lightweight_cluster_smoke.py lightweight cluster smoke harness
+  verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -355,6 +358,7 @@ python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
+python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

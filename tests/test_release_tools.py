@@ -14,6 +14,7 @@ CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
 CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
 CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budget.py"
+LIGHTWEIGHT_CLUSTER_SMOKE = ROOT / "scripts" / "verify_lightweight_cluster_smoke.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -147,6 +148,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("controller-resource-budget: passed", result.stdout)
         self.assertIn("idle-cpu-budget: <50m", result.stdout)
         self.assertIn("idle-memory-budget: <64Mi", result.stdout)
+
+    def test_verify_lightweight_cluster_smoke(self):
+        result = subprocess.run(
+            [sys.executable, str(LIGHTWEIGHT_CLUSTER_SMOKE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("lightweight-cluster-smoke: passed", result.stdout)
+        self.assertIn("providers: kind, minikube, microk8s, k3s", result.stdout)
 
 
 if __name__ == "__main__":

@@ -306,6 +306,7 @@ docs/
   project-assessment.md        현재 성숙도 평가
   release-checklist.md         릴리스 gate 체크리스트
   release-taskboard.md         로컬 v1.0 taskboard
+  lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
   crd-upgrade-rollback.md      CRD fixture upgrade/rollback runbook
   controller.md                저부하 controller 설계와 계약
@@ -334,6 +335,8 @@ scripts/
   verify_controller_runtime_contract.py offline controller runtime check
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
+  run_lightweight_cluster_smoke.py lightweight cluster smoke harness
+  verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -357,6 +360,7 @@ python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
+python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
