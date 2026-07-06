@@ -58,6 +58,7 @@ Evidence collector release:
   history status;
 - show next local loop commands in version iteration history status;
 - show latest next-task evidence file details in version iteration history status;
+- show latest next-task worklist drilldowns in version iteration history status;
 - preserve prepared queue source in next-task runner and advance reports;
 - preserve environment blocker status and next steps in advance reports;
 - surface runner and advance queue source in release evidence status/progress;
@@ -90,6 +91,8 @@ Evidence collector release:
 - show filtered worklist commands for release evidence status blockers;
 - add CLI Markdown output for release evidence status inspection;
 - add CLI Markdown output for version iteration advance reports;
+- show selected next-task worklist drilldowns in version iteration advance
+  reports;
 - add CLI Markdown output for selected next-task runner reports;
 - add CLI Markdown output for next-task evidence build reports;
 - record next-task evidence build status under prepared evidence directories;

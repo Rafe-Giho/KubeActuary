@@ -118,10 +118,11 @@ Expected:
   records evidence-aware run history with schema `kube-actuary.version-iteration-history.v1`,
   inspects evidence-aware history status with schema `kube-actuary.version-iteration-history-status.v1`
   in text, JSON, and Markdown while preserving latest blocker summaries and
-  drilldown commands, latest run filters, latest next-task details, latest run
-  artifact paths, latest aggregate and per-version diff summaries, next local
-  loop commands, latest next-task evidence file details, latest environment
-  probe failures, and records `status.json` plus `status.md` on request,
+  drilldown commands, latest run filters, latest next-task details and
+  worklist drilldowns, latest run artifact paths, latest aggregate and
+  per-version diff summaries, next local loop commands, latest next-task
+  evidence file details, latest environment probe failures, and records
+  `status.json` plus `status.md` on request,
   selects the next task with schema `kube-actuary.next-version-task.v1`,
   resolves next-task evidence paths under a requested evidence directory,
   skips completed local evidence file sets when requested,
@@ -204,7 +205,8 @@ Expected:
   recording, and
   `.kubeactuary/next-version-task-run.json` runner status plus
   `.kubeactuary/version-iteration-advance.json` workflow status output,
-  including selected blocker status, next-step metadata, and CLI Markdown output;
+  including selected blocker status, next-step metadata, selected worklist
+  drilldowns, and CLI Markdown output;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

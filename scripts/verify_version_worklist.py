@@ -840,6 +840,12 @@ def main() -> int:
         for item in latest_history_blockers.get("environment", [])
     ):
         errors.append("version iteration history status should preserve latest environment blockers")
+    latest_history_next_task = history_status_payload.get("latestNextTask", {})
+    if not any(
+        "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable" in command
+        for command in latest_history_next_task.get("worklistCommands", [])
+    ):
+        errors.append("version iteration history status should preserve latest next-task worklist drilldown")
     if "environment-blocker: cluster-unavailable (1 items)" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment blocker summary")
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:
@@ -870,6 +876,8 @@ def main() -> int:
         errors.append("version iteration history text should show latest next-task capture status")
     if "latest-next-task-command: python3 -B scripts/capture_controller_resource_budget.py" not in history_status.stdout:
         errors.append("version iteration history text should show latest next-task command")
+    if "latest-next-task-worklist: python3 -B scripts/generate_version_worklist.py" not in history_status.stdout:
+        errors.append("version iteration history text should show latest next-task worklist drilldown")
     if (
         "latest-version-diff: 0.4.3 capture-ready->blocked-by-environment "
         "capture-ready-delta=-1 blocked-by-environment-delta=1 changed-items=1"
@@ -906,6 +914,8 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest next-task summary")
     if "id: `11-resource-budget-target-idle-50m-cpu-and-64mi-memory`" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest next-task id")
+    if "worklist: `python3 -B scripts/generate_version_worklist.py" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest next-task worklist drilldown")
     if "## Latest Version Diffs" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include latest per-version diffs")
     if (

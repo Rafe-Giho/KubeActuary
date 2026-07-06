@@ -172,6 +172,8 @@ Expected:
   in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves selected latest next-task evidence
   file details in text, JSON, and Markdown;
+- version iteration history status preserves selected latest next-task worklist
+  drilldowns in text, JSON, and Markdown;
 - version iteration history status preserves latest run, worklist, and diff
   artifact paths in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run diff summaries in text,
@@ -218,7 +220,7 @@ Expected:
 - version iteration advance check prints `version-iteration-advance: passed`
   and verifies selected blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus CLI Markdown output;
+  reports plus selected worklist drilldowns and CLI Markdown output;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -364,7 +366,7 @@ Confirm from code and tests:
 - version iteration advance verifier wraps the selected-task runner with
   probe-aware before/after evidence-aware history recording and validates the
   resulting diff or zero-run environment-blocked runner record plus blocked
-  history snapshot;
+  history snapshot and selected worklist drilldowns;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

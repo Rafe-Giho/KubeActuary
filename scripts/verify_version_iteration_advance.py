@@ -87,6 +87,7 @@ def main() -> int:
             "# KubeActuary Version Iteration Advance",
             "Mode: `plan`",
             "Status: `plan`",
+            "selected worklist: `python3 -B scripts/generate_version_worklist.py",
             "planned step: prepare live evidence directory with skip-complete evidence",
         ):
             if snippet not in plan_markdown.stdout:
@@ -104,6 +105,11 @@ def main() -> int:
             errors.append("filtered advance plan should select the first kind-blocked task")
         if filtered_plan_payload.get("selected", {}).get("captureStatus") != "missing-tools":
             errors.append("filtered advance plan should preserve missing-tools capture status")
+        if not any(
+            "--capture-status missing-tools --missing-tool kind" in command
+            for command in filtered_plan_payload.get("selected", {}).get("worklistCommands", [])
+        ):
+            errors.append("filtered advance plan must include selected worklist drilldown")
         if (tmpdir / "filtered-plan-evidence").exists() or (tmpdir / "filtered-plan-history").exists():
             errors.append("filtered advance plan must not create evidence or history directories")
 
@@ -145,6 +151,7 @@ def main() -> int:
             "Mode: `run`",
             "Status: `passed`",
             "run id: `markdown-advance`",
+            "next task worklist: `python3 -B scripts/generate_version_worklist.py",
             "history runs: 2",
             "runner: `passed`",
         ):
@@ -210,6 +217,8 @@ def main() -> int:
             errors.append("advance after diff must record evidence file growth")
         if payload.get("nextTask", {}).get("skippedCompleteEvidence") != 1:
             errors.append("advance must refresh next-task artifacts past completed evidence")
+        if not payload.get("nextTask", {}).get("worklistCommands"):
+            errors.append("advance must include refreshed next-task worklist drilldowns")
         if payload.get("history", {}).get("runs") != 2:
             errors.append("advance history status must include two runs")
         if payload.get("history", {}).get("latestQueueSource") != "prepared-live-validation-queue":
@@ -301,10 +310,17 @@ def main() -> int:
                 errors.append("probe-blocked advance record must preserve blocked status")
             if blocked_advance_payload.get("nextTask", {}).get("environmentStatus") != "cluster-unavailable":
                 errors.append("probe-blocked advance record must preserve environment status")
+            if not any(
+                "--capture-status blocked-by-environment --environment-status cluster-unavailable" in command
+                for command in blocked_advance_payload.get("nextTask", {}).get("worklistCommands", [])
+            ):
+                errors.append("probe-blocked advance record must include selected worklist drilldown")
             if "next task environment: `cluster-unavailable`" not in blocked_advance_md_text:
                 errors.append("probe-blocked advance Markdown must show environment status")
             if f"next task next step: {blocked_next_step}" not in blocked_advance_md_text:
                 errors.append("probe-blocked advance Markdown must show the blocker next step")
+            if "next task worklist: `python3 -B scripts/generate_version_worklist.py" not in blocked_advance_md_text:
+                errors.append("probe-blocked advance Markdown must show selected worklist drilldown")
         if blocked_payload.get("history", {}).get("runs") != 2:
             errors.append("probe-blocked advance must record before and blocked history runs")
         if blocked_payload.get("history", {}).get("latestRunId") != "blocked-advance-blocked":

@@ -370,10 +370,11 @@ access is unavailable, the prepared next-task artifacts record
 captured. Probe-blocked advance runs also write a zero-run
 `.kubeactuary/next-version-task-run.json` record with `blocked-by-environment`
 status, so stale failed runner records do not remain the latest local state.
-The advance report also preserves the selected environment blocker status and
-next step. Probe-blocked runs record both `before` and `blocked` history
-snapshots, making the blocked snapshot the latest version-iteration history
-entry without running evidence commands.
+The advance report also preserves the selected environment blocker status,
+next step, and selected next-task worklist drilldown. Probe-blocked runs record
+both `before` and `blocked` history snapshots, making the blocked snapshot the
+latest version-iteration history entry without running evidence commands.
+History status also prints the latest next-task worklist drilldown.
 The scaffold also writes
 `.kubeactuary/environment-probe.json` with schema
 `kube-actuary.environment-probe.v1` for read-only probe details and

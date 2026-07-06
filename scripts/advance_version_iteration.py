@@ -14,7 +14,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.inspect_version_history import inspect_history  # noqa: E402
+from scripts.inspect_version_history import inspect_history, selected_worklist_commands  # noqa: E402
 from scripts.prepare_live_evidence_directory import prepare_directory  # noqa: E402
 from scripts.record_version_iteration import record_iteration  # noqa: E402
 from scripts.run_next_version_task import build_result as run_next_task  # noqa: E402
@@ -77,6 +77,7 @@ def planned_result(
             "missingTools": selected.get("missingTools", []),
             "nextStep": selected.get("nextStep"),
             "commands": selected.get("resolvedCommands", selected.get("commands", [])),
+            "worklistCommands": selected_worklist_commands(selected, evidence_dir),
         },
         "plannedSteps": [
             "prepare live evidence directory with skip-complete evidence",
@@ -218,6 +219,7 @@ def run_advance(
                 "environmentStatus": selected.get("environmentStatus"),
                 "missingTools": selected.get("missingTools", []),
                 "nextStep": selected.get("nextStep"),
+                "worklistCommands": selected_worklist_commands(selected, evidence_dir),
                 "skippedCompleteEvidence": prepared_next_task.get("summary", {}).get(
                     "skippedCompleteEvidence",
                     0,
@@ -287,6 +289,7 @@ def run_advance(
             "environmentStatus": refreshed_selected.get("environmentStatus"),
             "missingTools": refreshed_selected.get("missingTools", []),
             "nextStep": refreshed_selected.get("nextStep"),
+            "worklistCommands": selected_worklist_commands(refreshed_selected, evidence_dir),
             "skippedCompleteEvidence": next_task.get("summary", {}).get("skippedCompleteEvidence", 0),
         },
         "history": history.get("summary", {}),
@@ -318,6 +321,8 @@ def render_text(result: dict[str, Any]) -> str:
             lines.append(f"selected-next-step: {selected.get('nextStep')}")
         for command in selected.get("commands", []):
             lines.append(f"command: {command}")
+        for command in selected.get("worklistCommands", []):
+            lines.append(f"worklist: {command}")
         for step in result.get("plannedSteps", []):
             lines.append(f"step: {step}")
     else:
@@ -340,6 +345,8 @@ def render_text(result: dict[str, Any]) -> str:
             lines.append(f"next-task-missing-tools: {tools}")
         if result["nextTask"].get("nextStep"):
             lines.append(f"next-task-next-step: {result['nextTask'].get('nextStep')}")
+        for command in result["nextTask"].get("worklistCommands", []):
+            lines.append(f"next-task-worklist: {command}")
         lines.append(f"skipped-complete-evidence: {result['nextTask'].get('skippedCompleteEvidence')}")
         if result.get("advanceRecord"):
             lines.append(f"advance-record: {result['advanceRecord'].get('json')}")
@@ -381,6 +388,8 @@ def render_markdown(result: dict[str, Any]) -> str:
             lines.append(f"- next task missing tools: `{tools}`")
         if next_task.get("nextStep"):
             lines.append(f"- next task next step: {next_task.get('nextStep')}")
+        for command in next_task.get("worklistCommands", []):
+            lines.append(f"- next task worklist: `{command}`")
         lines.append(f"- history runs: {result.get('history', {}).get('runs')}")
     else:
         selected = result.get("selected") or {}
@@ -395,6 +404,8 @@ def render_markdown(result: dict[str, Any]) -> str:
             lines.append(f"- selected missing tools: `{tools}`")
         if selected.get("nextStep"):
             lines.append(f"- selected next step: {selected.get('nextStep')}")
+        for command in selected.get("worklistCommands", []):
+            lines.append(f"- selected worklist: `{command}`")
         for step in result.get("plannedSteps", []):
             lines.append(f"- planned step: {step}")
     return "\n".join(lines) + "\n"

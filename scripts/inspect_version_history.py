@@ -139,8 +139,34 @@ def dict_value(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def selected_worklist_commands(selected: dict[str, Any], evidence_dir: Path | None = None) -> list[str]:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+    ]
+    if evidence_dir is not None:
+        args.extend(["--evidence-dir", evidence_dir.as_posix()])
+    if selected.get("version"):
+        args.extend(["--version", str(selected["version"])])
+    capture_status = selected.get("captureStatus")
+    if capture_status:
+        args.extend(["--capture-status", str(capture_status)])
+    if capture_status == "missing-tools" and selected.get("missingTools"):
+        return [
+            shell_join([*args, "--missing-tool", str(tool)])
+            for tool in selected.get("missingTools", [])
+        ]
+    if capture_status == "blocked-by-environment" and selected.get("environmentStatus"):
+        args.extend(["--environment-status", str(selected["environmentStatus"])])
+    return [shell_join(args)]
+
+
 def summarize_task(version: dict[str, Any], item: dict[str, Any], version_index: int, item_index: int) -> dict[str, Any]:
-    return {
+    result = {
         "version": version.get("version"),
         "versionStatus": version.get("status"),
         "versionIndex": version_index,
@@ -158,6 +184,14 @@ def summarize_task(version: dict[str, Any], item: dict[str, Any], version_index:
         "commands": list_value(item.get("commands")),
         "resolvedCommands": list_value(item.get("resolvedCommands")),
     }
+    evidence_dir = item.get("evidenceDir")
+    if evidence_dir:
+        result["evidenceDir"] = evidence_dir
+    result["worklistCommands"] = selected_worklist_commands(
+        result,
+        Path(str(evidence_dir)) if evidence_dir else None,
+    )
+    return result
 
 
 def summarize_next_task(worklist: dict[str, Any]) -> dict[str, Any] | None:
@@ -450,6 +484,8 @@ def render_text(status: dict[str, Any]) -> str:
         commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
         for command in commands:
             lines.append(f"latest-next-task-command: {command}")
+        for command in list_value(latest_next_task.get("worklistCommands")):
+            lines.append(f"latest-next-task-worklist: {command}")
     for version in status.get("latestVersionDiffs", []) or []:
         if not isinstance(version, dict):
             continue
@@ -575,6 +611,8 @@ def render_markdown(status: dict[str, Any]) -> str:
         commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
         for command in commands:
             lines.append(f"  - `{command}`")
+        for command in list_value(latest_next_task.get("worklistCommands")):
+            lines.append(f"  - worklist: `{command}`")
     else:
         lines.append("- none")
     lines.extend(

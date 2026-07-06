@@ -273,9 +273,10 @@ Result:
   next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,
   iteration history queue-source, blocker drilldown, latest filters, latest
-  next-task details, latest next-task evidence file details, latest artifact
-  paths, latest aggregate/per-version diff summaries, and next-command
-  preservation across text, JSON, Markdown, recorded status reports, and latest
+  next-task details, latest next-task evidence file details, latest next-task
+  worklist drilldowns, latest artifact paths, latest aggregate/per-version
+  diff summaries, and next-command preservation across text, JSON, Markdown,
+  recorded status reports, and latest
   probe failures,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,
@@ -310,7 +311,7 @@ Result:
 - version iteration advance check prints `version-iteration-advance: passed`
   with blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
-  reports plus CLI Markdown output;
+  reports plus selected worklist drilldowns and CLI Markdown output;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
