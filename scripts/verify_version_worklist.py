@@ -480,6 +480,9 @@ def main() -> int:
             f"python3 -B scripts/record_version_iteration.py {history_dir.as_posix()} "
             "--version 0.4.3 --probe-environment"
         )
+        history_status_run_path = (history_dir / "runs" / "after").as_posix()
+        history_status_worklist_path = (history_dir / "runs" / "after" / "worklist.json").as_posix()
+        history_status_diff_path = history_diff_path.as_posix()
         history_status_output = tmpdir / "history-status.json"
         written_history_status = run_inspect_history(
             str(history_dir),
@@ -771,6 +774,13 @@ def main() -> int:
         errors.append("version iteration history status should preserve latest diff status changes")
     if latest_diff_summary.get("blockedByEnvironmentDelta") != 1:
         errors.append("version iteration history status should preserve latest environment delta")
+    latest_artifacts = history_status_payload.get("latestArtifacts", {})
+    if latest_artifacts.get("runPath") != history_status_run_path:
+        errors.append("version iteration history status should show latest run artifact path")
+    if latest_artifacts.get("worklistPath") != history_status_worklist_path:
+        errors.append("version iteration history status should show latest worklist artifact path")
+    if latest_artifacts.get("diffPath") != history_status_diff_path:
+        errors.append("version iteration history status should show latest diff artifact path")
     history_next_commands = history_status_payload.get("nextCommands", [])
     for command in (history_status_record_command, history_status_iteration_command):
         if command not in history_next_commands:
@@ -804,6 +814,12 @@ def main() -> int:
         errors.append("version iteration history text should show latest diff status changes")
     if "latest-diff-blocked-by-environment-delta: 1" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment diff delta")
+    if f"latest-artifact-run-path: {history_status_run_path}" not in history_status.stdout:
+        errors.append("version iteration history text should show latest run artifact path")
+    if f"latest-artifact-worklist-path: {history_status_worklist_path}" not in history_status.stdout:
+        errors.append("version iteration history text should show latest worklist artifact path")
+    if f"latest-artifact-diff-path: {history_status_diff_path}" not in history_status.stdout:
+        errors.append("version iteration history text should show latest diff artifact path")
     if f"next-command: {history_status_record_command}" not in history_status.stdout:
         errors.append("version iteration history text should show the record next command")
     if f"next-command: {history_status_iteration_command}" not in history_status.stdout:
@@ -812,6 +828,11 @@ def main() -> int:
         errors.append("version iteration history Markdown status must pass")
     if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown status should include a title")
+    if "## Latest Artifacts" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include latest artifact paths")
+    for path in (history_status_run_path, history_status_worklist_path, history_status_diff_path):
+        if path not in history_status_markdown.stdout:
+            errors.append(f"version iteration history Markdown should show latest artifact path: {path}")
     if "## Latest Diff" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include latest diff details")
     if "- status-changed: 1" not in history_status_markdown.stdout:
@@ -844,8 +865,15 @@ def main() -> int:
     recorded_latest_diff = history_status_record_payload.get("latestDiffSummary", {})
     if recorded_latest_diff.get("blockedByEnvironmentDelta") != 1:
         errors.append("version iteration history recorded JSON should preserve latest diff summary")
+    recorded_latest_artifacts = history_status_record_payload.get("latestArtifacts", {})
+    if recorded_latest_artifacts.get("diffPath") != history_status_diff_path:
+        errors.append("version iteration history recorded JSON should preserve latest artifact paths")
     if "# KubeActuary Version Iteration History Status" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should include a title")
+    if "## Latest Artifacts" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest artifact paths")
+    if history_status_diff_path not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest diff artifact path")
     if "## Latest Diff" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest diff details")
     if "- blocked-by-environment-delta: 1" not in history_status_record_md_text:

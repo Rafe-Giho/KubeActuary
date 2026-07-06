@@ -135,6 +135,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
     return {
         "runId": run_id,
         "path": relative_path,
+        "diffPath": str(diff_path) if diff_path else None,
         "worklistSchema": worklist.get("schemaVersion"),
         "queueSource": run.get("queueSource") or worklist.get("queueSource") or "generated",
         "summary": worklist.get("summary", {}),
@@ -201,6 +202,23 @@ def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> lis
     return commands
 
 
+def build_latest_artifacts(history_dir: Path, latest: dict[str, Any] | None) -> dict[str, str]:
+    if not latest:
+        return {}
+    relative_path = latest.get("path")
+    if not relative_path:
+        return {}
+    run_path = history_dir / str(relative_path)
+    artifacts = {
+        "runPath": run_path.as_posix(),
+        "worklistPath": (run_path / "worklist.json").as_posix(),
+    }
+    diff_path = latest.get("diffPath")
+    if diff_path:
+        artifacts["diffPath"] = (history_dir / str(diff_path)).as_posix()
+    return artifacts
+
+
 def inspect_history(history_dir: Path) -> dict[str, Any]:
     errors: list[str] = []
     index = load_json(history_dir / "index.json", errors)
@@ -226,6 +244,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_diff_summary = latest.get("diffSummary", {}) if latest else {}
     if not isinstance(latest_diff_summary, dict):
         latest_diff_summary = {}
+    latest_artifacts = build_latest_artifacts(history_dir, latest)
     next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -249,6 +268,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
         "latestDiffSummary": latest_diff_summary,
+        "latestArtifacts": latest_artifacts,
         "nextCommands": next_commands,
         "runs": inspected_runs,
     }
@@ -275,6 +295,11 @@ def render_text(status: dict[str, Any]) -> str:
         for key in DIFF_SUMMARY_KEYS:
             if key in latest_diff:
                 lines.append(f"latest-diff-{dash_label(key)}: {latest_diff[key]}")
+    latest_artifacts = status.get("latestArtifacts", {})
+    if isinstance(latest_artifacts, dict) and latest_artifacts:
+        for key in ("runPath", "worklistPath", "diffPath"):
+            if key in latest_artifacts:
+                lines.append(f"latest-artifact-{dash_label(key)}: {latest_artifacts[key]}")
     for command in status.get("nextCommands", []):
         lines.append(f"next-command: {command}")
     blockers = status.get("latestBlockers", {})
@@ -329,9 +354,23 @@ def render_markdown(status: dict[str, Any]) -> str:
         f"- complete evidence items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"- diffs: {summary['diffs']}",
         "",
-        "## Latest Diff",
+        "## Latest Artifacts",
         "",
     ]
+    latest_artifacts = status.get("latestArtifacts", {})
+    if isinstance(latest_artifacts, dict) and latest_artifacts:
+        for key in ("runPath", "worklistPath", "diffPath"):
+            if key in latest_artifacts:
+                lines.append(f"- {dash_label(key)}: `{latest_artifacts[key]}`")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Diff",
+            "",
+        ]
+    )
     latest_diff = status.get("latestDiffSummary", {})
     if isinstance(latest_diff, dict) and latest_diff:
         for key in DIFF_SUMMARY_KEYS:

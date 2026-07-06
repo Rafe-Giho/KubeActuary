@@ -51,6 +51,8 @@ Evidence collector release:
 - add recorded version iteration history status reports;
 - show latest environment probe failures in version iteration history status;
 - show latest run diff summaries in version iteration history status;
+- show latest run, worklist, and diff artifact paths in version iteration
+  history status;
 - show next local loop commands in version iteration history status;
 - preserve prepared queue source in next-task runner and advance reports;
 - preserve environment blocker status and next steps in advance reports;
