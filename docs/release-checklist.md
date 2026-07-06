@@ -120,8 +120,8 @@ Expected:
 - release evidence directory builder validates captured evidence directories
   and writes manifest and bundle artifacts without contacting clusters;
 - release evidence status inspector reports partial directory coverage, next
-  commands, and persisted next-task output without requiring complete release
-  closure;
+  commands, persisted next-task output, and next-task file readiness without
+  requiring complete release closure;
 - clean-artifact verifier proves no generated Python cache directories or
   bytecode files remain in the workspace;
 - controller contract emits status-only patch examples and OperationCapsule-only

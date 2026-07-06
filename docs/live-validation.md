@@ -183,7 +183,8 @@ The status inspector uses schema `kube-actuary.release-evidence-status.v1`,
 reports covered and uncovered external gates, prints next evidence commands,
 and includes the persisted `kube-actuary.next-version-task.v1` artifact when
 the evidence directory was prepared by the scaffold. It does not require
-complete release closure.
+complete release closure. For resolved next-task file paths, it reports whether
+the raw input and supplemental output files are present or still missing.
 
 Supported evidence schemas:
 

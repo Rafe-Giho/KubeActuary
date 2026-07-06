@@ -91,6 +91,9 @@ def main() -> int:
         payload = sample("kube-actuary.lightweight-smoke.v1")
         payload["provider"] = "kind"
         write_payload(partial_dir / "reports" / "kind.json", payload)
+        (partial_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
+            "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
+        )
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
 
@@ -144,13 +147,25 @@ def main() -> int:
     selected = next_task.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
         errors.append("partial status must include next-task schema")
+    next_task_summary = next_task.get("summary", {})
+    if next_task_summary.get("files") != 3:
+        errors.append("partial status must summarize three selected next-task file references")
+    if next_task_summary.get("existingFiles") != 2 or next_task_summary.get("missingFiles") != 1:
+        errors.append("partial status must report next-task file readiness")
     if selected.get("id") != "01-controller-resource-budget":
         errors.append("partial status must preserve selected next task")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
+    files = selected.get("files", [])
+    if not any(item.get("role") == "sample" and item.get("exists") is True for item in files):
+        errors.append("partial status must mark the sample file present")
+    if not any(item.get("role") == "output" and item.get("exists") is False for item in files):
+        errors.append("partial status must mark the output file missing")
     if partial_text.returncode != 0 or "next-task: 01-controller-resource-budget" not in partial_text.stdout:
         errors.append("partial text status must print the selected next task")
+    if "next-task-files: 2/3" not in partial_text.stdout:
+        errors.append("partial text status must print next-task file readiness")
 
     if complete_payload.get("summary", {}).get("status") != "complete":
         errors.append("full evidence directory must report complete")

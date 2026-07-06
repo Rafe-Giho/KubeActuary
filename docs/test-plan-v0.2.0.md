@@ -148,7 +148,7 @@ Expected:
 - external evidence bundle check prints `external-evidence-bundle: passed`;
 - release evidence directory check prints `release-evidence-directory: passed`;
 - release evidence status check prints `release-evidence-status: passed` and
-  verifies persisted next-task output;
+  verifies persisted next-task output and file readiness;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -265,8 +265,8 @@ Confirm from code and tests:
 - release evidence directory verifier builds manifest and bundle artifacts from
   one local evidence directory and ignores generated artifacts on rerun;
 - release evidence status verifier reports partial and complete evidence
-  directory coverage plus persisted next-task output without requiring cluster
-  or cloud access;
+  directory coverage plus persisted next-task output and file readiness without
+  requiring cluster or cloud access;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,38 @@ from scripts.evaluate_external_gate_evidence import evaluate, load_supplemental 
 
 SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+NEXT_TASK_FILE_FLAGS = {
+    "--sample": "sample",
+    "--source": "source",
+    "--output": "output",
+}
+
+
+def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for command in selected.get("resolvedCommands", []):
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            continue
+        for index, token in enumerate(tokens[:-1]):
+            role = NEXT_TASK_FILE_FLAGS.get(token)
+            if role is None:
+                continue
+            path = tokens[index + 1]
+            key = (role, path)
+            if key in seen:
+                continue
+            seen.add(key)
+            files.append(
+                {
+                    "role": role,
+                    "path": path,
+                    "exists": Path(path).is_file(),
+                }
+            )
+    return files
 
 
 def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
@@ -31,9 +64,15 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
     if payload.get("schemaVersion") != NEXT_TASK_SCHEMA:
         raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")
     selected = payload.get("selected") or {}
+    files = next_task_files(selected)
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
+        "summary": {
+            "files": len(files),
+            "existingFiles": sum(1 for item in files if item["exists"]),
+            "missingFiles": sum(1 for item in files if not item["exists"]),
+        },
         "selected": {
             "id": selected.get("id"),
             "version": selected.get("version"),
@@ -44,6 +83,7 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
             "missingTools": selected.get("missingTools", []),
             "commands": selected.get("commands", []),
             "resolvedCommands": selected.get("resolvedCommands", []),
+            "files": files,
         },
     }
 
@@ -132,6 +172,14 @@ def render_text(status: dict[str, Any]) -> str:
     if selected:
         lines.append(f"next-task: {selected.get('id')}")
         lines.append(f"next-task-status: {selected.get('captureStatus')}")
+        file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
+        if file_summary:
+            lines.append(
+                f"next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}"
+            )
+        for item in selected.get("files", [])[:4]:
+            status = "present" if item.get("exists") else "missing"
+            lines.append(f"next-task-file: {status} {item.get('role')} {item.get('path')}")
         for command in selected.get("resolvedCommands", [])[:2]:
             lines.append(f"next-task-command: {command}")
     return "\n".join(lines) + "\n"

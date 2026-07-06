@@ -389,7 +389,7 @@ scripts/
   kube-actuary.external-evidence-bundle.v1 external evidence bundle schema
   build_release_evidence_directory.py release evidence directory builder
   verify_release_evidence_directory.py release evidence directory verifier
-  inspect_release_evidence_directory.py release evidence directory status inspector
+  inspect_release_evidence_directory.py release evidence directory status and next-task readiness inspector
   verify_release_evidence_status.py release evidence status verifier
   kube-actuary.release-evidence-status.v1 release evidence status schema
   verify_clean_artifacts.py generated Python cache artifact verifier
