@@ -27,6 +27,7 @@ Status legend:
 | Version worklist | DONE | `scripts/generate_version_worklist.py`, `scripts/prepare_version_iteration.py`, `scripts/compare_version_iterations.py`, `scripts/record_version_iteration.py`, `scripts/inspect_version_history.py`, `scripts/select_next_version_task.py`, and `scripts/verify_version_worklist.py` verify schemas `kube-actuary.version-worklist.v1`, `kube-actuary.version-iteration.v1`, `kube-actuary.version-iteration-diff.v1`, `kube-actuary.version-iteration-history.v1`, `kube-actuary.version-iteration-history-status.v1`, and `kube-actuary.next-version-task.v1` for version-grouped open work, text/Markdown local task output, prepared queue reuse, blocker summaries, blocker-focused filters including environment reasons, evidence-dir file readiness, non-runnable blocked selector output, history-dir worklist/selector context with latest blocker streaks/actions, evidence-aware local iteration packs, pack diffs, queue-source-preserving run history, history inspection with latest next-task worklist drilldowns, latest blocker streaks/actions, latest advance/runner status, and latest advance/next-task consistency, next-task selection, `--runnable-only` and `--blocked-only` selection plus scaffold persistence, deterministic evidence-directory command paths, and `--skip-complete-evidence` completed-evidence skipping |
 | Version blocker ledger | DONE | `scripts/record_version_blockers.py` and `scripts/verify_version_blockers.py` verify schema `kube-actuary.version-blockers.v1` for prepared-queue-sourced local blocker records, affected versions, filtered worklist drilldowns, environment reasons, next local loop commands, and persisted `.kubeactuary/version-blockers.json` plus Markdown reports |
 | Version unblock plan | DONE | `scripts/generate_version_unblock_plan.py` and `scripts/verify_version_unblock_plan.py` verify schema `kube-actuary.version-unblock-plan.v1` for grouped missing-tool and environment unblock actions, read-only verification commands, queue refresh commands, and persisted `.kubeactuary/version-unblock-plan.json` plus Markdown reports |
+| Next unblock action | DONE | `scripts/select_next_unblock_action.py` and `scripts/verify_next_unblock_action.py` verify schema `kube-actuary.next-unblock-action.v1` for deterministic highest-impact blocker selection, read-only verification commands, blocker filters, and persisted `.kubeactuary/next-unblock-action.json` plus Markdown reports |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate command safety | DONE | `scripts/verify_external_gate_command_safety.py` verifies generated external commands stay dry-run/read-only/evidence-only |
 | External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
@@ -84,7 +85,7 @@ Last local verification:
 
 ```text
 2026-07-07: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (81 checks)
+verification: passed (82 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

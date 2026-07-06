@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  release progress reporting, version worklist generation, version blocker ledger recording, version unblock plan generation, evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, next version task selection, evidence-aware next-task skipping, external gate plan generation, external gate evidence evaluation,
+  release progress reporting, version worklist generation, version blocker ledger recording, version unblock plan generation, next unblock action selection, evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, next version task selection, evidence-aware next-task skipping, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
   clean generated-artifact verification,
@@ -69,6 +69,7 @@ python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
+python3 -B scripts/verify_next_unblock_action.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -163,6 +164,10 @@ Expected:
 - version unblock plan check prints `version-unblock-plan: passed` and covers
   missing-tool/environment unblock actions, read-only verification commands,
   queue refresh commands, and persisted `.kubeactuary/version-unblock-plan.json`
+  plus Markdown reports;
+- next unblock action check prints `next-unblock-action: passed` and covers
+  deterministic highest-impact blocker selection, read-only verification
+  commands, blocker filters, and persisted `.kubeactuary/next-unblock-action.json`
   plus Markdown reports;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
@@ -370,6 +375,9 @@ Confirm from code and tests:
 - version unblock plan verifier checks grouped missing-tool/environment unblock
   actions, read-only verification commands, queue refresh commands, and
   persisted local unblock metadata;
+- next unblock action verifier checks deterministic highest-impact blocker
+  selection, read-only verification commands, blocker filters, and persisted
+  local next-action metadata;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
@@ -518,7 +526,7 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, release taskboard audit, release progress, version worklist, version blocker ledger, version unblock plan, external gate plan, external gate command safety, external gate evidence,
+  release notes dry-run, release taskboard audit, release progress, version worklist, version blocker ledger, version unblock plan, next unblock action, external gate plan, external gate command safety, external gate evidence,
   evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build, next-version task run, version iteration advance,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,

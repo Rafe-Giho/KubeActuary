@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.generate_live_validation_queue import build_queue, render_markdown  # noqa: E402
+from scripts.select_next_unblock_action import build_selection as build_unblock_selection  # noqa: E402
+from scripts.select_next_unblock_action import render_markdown as render_unblock_markdown  # noqa: E402
 from scripts.select_next_version_task import build_selection, render_markdown as render_next_task_markdown  # noqa: E402
 
 
@@ -21,6 +23,8 @@ QUEUE_JSON = "live-validation-queue.json"
 QUEUE_MD = "live-validation-queue.md"
 NEXT_TASK_JSON = "next-version-task.json"
 NEXT_TASK_MD = "next-version-task.md"
+NEXT_UNBLOCK_JSON = "next-unblock-action.json"
+NEXT_UNBLOCK_MD = "next-unblock-action.md"
 ENVIRONMENT_PROBE_JSON = "environment-probe.json"
 ENVIRONMENT_PROBE_MD = "environment-probe.md"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
@@ -56,6 +60,8 @@ def readme_text(evidence_dir: Path, queue: dict) -> str:
             "`reports/`, `raw/`, and `supplemental/` directories.",
             "Use `.kubeactuary/next-version-task.*` for the deterministic next",
             "task and its resolved evidence paths.",
+            "Use `.kubeactuary/next-unblock-action.*` for the deterministic",
+            "next blocker to resolve when no evidence task is currently runnable.",
             "After a selected task's evidence files exist, rerun this helper with",
             "`--skip-complete-evidence` to advance the next-task artifact.",
             "",
@@ -257,7 +263,19 @@ def prepare_directory(
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD
+    next_unblock_json = metadata_dir / NEXT_UNBLOCK_JSON
+    next_unblock_md = metadata_dir / NEXT_UNBLOCK_MD
     readme = evidence_dir / "README.md"
+    next_unblock = build_unblock_selection(
+        version_filters=list(version_filters or []),
+        evidence_dir=evidence_dir,
+        probe_environment=probe_environment,
+        kubectl=kubectl,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
+    )
     probe = environment_probe_report(evidence_dir, queue)
     blockers = environment_blocker_report(evidence_dir, queue, next_task)
     write_text(queue_md, render_markdown(queue))
@@ -265,6 +283,8 @@ def prepare_directory(
     write_text(probe_md, render_environment_probe(probe))
     write_text(next_task_json, json.dumps(next_task, indent=2, sort_keys=True))
     write_text(next_task_md, render_next_task_markdown(next_task))
+    write_text(next_unblock_json, json.dumps(next_unblock, indent=2, sort_keys=True))
+    write_text(next_unblock_md, render_unblock_markdown(next_unblock))
     write_text(blockers_json, json.dumps(blockers, indent=2, sort_keys=True))
     write_text(blockers_md, render_environment_blockers(blockers))
     write_text(readme, readme_text(evidence_dir, queue))
@@ -281,6 +301,9 @@ def prepare_directory(
         "nextTask": next_task,
         "nextTaskJson": next_task_json,
         "nextTaskMarkdown": next_task_md,
+        "nextUnblockAction": next_unblock,
+        "nextUnblockActionJson": next_unblock_json,
+        "nextUnblockActionMarkdown": next_unblock_md,
         "readme": readme,
     }
 
@@ -342,6 +365,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"environment-probe: {result['environmentProbeJson']}")
     print(f"environment-blockers: {result['environmentBlockersJson']}")
     print(f"next-task: {result['nextTaskJson']}")
+    print(f"next-unblock-action: {result['nextUnblockActionJson']}")
     next_task = result["nextTask"]
     next_task_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
     print(f"skip-complete-evidence: {str(args.skip_complete_evidence).lower()}")

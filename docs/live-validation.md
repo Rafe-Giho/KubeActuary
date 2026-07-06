@@ -22,6 +22,8 @@ python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir e
 python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
 python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
+python3 -B scripts/select_next_unblock_action.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/select_next_unblock_action.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_validation_queue.py
@@ -123,6 +125,11 @@ recording commands. With `--record`, it writes
 `.kubeactuary/version-unblock-plan.json` and
 `.kubeactuary/version-unblock-plan.md` without installing tools or starting
 clusters.
+`select_next_unblock_action.py` narrows that plan to one deterministic next
+blocker using the highest item count, then kind and target name for stable
+ties. With `--record`, it writes `.kubeactuary/next-unblock-action.json` and
+`.kubeactuary/next-unblock-action.md`, preserving the read-only verify,
+refresh, inspect, and record commands for the selected blocker.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, including environment reasons such as
 `connection-refused`, so repeated validation can focus on the shared blocker
@@ -436,7 +443,9 @@ The scaffold also writes
 `.kubeactuary/environment-probe.json` with schema
 `kube-actuary.environment-probe.v1` for read-only probe details and
 `.kubeactuary/environment-blockers.json` with schema
-`kube-actuary.environment-blockers.v1`, plus Markdown summaries for local
+`kube-actuary.environment-blockers.v1`. It also writes
+`.kubeactuary/next-unblock-action.json` with schema
+`kube-actuary.next-unblock-action.v1`, plus Markdown summaries for local
 operators.
 
 Supported evidence schemas:

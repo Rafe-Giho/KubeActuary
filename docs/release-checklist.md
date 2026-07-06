@@ -27,6 +27,7 @@ python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
+python3 -B scripts/verify_next_unblock_action.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -121,6 +122,9 @@ Expected:
   generates unblock plans with schema
   `kube-actuary.version-unblock-plan.v1` and persisted
   `.kubeactuary/version-unblock-plan.json` reports,
+  selects the next unblock action with schema
+  `kube-actuary.next-unblock-action.v1` and persisted
+  `.kubeactuary/next-unblock-action.json` reports,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving blocker summaries, drilldown commands, and evidence
   readiness when `--evidence-dir` is used,
@@ -264,6 +268,7 @@ Expected:
 - [ ] version worklist check passes.
 - [ ] version blocker ledger check passes.
 - [ ] version unblock plan check passes.
+- [ ] next unblock action check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate command safety check passes.
 - [ ] external gate evidence evaluation check passes.

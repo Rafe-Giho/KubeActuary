@@ -20,7 +20,9 @@ LIVE_VALIDATION = ROOT / "docs" / "live-validation.md"
 PREPARE_TOOL = "prepare_live_evidence_directory.py"
 VERIFY_TOOL = "verify_live_evidence_directory_scaffold.py"
 NEXT_TASK_TOOL = "select_next_version_task.py"
+NEXT_UNBLOCK_TOOL = "select_next_unblock_action.py"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+NEXT_UNBLOCK_SCHEMA = "kube-actuary.next-unblock-action.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 
@@ -87,6 +89,8 @@ def main() -> int:
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
         next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
         next_task_md = evidence_dir / ".kubeactuary" / "next-version-task.md"
+        next_unblock_json = evidence_dir / ".kubeactuary" / "next-unblock-action.json"
+        next_unblock_md = evidence_dir / ".kubeactuary" / "next-unblock-action.md"
         probe_json = evidence_dir / ".kubeactuary" / "environment-probe.json"
         probe_md = evidence_dir / ".kubeactuary" / "environment-probe.md"
         blockers_json = evidence_dir / ".kubeactuary" / "environment-blockers.json"
@@ -97,6 +101,8 @@ def main() -> int:
         next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
         probe_report = json.loads(probe_json.read_text()) if probe_json.is_file() else {}
         blockers = json.loads(blockers_json.read_text()) if blockers_json.is_file() else {}
+        next_unblock = json.loads(next_unblock_json.read_text()) if next_unblock_json.is_file() else {}
+        initial_next_unblock_md = next_unblock_md.read_text() if next_unblock_md.is_file() else ""
         initial_next_task_md = next_task_md.read_text() if next_task_md.is_file() else ""
         (evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
@@ -106,19 +112,25 @@ def main() -> int:
         advanced_next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
         probe_queue_path = probe_dir / ".kubeactuary" / "live-validation-queue.json"
         probe_next_task_path = probe_dir / ".kubeactuary" / "next-version-task.json"
+        probe_next_unblock_path = probe_dir / ".kubeactuary" / "next-unblock-action.json"
         probe_report_path = probe_dir / ".kubeactuary" / "environment-probe.json"
         probe_blockers_path = probe_dir / ".kubeactuary" / "environment-blockers.json"
         filtered_next_task_path = filtered_dir / ".kubeactuary" / "next-version-task.json"
+        filtered_next_unblock_path = filtered_dir / ".kubeactuary" / "next-unblock-action.json"
         version_next_task_path = version_dir / ".kubeactuary" / "next-version-task.json"
+        version_next_unblock_path = version_dir / ".kubeactuary" / "next-unblock-action.json"
         version_next_task_md_path = version_dir / ".kubeactuary" / "next-version-task.md"
         runnable_next_task_path = runnable_dir / ".kubeactuary" / "next-version-task.json"
         blocked_next_task_path = blocked_dir / ".kubeactuary" / "next-version-task.json"
         probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
         probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
+        probe_next_unblock = json.loads(probe_next_unblock_path.read_text()) if probe_next_unblock_path.is_file() else {}
         probe_report_payload = json.loads(probe_report_path.read_text()) if probe_report_path.is_file() else {}
         probe_blockers = json.loads(probe_blockers_path.read_text()) if probe_blockers_path.is_file() else {}
         filtered_next_task = json.loads(filtered_next_task_path.read_text()) if filtered_next_task_path.is_file() else {}
+        filtered_next_unblock = json.loads(filtered_next_unblock_path.read_text()) if filtered_next_unblock_path.is_file() else {}
         version_next_task = json.loads(version_next_task_path.read_text()) if version_next_task_path.is_file() else {}
+        version_next_unblock = json.loads(version_next_unblock_path.read_text()) if version_next_unblock_path.is_file() else {}
         version_next_task_md = version_next_task_md_path.read_text() if version_next_task_md_path.is_file() else ""
         runnable_next_task = json.loads(runnable_next_task_path.read_text()) if runnable_next_task_path.is_file() else {}
         blocked_next_task = json.loads(blocked_next_task_path.read_text()) if blocked_next_task_path.is_file() else {}
@@ -163,7 +175,19 @@ def main() -> int:
         for path in expected_dirs:
             if not path.is_dir():
                 errors.append(f"scaffold missing directory: {path.name}")
-        for path in (queue_json, queue_md, next_task_json, next_task_md, probe_json, probe_md, blockers_json, blockers_md, readme):
+        for path in (
+            queue_json,
+            queue_md,
+            next_task_json,
+            next_task_md,
+            next_unblock_json,
+            next_unblock_md,
+            probe_json,
+            probe_md,
+            blockers_json,
+            blockers_md,
+            readme,
+        ):
             if not path.is_file():
                 errors.append(f"scaffold missing file: {path.name}")
         if queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":
@@ -195,6 +219,8 @@ def main() -> int:
             errors.append("scaffold README must document disabled writes")
         if "next-version-task" not in readme.read_text():
             errors.append("scaffold README must point to next-task artifacts")
+        if "next-unblock-action" not in readme.read_text():
+            errors.append("scaffold README must point to next-unblock artifacts")
         if probe_queue.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
             errors.append("probe scaffold queue must persist unavailable cluster access")
         if probe_report_payload.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
@@ -244,6 +270,15 @@ def main() -> int:
             errors.append("probe scaffold next task must use the prepared live validation queue")
         if probe_next_task.get("filters", {}).get("probeEnvironment") is not True:
             errors.append("probe scaffold next task must preserve probe-environment filters")
+        probe_unblock_selected = probe_next_unblock.get("selected") or {}
+        if probe_next_unblock.get("schemaVersion") != NEXT_UNBLOCK_SCHEMA:
+            errors.append("probe scaffold next-unblock schemaVersion mismatch")
+        if probe_next_unblock.get("filters", {}).get("probeEnvironment") is not True:
+            errors.append("probe scaffold next-unblock must preserve probe-environment filters")
+        if probe_unblock_selected.get("kind") != "environment":
+            errors.append("probe scaffold next-unblock should select the shared environment blocker")
+        if probe_unblock_selected.get("environmentReason") != "connection-refused":
+            errors.append("probe scaffold next-unblock must preserve environment reason")
         filtered_selected = filtered_next_task.get("selected") or {}
         if filtered_next_task.get("filters", {}).get("missingTools") != ["kind"]:
             errors.append("filtered scaffold must persist missing-tool filters")
@@ -251,6 +286,11 @@ def main() -> int:
             errors.append("filtered scaffold should select the first kind-blocked task")
         if filtered_selected.get("captureStatus") != "missing-tools":
             errors.append("filtered scaffold should preserve missing-tools capture status")
+        filtered_unblock_selected = filtered_next_unblock.get("selected") or {}
+        if filtered_next_unblock.get("filters", {}).get("missingTools") != ["kind"]:
+            errors.append("filtered scaffold next-unblock must persist missing-tool filters")
+        if filtered_unblock_selected.get("tool") != "kind":
+            errors.append("filtered scaffold next-unblock should select the kind unblock action")
         version_selected = version_next_task.get("selected") or {}
         if version_next_task.get("filters", {}).get("versions") != ["0.4.3"]:
             errors.append("versioned scaffold must persist version filters")
@@ -260,6 +300,8 @@ def main() -> int:
             errors.append("versioned scaffold must preserve selected task version")
         if "0.4.3" not in version_next_task_md:
             errors.append("versioned scaffold next-task markdown must show the selected version")
+        if version_next_unblock.get("filters", {}).get("versions") != ["0.4.3"]:
+            errors.append("versioned scaffold next-unblock must persist version filters")
         runnable_selected = runnable_next_task.get("selected") or {}
         if runnable_next_task.get("filters", {}).get("runnableOnly") is not True:
             errors.append("runnable-only scaffold must persist runnable-only filter")
@@ -276,6 +318,17 @@ def main() -> int:
             errors.append("blocked-only scaffold selected task should be non-runnable")
         if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
             errors.append("scaffold next task schemaVersion mismatch")
+        if next_unblock.get("schemaVersion") != NEXT_UNBLOCK_SCHEMA:
+            errors.append("scaffold next-unblock schemaVersion mismatch")
+        if next_unblock.get("evidenceDir") != str(evidence_dir):
+            errors.append("scaffold next-unblock must record evidence directory")
+        if next_unblock.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
+            errors.append("scaffold next-unblock must use the prepared live validation queue")
+        next_unblock_selected = next_unblock.get("selected") or {}
+        if next_unblock_selected.get("kind") != "missing-tool":
+            errors.append("scaffold next-unblock should select a missing-tool blocker by default")
+        if not next_unblock_selected.get("commands", {}).get("verify"):
+            errors.append("scaffold next-unblock must include verification commands")
         if next_task.get("evidenceDir") != str(evidence_dir):
             errors.append("scaffold next task must record evidence directory")
         if next_task.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
@@ -294,6 +347,10 @@ def main() -> int:
             errors.append("scaffold next task markdown must summarize selected task")
         if "Queue source: `prepared-live-validation-queue`" not in initial_next_task_md:
             errors.append("scaffold next task markdown must show prepared queue source")
+        if "# KubeActuary Next Unblock Action" not in initial_next_unblock_md:
+            errors.append("scaffold next-unblock markdown must render title")
+        if "Selection policy: `highest-items-then-kind-target`" not in initial_next_unblock_md:
+            errors.append("scaffold next-unblock markdown must show selection policy")
         advanced_selected = advanced_next_task.get("selected") or {}
         advanced_summary = advanced_next_task.get("summary", {})
         if advanced_summary.get("skippedCompleteEvidence") != 1:
@@ -309,7 +366,9 @@ def main() -> int:
             PREPARE_TOOL,
             VERIFY_TOOL,
             NEXT_TASK_TOOL,
+            NEXT_UNBLOCK_TOOL,
             NEXT_TASK_SCHEMA,
+            NEXT_UNBLOCK_SCHEMA,
             ENVIRONMENT_PROBE_SCHEMA,
             ENVIRONMENT_BLOCKERS_SCHEMA,
             "--skip-complete-evidence",
@@ -331,6 +390,7 @@ def main() -> int:
     print("directories: 4")
     print("queue-items: 16")
     print("next-task: selected")
+    print("next-unblock-action: selected")
     print("cluster-writes: disabled")
     print("environment-probe: metadata")
     return 0

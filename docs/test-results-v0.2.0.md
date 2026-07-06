@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (81 checks)
-Ran 115 tests
+verification: passed (82 checks)
+Ran 116 tests
 OK
 ```
 
@@ -139,6 +139,9 @@ Coverage included:
 - version unblock plan generation with grouped missing-tool and environment
   actions, read-only verification commands, queue refresh commands, and
   persisted `.kubeactuary/version-unblock-plan.json` plus Markdown reports;
+- next unblock action selection with deterministic highest-impact blocker
+  selection, read-only verification commands, blocker filters, and persisted
+  `.kubeactuary/next-unblock-action.json` plus Markdown reports;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -191,6 +194,7 @@ python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
+python3 -B scripts/verify_next_unblock_action.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -307,6 +311,9 @@ Result:
 - version unblock plan check prints `version-unblock-plan: passed` and
   exercises missing-tool/environment unblock actions, read-only verification
   commands, queue refresh commands, and persisted unblock metadata;
+- next unblock action check prints `next-unblock-action: passed` and exercises
+  deterministic highest-impact blocker selection, read-only verification
+  commands, blocker filters, and persisted next-action metadata;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
@@ -368,8 +375,9 @@ Result:
   kubectl;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
-  `live-evidence-directory-scaffold: passed` and verifies next-task artifacts
-  plus completed-evidence advancement and environment probe metadata;
+  `live-evidence-directory-scaffold: passed` and verifies next-task and
+  next-unblock artifacts plus completed-evidence advancement and environment
+  probe metadata;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;
