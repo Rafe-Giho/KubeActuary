@@ -16,6 +16,7 @@ GENERATOR = ROOT / "scripts" / "generate_version_worklist.py"
 PREPARE = ROOT / "scripts" / "prepare_version_iteration.py"
 COMPARE = ROOT / "scripts" / "compare_version_iterations.py"
 RECORD = ROOT / "scripts" / "record_version_iteration.py"
+INSPECT_HISTORY = ROOT / "scripts" / "inspect_version_history.py"
 README = ROOT / "README.md"
 README_KO = ROOT / "README.ko.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
@@ -23,11 +24,13 @@ WORKLIST_TOOL = "generate_version_worklist.py"
 PREPARE_TOOL = "prepare_version_iteration.py"
 COMPARE_TOOL = "compare_version_iterations.py"
 RECORD_TOOL = "record_version_iteration.py"
+INSPECT_HISTORY_TOOL = "inspect_version_history.py"
 VERIFY_TOOL = "verify_version_worklist.py"
 SCHEMA = "kube-actuary.version-worklist.v1"
 ITERATION_SCHEMA = "kube-actuary.version-iteration.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
 HISTORY_SCHEMA = "kube-actuary.version-iteration-history.v1"
+HISTORY_STATUS_SCHEMA = "kube-actuary.version-iteration-history-status.v1"
 
 
 def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -70,6 +73,17 @@ def run_record(*args: str, env: dict[str, str] | None = None) -> subprocess.Comp
         [sys.executable, "-B", str(RECORD), *args],
         cwd=ROOT,
         env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_inspect_history(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(INSPECT_HISTORY), *args],
+        cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -190,6 +204,18 @@ def main() -> int:
         history_readme_text = (history_dir / "README.md").read_text() if (history_dir / "README.md").is_file() else ""
         history_diff_path = history_dir / "runs" / "after" / "diff-from-previous.json"
         history_diff = json.loads(history_diff_path.read_text()) if history_diff_path.is_file() else {}
+        history_status = run_inspect_history(str(history_dir))
+        history_status_json = run_inspect_history(str(history_dir), "--format", "json")
+        history_status_payload = json.loads(history_status_json.stdout) if history_status_json.returncode == 0 else {}
+        history_status_output = tmpdir / "history-status.json"
+        written_history_status = run_inspect_history(
+            str(history_dir),
+            "--format",
+            "json",
+            "--output",
+            str(history_status_output),
+        )
+        history_status_output_written = history_status_output.is_file()
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
@@ -257,6 +283,17 @@ def main() -> int:
         errors.append("version iteration history should write diff artifact")
     if "after" not in history_readme_text or "blocked-by-environment-delta=1" not in history_readme_text:
         errors.append("version iteration history README should summarize runs and diff")
+    if history_status.returncode != 0 or "version-iteration-history-status: valid" not in history_status.stdout:
+        errors.append("version iteration history inspector text must pass")
+    if history_status_payload.get("schemaVersion") != HISTORY_STATUS_SCHEMA:
+        errors.append("version iteration history status schemaVersion mismatch")
+    status_summary = history_status_payload.get("summary", {})
+    if status_summary.get("runs") != 2 or status_summary.get("latestRunId") != "after":
+        errors.append("version iteration history status should report latest run")
+    if status_summary.get("blockedByEnvironment") != 1 or status_summary.get("diffs") != 1:
+        errors.append("version iteration history status should summarize latest blockers and diffs")
+    if written_history_status.returncode != 0 or not history_status_output_written:
+        errors.append("version iteration history inspector must write requested output file")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")
@@ -340,11 +377,13 @@ def main() -> int:
             PREPARE_TOOL,
             COMPARE_TOOL,
             RECORD_TOOL,
+            INSPECT_HISTORY_TOOL,
             VERIFY_TOOL,
             SCHEMA,
             ITERATION_SCHEMA,
             DIFF_SCHEMA,
             HISTORY_SCHEMA,
+            HISTORY_STATUS_SCHEMA,
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing version worklist detail: {snippet}")

@@ -114,8 +114,9 @@ Coverage included:
 - release progress report generation for versioned task tracking and
   tool-ready next actions;
 - version worklist generation for version-grouped open work, local iteration
-  pack generation, iteration pack diffs, iteration history recording, capture
-  status, version/open-only filters, and optional environment blockers;
+  pack generation, iteration pack diffs, iteration history recording, history
+  status inspection, capture status, version/open-only filters, and optional
+  environment blockers;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -229,7 +230,8 @@ Result:
 - release progress check prints `release-progress: passed`;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
-  recording, version/open-only filters, and optional environment blockers;
+  recording, history status inspection, version/open-only filters, and optional
+  environment blockers;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
