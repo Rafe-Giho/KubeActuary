@@ -18,6 +18,41 @@ STATUS_JSON = "status.json"
 STATUS_MD = "status.md"
 
 
+def probe_message(check: dict[str, Any]) -> str | None:
+    for key in ("stderr", "stdout"):
+        value = check.get(key)
+        if not isinstance(value, str):
+            continue
+        lines = [line.strip() for line in value.splitlines() if line.strip()]
+        if lines:
+            return lines[-1]
+    return None
+
+
+def summarize_environment_probe(probe: Any) -> dict[str, Any]:
+    if not isinstance(probe, dict) or not probe:
+        return {}
+    checks = probe.get("checks", [])
+    failed_checks = []
+    if isinstance(checks, list):
+        for check in checks:
+            if not isinstance(check, dict) or check.get("ok") is True:
+                continue
+            failed_checks.append(
+                {
+                    "name": check.get("name"),
+                    "exitCode": check.get("exitCode"),
+                    "message": probe_message(check),
+                }
+            )
+    return {
+        "enabled": probe.get("enabled"),
+        "kubectl": probe.get("kubectl"),
+        "clusterAccess": probe.get("clusterAccess"),
+        "failedChecks": failed_checks,
+    }
+
+
 def load_json(path: Path, errors: list[str]) -> dict[str, Any]:
     if not path.is_file():
         errors.append(f"missing file: {path}")
@@ -76,6 +111,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "queueSource": run.get("queueSource") or worklist.get("queueSource") or "generated",
         "summary": worklist.get("summary", {}),
         "blockers": blockers if isinstance(blockers, dict) else {},
+        "environmentProbe": summarize_environment_probe(worklist.get("environmentProbe")),
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
     }
@@ -102,6 +138,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest = inspected_runs[-1] if inspected_runs else None
     latest_summary = latest.get("summary", {}) if latest else {}
     latest_blockers = latest.get("blockers", {}) if latest else {}
+    latest_environment_probe = latest.get("environmentProbe", {}) if latest else {}
     return {
         "schemaVersion": SCHEMA_VERSION,
         "historyDir": history_dir.as_posix(),
@@ -122,6 +159,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
             "diffs": sum(1 for run in inspected_runs if run.get("diffStatus") == "present"),
         },
         "latestBlockers": latest_blockers,
+        "latestEnvironmentProbe": latest_environment_probe,
         "runs": inspected_runs,
     }
 
@@ -154,6 +192,18 @@ def render_text(status: dict[str, Any]) -> str:
                 lines.append(f"environment-worklist: {item.get('worklistCommand')}")
         for item in blockers.get("environmentNextSteps", []) or []:
             lines.append(f"blocker-next-step: {item.get('nextStep')} ({item.get('items')} items)")
+    environment_probe = status.get("latestEnvironmentProbe", {})
+    if isinstance(environment_probe, dict) and environment_probe:
+        lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
+        if environment_probe.get("kubectl"):
+            lines.append(f"environment-probe-kubectl: {environment_probe.get('kubectl')}")
+        for check in environment_probe.get("failedChecks", []) or []:
+            message = check.get("message")
+            suffix = f" message={message}" if message else ""
+            lines.append(
+                f"environment-probe-failure: {check.get('name')} "
+                f"exit={check.get('exitCode')}{suffix}"
+            )
     for error in status["errors"]:
         lines.append(f"error: {error}")
     return "\n".join(lines) + "\n"
@@ -199,6 +249,20 @@ def render_markdown(status: dict[str, Any]) -> str:
                 lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
         for item in blockers.get("environmentNextSteps", []) or []:
             lines.append(f"- next step: {item.get('nextStep')} ({item.get('items')} items)")
+    environment_probe = status.get("latestEnvironmentProbe", {})
+    if isinstance(environment_probe, dict) and environment_probe:
+        lines.extend(["", "## Latest Environment Probe", ""])
+        lines.append(f"- cluster access: `{environment_probe.get('clusterAccess')}`")
+        if environment_probe.get("kubectl"):
+            lines.append(f"- kubectl: `{environment_probe.get('kubectl')}`")
+        failed_checks = environment_probe.get("failedChecks", []) or []
+        if not failed_checks:
+            lines.append("- failed checks: none")
+        for check in failed_checks:
+            message = f": {check.get('message')}" if check.get("message") else ""
+            lines.append(
+                f"- failed `{check.get('name')}` exit={check.get('exitCode')}{message}"
+            )
     if status["errors"]:
         lines.extend(["", "## Errors", ""])
         for error in status["errors"]:

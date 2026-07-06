@@ -147,6 +147,8 @@ def fake_all_tools_env(path: Path, cluster_ok: bool) -> dict[str, str]:
         "    print('Client Version: fake')\n"
         "    raise SystemExit(0)\n"
         "if args[:1] == ['cluster-info']:\n"
+        f"    if {cluster_exit} != 0:\n"
+        "        print('cluster unavailable from fake kubectl', file=sys.stderr)\n"
         f"    raise SystemExit({cluster_exit})\n"
         "raise SystemExit(0)\n"
     )
@@ -757,6 +759,17 @@ def main() -> int:
         errors.append("version iteration history status should report latest run")
     if status_summary.get("blockedByEnvironment") != 1 or status_summary.get("diffs") != 1:
         errors.append("version iteration history status should summarize latest blockers and diffs")
+    latest_history_probe = history_status_payload.get("latestEnvironmentProbe", {})
+    if latest_history_probe.get("clusterAccess") != "unavailable":
+        errors.append("version iteration history status should preserve latest probe cluster access")
+    failed_probe_checks = latest_history_probe.get("failedChecks", [])
+    if not any(
+        item.get("name") == "cluster-info"
+        and item.get("exitCode") == 1
+        and item.get("message") == "cluster unavailable from fake kubectl"
+        for item in failed_probe_checks
+    ):
+        errors.append("version iteration history status should summarize failed probe messages")
     latest_history_blockers = history_status_payload.get("latestBlockers", {})
     if not any(
         item.get("status") == "cluster-unavailable" and item.get("items") == 1
@@ -767,6 +780,10 @@ def main() -> int:
         errors.append("version iteration history text should show latest environment blocker summary")
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:
         errors.append("version iteration history text should show latest blocker drilldown command")
+    if "environment-probe: unavailable" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment probe status")
+    if "environment-probe-failure: cluster-info exit=1 message=cluster unavailable from fake kubectl" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment probe failure")
     if history_status_markdown.returncode != 0:
         errors.append("version iteration history Markdown status must pass")
     if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
@@ -775,6 +792,10 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest environment blocker summary")
     if history_status_markdown_worklist not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest blocker drilldown command")
+    if "## Latest Environment Probe" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include environment probe details")
+    if "failed `cluster-info` exit=1: cluster unavailable from fake kubectl" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest probe failure")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
     if recorded_history_status.returncode != 0:
@@ -785,6 +806,8 @@ def main() -> int:
         errors.append("version iteration history recorded Markdown should include a title")
     if "environment `cluster-unavailable`: 1 items" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest blockers")
+    if "failed `cluster-info` exit=1: cluster unavailable from fake kubectl" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest probe failure")
     evidence_runs = evidence_history_index.get("runs", [])
     if len(evidence_runs) != 2:
         errors.append("evidence-aware history should record two runs")

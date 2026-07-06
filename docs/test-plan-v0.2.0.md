@@ -165,6 +165,7 @@ Expected:
 - prepared-queue version iteration history records and status preserve the queue source;
 - version iteration history status preserves latest blocker summaries and
   drilldown commands in text, JSON, and Markdown output;
+- version iteration history status preserves latest environment probe failures;
 - version iteration history status records `status.json` and `status.md` on request;
 - prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
 - version iteration packs preserve resolved closure commands, blocker
