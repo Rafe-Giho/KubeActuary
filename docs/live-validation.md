@@ -64,9 +64,10 @@ The release progress report can also inspect `--evidence-dir`. If that
 directory has not been prepared yet, it reports `not-prepared` instead of
 failing and prints the `prepare_live_evidence_directory.py` command needed to
 start the local evidence loop. For prepared directories, the Markdown progress
-view also surfaces the selected next task, next-task runner status,
-next-task runner failure reason, environment probe/blocker status, and latest
-iteration advance status. It also prints queue-source details from the
+view lists every open item under its version and surfaces the selected next
+task, next-task runner status, next-task runner failure reason,
+environment probe/blocker status, and latest iteration advance status. It also
+prints queue-source details from the
 selected next-task, runner, and advance records when an evidence directory has
 been prepared. The same progress view summarizes repeated missing-tool and
 environment blockers, so the remaining local task loop can distinguish

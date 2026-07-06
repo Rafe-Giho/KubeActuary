@@ -342,7 +342,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
         lines.append(
             f"- `{group['version']}` done={counts['done']} verify={counts['verify']} doing={counts['doing']} todo={counts['todo']}"
         )
-        for item in group["openItems"][:3]:
+        for item in group["openItems"]:
             lines.append(f"  - {item['status']}: {item['item']}")
     readiness = progress["liveValidationReadiness"]["summary"]
     next_action_source = progress["nextActions"].get("source")

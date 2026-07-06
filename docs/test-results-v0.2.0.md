@@ -255,9 +255,10 @@ Result:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directory progress uses the persisted live validation queue
-  as the next-action source and shows persisted queue-source status plus
-  blocker summaries without recommending environment-blocked capture commands
-  or runnable JSON first commands for blocked actions;
+  as the next-action source, shows every open item in version Markdown, and
+  shows persisted queue-source status plus blocker summaries without
+  recommending environment-blocked capture commands or runnable JSON first
+  commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
   recording, history status inspection, evidence-aware worklist readiness,

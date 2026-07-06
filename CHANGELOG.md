@@ -53,6 +53,7 @@ Evidence collector release:
 - report runner and advance record consistency against the current next-task
   artifact in release evidence status/progress;
 - add tool-ready and missing-tool next actions to release progress reports;
+- show all open items per version in release progress Markdown;
 - summarize repeated missing-tool and environment blockers in release progress
   reports;
 - surface selected next-task, runner, environment, and advance status in release

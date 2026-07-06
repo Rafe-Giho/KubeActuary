@@ -189,6 +189,15 @@ def main() -> int:
         progress = json.loads(json_result.stdout)
     if markdown_result.returncode != 0 or "# KubeActuary Release Progress" not in markdown_result.stdout:
         errors.append("markdown progress output must include heading")
+    for snippet in (
+        "VERIFY: Krew manifest",
+        "VERIFY: Managed Kubernetes smoke",
+        "VERIFY: Controller",
+        "VERIFY: Packaging",
+        "VERIFY: Admission/audit",
+    ):
+        if snippet not in markdown_result.stdout:
+            errors.append(f"markdown progress must include all open items: {snippet}")
     if with_evidence.returncode != 0:
         errors.append(f"evidence progress failed: {with_evidence.stderr.strip() or with_evidence.stdout.strip()}")
         evidence_progress = {}
