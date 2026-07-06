@@ -520,6 +520,10 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"environment-blocker: {item.get('status')} ({item.get('items')} items)")
             if item.get("worklistCommand"):
                 lines.append(f"environment-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environmentReasons", []) or []:
+            lines.append(f"environment-reason-blocker: {item.get('reason')} ({item.get('items')} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"environment-reason-worklist: {item.get('worklistCommand')}")
         for item in blockers.get("environmentNextSteps", []) or []:
             lines.append(f"blocker-next-step: {item.get('nextStep')} ({item.get('items')} items)")
     environment_probe = status.get("latestEnvironmentProbe", {})
@@ -696,6 +700,10 @@ def render_markdown(status: dict[str, Any]) -> str:
                 lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
         for item in blockers.get("environment", []) or []:
             lines.append(f"- environment `{item.get('status')}`: {item.get('items')} items")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+        for item in blockers.get("environmentReasons", []) or []:
+            lines.append(f"- environment reason `{item.get('reason')}`: {item.get('items')} items")
             if item.get("worklistCommand"):
                 lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
         for item in blockers.get("environmentNextSteps", []) or []:

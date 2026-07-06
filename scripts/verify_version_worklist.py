@@ -874,6 +874,11 @@ def main() -> int:
         for item in latest_history_blockers.get("environment", [])
     ):
         errors.append("version iteration history status should preserve latest environment blockers")
+    if not any(
+        item.get("reason") == "command-failed" and item.get("items") == 1
+        for item in latest_history_blockers.get("environmentReasons", [])
+    ):
+        errors.append("version iteration history status should preserve latest environment reason blockers")
     latest_history_next_task = history_status_payload.get("latestNextTask", {})
     if not any(
         "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable" in command
@@ -884,6 +889,10 @@ def main() -> int:
         errors.append("version iteration history text should show latest environment blocker summary")
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:
         errors.append("version iteration history text should show latest blocker drilldown command")
+    if "environment-reason-blocker: command-failed (1 items)" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment reason blocker summary")
+    if "--capture-status blocked-by-environment --environment-reason command-failed" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment reason drilldown command")
     if "environment-probe: unavailable" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment probe status")
     if "environment-probe-reason: command-failed" not in history_status.stdout:
@@ -971,6 +980,10 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest environment blocker summary")
     if history_status_markdown_worklist not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest blocker drilldown command")
+    if "environment reason `command-failed`: 1 items" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest environment reason blocker summary")
+    if "--capture-status blocked-by-environment --environment-reason command-failed" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest environment reason drilldown command")
     if "## Latest Environment Probe" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include environment probe details")
     if "reason: `command-failed`" not in history_status_markdown.stdout:
