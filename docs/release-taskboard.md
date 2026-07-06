@@ -58,9 +58,9 @@ Status legend:
 | Managed Kubernetes smoke | VERIFY | `scripts/verify_managed_kubernetes_smoke.py` verifies EKS/GKE/AKS plan and evidence JSON; provider runs still needed |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
 | Controller | VERIFY | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, status apply dry-run, and status loop exist; live cluster loop/resource evidence remains |
-| Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
+| Packaging | VERIFY | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
-| Admission/audit | DOING | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; live kind webhook smoke remains |
+| Admission/audit | VERIFY | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; live kind webhook smoke remains |
 
 Last local verification:
 
