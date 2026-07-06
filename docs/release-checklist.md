@@ -38,6 +38,7 @@ python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
+python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -68,6 +69,7 @@ Expected:
 - kube-linter adapter verifies pass and fail fixtures;
 - kube-score adapter verifies pass and fail fixtures;
 - Pluto adapter verifies pass and fail fixtures;
+- adapter contract verifies common evidence fields and normalized severity;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -99,6 +101,7 @@ Expected:
 - [ ] kube-linter adapter fixture check passes.
 - [ ] kube-score adapter fixture check passes.
 - [ ] Pluto adapter fixture check passes.
+- [ ] adapter contract check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

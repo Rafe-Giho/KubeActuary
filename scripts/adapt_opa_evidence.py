@@ -51,6 +51,7 @@ def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
         "actor": "opa-cli",
         "collector": "opa",
         "reason": "policy-pass" if ok else "policy-fail",
+        "severity": "none" if ok else "error",
         "sourceRef": source,
         "policyResults": {
             "expressions": len(values),

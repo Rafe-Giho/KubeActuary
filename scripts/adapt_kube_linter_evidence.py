@@ -40,6 +40,16 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def normalized_severity(counts: dict[str, int]) -> str:
+    if counts["error"]:
+        return "error"
+    if counts["warning"]:
+        return "warning"
+    if counts["info"]:
+        return "info"
+    return "none"
+
+
 def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
     records = report_items(payload)
     counts = summarize(records)
@@ -56,6 +66,7 @@ def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
         "actor": "kube-linter-cli",
         "collector": "kube-linter",
         "reason": "policy-pass" if ok else "policy-fail",
+        "severity": normalized_severity(counts),
         "sourceRef": source,
         "policyResults": {
             "issues": len(records),

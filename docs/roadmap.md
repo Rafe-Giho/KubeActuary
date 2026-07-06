@@ -131,7 +131,9 @@ Add optional adapters:
   fixtures.
 - Pluto. Adapter available for captured JSON output with pass/fail fixtures.
 
-Adapters should attach evidence, not replace the core gate.
+Adapters attach evidence, not replace the core gate. Adapter outputs include a
+common evidence contract and normalized severity verified by
+`scripts/verify_adapter_contract.py`.
 
 ## v0.7: MCP Server
 

@@ -35,6 +35,14 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def normalized_severity(counts: dict[str, int]) -> str:
+    if counts["error"] or counts["fail"]:
+        return "error"
+    if counts["warn"]:
+        return "warning"
+    return "none"
+
+
 def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
     records = walk_results(payload)
     counts = summarize(records)
@@ -52,6 +60,7 @@ def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
         "actor": "kyverno-cli",
         "collector": "kyverno",
         "reason": "policy-pass" if ok else "policy-fail",
+        "severity": normalized_severity(counts),
         "sourceRef": source,
         "policyResults": {
             "pass": counts["pass"],

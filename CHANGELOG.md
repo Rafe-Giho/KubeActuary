@@ -43,6 +43,7 @@ Evidence collector release:
 - add kube-linter policy evidence adapter with pass/fail fixtures;
 - add kube-score policy evidence adapter with pass/fail fixtures;
 - add Pluto deprecated API evidence adapter with pass/fail fixtures;
+- add common adapter evidence contract and normalized severity verification;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

@@ -3,6 +3,21 @@
 Policy adapters convert external tool output into KubeActuary evidence. They do
 not replace the gate and do not execute proposed Kubernetes writes.
 
+Common adapter evidence fields:
+
+- `id`, `ok`, `summary`, `actor`, `collector`, `reason`, `severity`, and
+  `sourceRef` are required;
+- `severity` is normalized to `none`, `info`, `warning`, `error`, or
+  `critical`;
+- pass fixtures must emit `severity: none`;
+- fail fixtures must emit a non-`none` severity.
+
+Verification:
+
+```sh
+python3 -B scripts/verify_adapter_contract.py
+```
+
 ## Kyverno
 
 ```sh

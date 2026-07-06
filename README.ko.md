@@ -369,6 +369,7 @@ scripts/
   verify_kube_score_adapter.py kube-score adapter fixture verifier
   adapt_pluto_evidence.py     Pluto output to evidence adapter
   verify_pluto_adapter.py     Pluto adapter fixture verifier
+  verify_adapter_contract.py  common adapter contract verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -404,6 +405,7 @@ python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
+python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -451,7 +453,7 @@ check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 
 - optional MCP server
 - real Krew install validation
 - AI-originated write용 optional admission webhook
-- adapter result schema and severity normalization
+- optional MCP server
 
 자세한 내용은 [docs/roadmap.md](docs/roadmap.md)를 참고하세요.
 

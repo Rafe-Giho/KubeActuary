@@ -59,5 +59,5 @@ Priority order:
 3. Add release signing on top of deterministic digests and provenance.
 4. Add MCP server wrapper for safe tools.
 5. Add optional admission webhook for AI-originated write identities.
-6. Add adapter result schema and severity normalization.
+6. Add richer adapter remediation hints and source excerpts.
 7. Add signature support on top of deterministic capsule digests.

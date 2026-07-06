@@ -49,6 +49,14 @@ def target_versions(payload: dict[str, Any]) -> dict[str, str]:
     return {str(key): str(version) for key, version in sorted(value.items())}
 
 
+def normalized_severity(counts: dict[str, int]) -> str:
+    if counts["removed"]:
+        return "critical"
+    if counts["deprecated"] or counts["unavailableReplacement"] or counts["unknown"]:
+        return "warning"
+    return "none"
+
+
 def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
     records = items(payload)
     counts = finding_counts(records)
@@ -66,6 +74,7 @@ def evidence(payload: dict[str, Any], source: str) -> dict[str, Any]:
         "actor": "pluto-cli",
         "collector": "pluto",
         "reason": "api-compatible" if ok else "deprecated-api-found",
+        "severity": normalized_severity(counts),
         "sourceRef": source,
         "deprecatedApiResults": {
             "items": len(records),

@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (35 checks)
-Ran 64 tests
+verification: passed (36 checks)
+Ran 65 tests
 OK
 ```
 
@@ -66,6 +66,7 @@ Coverage included:
 - kube-linter policy adapter pass/fail fixture verification;
 - kube-score policy adapter pass/fail fixture verification;
 - Pluto deprecated API adapter pass/fail fixture verification;
+- common adapter evidence contract and normalized severity verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -107,6 +108,7 @@ python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
+python3 -B scripts/verify_adapter_contract.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -140,6 +142,7 @@ Result:
 - kube-linter adapter check prints `kube-linter-adapter: passed`;
 - kube-score adapter check prints `kube-score-adapter: passed`;
 - Pluto adapter check prints `pluto-adapter: passed`;
+- adapter contract check prints `adapter-contract: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

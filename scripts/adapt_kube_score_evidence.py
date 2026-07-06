@@ -80,6 +80,14 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def normalized_severity(counts: dict[str, int]) -> str:
+    if counts["critical"]:
+        return "critical"
+    if counts["warning"] or counts["unknown"]:
+        return "warning"
+    return "none"
+
+
 def evidence(payload: Any, source: str) -> dict[str, Any]:
     records = collect_checks(payload)
     counts = summarize(records)
@@ -98,6 +106,7 @@ def evidence(payload: Any, source: str) -> dict[str, Any]:
         "actor": "kube-score-cli",
         "collector": "kube-score",
         "reason": "policy-pass" if ok else "policy-fail",
+        "severity": normalized_severity(counts),
         "sourceRef": source,
         "policyResults": {
             "checks": len(records),
