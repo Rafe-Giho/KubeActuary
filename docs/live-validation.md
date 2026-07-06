@@ -97,6 +97,13 @@ contract is satisfied.
 The external gate evaluator maps that same manifest back to the taskboard
 `VERIFY` rows. It intentionally leaves resource-budget and live
 `kubectl explain` rows uncovered until those separate raw outputs are captured.
+Supplemental evidence files use schema `kube-actuary.external-evidence.v1` with
+`kind` set to `kubectl-explain`, `controller-resource-budget`, or
+`controller-live-loop`:
+
+```sh
+python3 -B scripts/evaluate_external_gate_evidence.py /tmp/kubeactuary-live-evidence-manifest.json --evidence <external-evidence.json>
+```
 
 Supported evidence schemas:
 

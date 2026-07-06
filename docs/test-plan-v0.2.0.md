@@ -219,8 +219,8 @@ Confirm from code and tests:
   the release suite check count;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
-- external gate evidence verifier maps captured smoke manifests back to
-  taskboard rows while leaving non-manifest live evidence uncovered;
+- external gate evidence verifier maps captured smoke manifests and
+  supplemental external evidence back to taskboard rows;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

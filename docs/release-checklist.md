@@ -87,8 +87,8 @@ Expected:
   release check count;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
-- external gate evidence evaluation maps captured smoke manifests back to
-  taskboard rows and keeps non-manifest evidence uncovered;
+- external gate evidence evaluation maps captured smoke manifests and
+  supplemental external evidence back to taskboard rows;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch

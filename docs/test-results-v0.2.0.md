@@ -104,7 +104,8 @@ Coverage included:
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
 - external gate plan generation for remaining VERIFY rows;
-- external gate evidence evaluation for captured smoke manifests;
+- external gate evidence evaluation for captured smoke manifests plus
+  supplemental external evidence;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;

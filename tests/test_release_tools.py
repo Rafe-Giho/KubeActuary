@@ -128,7 +128,8 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("external-gate-evidence: passed", result.stdout)
-        self.assertIn("covered: 12", result.stdout)
+        self.assertIn("smoke-covered: 12", result.stdout)
+        self.assertIn("supplemental-covered: 16", result.stdout)
 
     def test_verify_agent_help_contract(self):
         result = subprocess.run(

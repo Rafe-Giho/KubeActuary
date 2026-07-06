@@ -87,7 +87,7 @@ COMMON_CHECKS = (
     Check(
         "external gate evidence",
         ("python3", "-B", "scripts/verify_external_gate_evidence.py"),
-        contains=("external-gate-evidence: passed", "covered: 12", "uncovered: 4"),
+        contains=("external-gate-evidence: passed", "smoke-covered: 12", "supplemental-covered: 16"),
     ),
     Check(
         "crd compatibility smoke",
