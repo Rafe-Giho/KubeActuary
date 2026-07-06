@@ -493,6 +493,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
         advance = evidence_status.get("versionIterationAdvance")
         if isinstance(advance, dict):
             lines.append(f"- version-iteration-advance: `{advance.get('status')}`")
+            if advance.get("runId"):
+                lines.append(f"- version-iteration-advance-run-id: `{advance.get('runId')}`")
+            history = advance.get("history", {})
+            if isinstance(history, dict) and history.get("runs") is not None:
+                lines.append(f"- version-iteration-advance-history-runs: {history.get('runs')}")
             if advance.get("queueSource"):
                 lines.append(f"- version-iteration-advance-queue-source: `{advance.get('queueSource')}`")
             if advance.get("queueSourceOrigin"):

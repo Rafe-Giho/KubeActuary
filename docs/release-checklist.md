@@ -100,7 +100,8 @@ Expected:
   readiness, complete tool-ready next actions, blocker summaries, and optional
   evidence directory status; blocker summaries include filtered worklist
   commands, selected next-task file/command details are visible in Markdown,
-  and evidence next commands are not truncated;
+  advance run/history metadata is visible in Markdown, and evidence next
+  commands are not truncated;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   summarizes every repeated missing-tool and environment blocker with filtered

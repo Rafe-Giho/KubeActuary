@@ -273,6 +273,8 @@ def main() -> int:
             "environment-probe: `not-run`",
             "environment-next: start or select a disposable cluster, then rerun the probe",
             "version-iteration-advance: `failed`",
+            "version-iteration-advance-run-id: `test-progress`",
+            "version-iteration-advance-history-runs: 1",
             "version-iteration-advance-queue-source: `prepared-live-validation-queue`",
             "version-iteration-advance-queue-source-origin: `inferred-live-validation-queue`",
             "version-iteration-advance-consistency: `matched`",

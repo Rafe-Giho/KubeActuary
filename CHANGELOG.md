@@ -80,6 +80,8 @@ Evidence collector release:
   reports;
 - surface selected next-task, runner, environment, and advance status in release
   progress Markdown for local evidence directories;
+- show version-iteration advance run id and history run count in release
+  progress Markdown;
 - preserve selected next-task runner failure reasons in release evidence status
   and progress output;
 - show all release evidence status next commands, next-task files, and

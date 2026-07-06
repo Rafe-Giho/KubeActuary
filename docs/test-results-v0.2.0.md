@@ -258,9 +258,9 @@ Result:
   as the next-action source, shows every open item in version Markdown, and
   shows every action blocker plus filtered worklist commands, selected
   next-task file/command details, every runnable tool-ready action and evidence
-  next command, and persisted queue-source status without recommending
-  environment-blocked capture commands or runnable JSON first commands for
-  blocked actions;
+  next command, persisted queue-source status, and version-iteration advance
+  run/history metadata without recommending environment-blocked capture
+  commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
   recording, history status inspection, evidence-aware worklist readiness,
