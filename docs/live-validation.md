@@ -20,6 +20,8 @@ python3 -B scripts/generate_live_validation_queue.py --format markdown --evidenc
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
 python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
+python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_validation_queue.py
@@ -113,6 +115,14 @@ dedicated local blocker ledger. With `--record`, it writes
 under the evidence directory, preserving version groups, affected versions,
 filtered worklist drilldowns, environment reasons, next steps, and evidence file
 readiness without running cluster or cloud commands.
+`generate_version_unblock_plan.py` converts that blocker ledger into a local
+unblock plan with one action per missing tool or environment blocker. The plan
+lists read-only verification commands such as tool version checks and
+`kubectl cluster-info --request-timeout=5s`, plus queue refresh and metadata
+recording commands. With `--record`, it writes
+`.kubeactuary/version-unblock-plan.json` and
+`.kubeactuary/version-unblock-plan.md` without installing tools or starting
+clusters.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, including environment reasons such as
 `connection-refused`, so repeated validation can focus on the shared blocker

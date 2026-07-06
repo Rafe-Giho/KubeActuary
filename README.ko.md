@@ -372,6 +372,8 @@ scripts/
   verify_version_worklist.py version worklist verifier
   record_version_blockers.py local version blocker ledger recorder with prepared queue reuse
   verify_version_blockers.py version blocker ledger verifier
+  generate_version_unblock_plan.py local unblock action plan generator for blocker resolution
+  verify_version_unblock_plan.py version unblock plan verifier
   kube-actuary.version-worklist.v1 version worklist schema
   kube-actuary.version-iteration.v1 version iteration schema
   kube-actuary.version-iteration-diff.v1 version iteration diff schema
@@ -380,6 +382,8 @@ scripts/
   kube-actuary.next-version-task.v1 next version task schema
   kube-actuary.version-blockers.v1 version blocker ledger schema
   version-blockers.json persisted local blocker ledger report
+  kube-actuary.version-unblock-plan.v1 version unblock plan schema
+  version-unblock-plan.json persisted local unblock plan report
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   verify_external_gate_command_safety.py external gate command safety verifier
@@ -510,12 +514,15 @@ python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir
 python3 -B scripts/generate_release_progress.py --format markdown --history-dir evidence/version-history
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
+python3 -B scripts/verify_version_unblock_plan.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind
 python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
+python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_version_task.py --missing-tool kind
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment --environment-reason connection-refused

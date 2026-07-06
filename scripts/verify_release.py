@@ -83,7 +83,7 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 80"),
+        contains=("release-progress: passed", "verify: 16", "checks: 81"),
     ),
     Check(
         "version worklist",
@@ -94,6 +94,11 @@ COMMON_CHECKS = (
         "version blockers",
         ("python3", "-B", "scripts/verify_version_blockers.py"),
         contains=("version-blockers: passed", "blocked-items: 3", "record: metadata"),
+    ),
+    Check(
+        "version unblock plan",
+        ("python3", "-B", "scripts/verify_version_unblock_plan.py"),
+        contains=("version-unblock-plan: passed", "actions: 3", "record: metadata"),
     ),
     Check(
         "external gate plan",

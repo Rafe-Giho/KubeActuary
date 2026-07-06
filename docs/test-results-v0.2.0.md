@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (80 checks)
-Ran 114 tests
+verification: passed (81 checks)
+Ran 115 tests
 OK
 ```
 
@@ -136,6 +136,9 @@ Coverage included:
   missing-tool and environment blockers, affected versions, filtered worklist
   drilldowns, next local loop commands, and persisted
   `.kubeactuary/version-blockers.json` plus Markdown reports;
+- version unblock plan generation with grouped missing-tool and environment
+  actions, read-only verification commands, queue refresh commands, and
+  persisted `.kubeactuary/version-unblock-plan.json` plus Markdown reports;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -187,6 +190,7 @@ python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
+python3 -B scripts/verify_version_unblock_plan.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -300,6 +304,9 @@ Result:
 - version blocker ledger check prints `version-blockers: passed` and exercises
   prepared queue blocker records, affected versions, worklist drilldowns,
   environment reasons, next local loop commands, and persisted blocker metadata;
+- version unblock plan check prints `version-unblock-plan: passed` and
+  exercises missing-tool/environment unblock actions, read-only verification
+  commands, queue refresh commands, and persisted unblock metadata;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;

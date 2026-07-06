@@ -26,6 +26,7 @@ python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
+python3 -B scripts/verify_version_unblock_plan.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -117,6 +118,9 @@ Expected:
   records grouped blocker metadata with schema
   `kube-actuary.version-blockers.v1` and persisted
   `.kubeactuary/version-blockers.json` reports,
+  generates unblock plans with schema
+  `kube-actuary.version-unblock-plan.v1` and persisted
+  `.kubeactuary/version-unblock-plan.json` reports,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving blocker summaries, drilldown commands, and evidence
   readiness when `--evidence-dir` is used,
@@ -259,6 +263,7 @@ Expected:
 - [ ] release progress check passes.
 - [ ] version worklist check passes.
 - [ ] version blocker ledger check passes.
+- [ ] version unblock plan check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate command safety check passes.
 - [ ] external gate evidence evaluation check passes.
