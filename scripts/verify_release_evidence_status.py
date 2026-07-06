@@ -14,6 +14,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 INSPECTOR = ROOT / "scripts" / "inspect_release_evidence_directory.py"
 EVIDENCE_BUILDER = ROOT / "scripts" / "build_external_evidence.py"
+PREPARE = ROOT / "scripts" / "prepare_live_evidence_directory.py"
 README = ROOT / "README.md"
 LIVE_VALIDATION = ROOT / "docs" / "live-validation.md"
 sys.path.insert(0, str(ROOT))
@@ -21,6 +22,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 
+NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 LIGHTWEIGHT_PROVIDERS = ("kind", "minikube", "microk8s", "k3s")
 MANAGED_PROVIDERS = ("eks", "gke", "aks")
 SINGLE_REPORT_SCHEMAS = (
@@ -83,11 +85,14 @@ def main() -> int:
         tmpdir = Path(tmp)
 
         partial_dir = tmpdir / "partial"
-        partial_dir.mkdir()
+        prepared = run_script(PREPARE, str(partial_dir))
+        if prepared.returncode != 0:
+            errors.append(f"partial scaffold failed: {prepared.stderr.strip() or prepared.stdout.strip()}")
         payload = sample("kube-actuary.lightweight-smoke.v1")
         payload["provider"] = "kind"
-        write_payload(partial_dir / "kind.json", payload)
+        write_payload(partial_dir / "reports" / "kind.json", payload)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
+        partial_text = run_script(INSPECTOR, str(partial_dir))
 
         full_dir = tmpdir / "full"
         full_dir.mkdir()
@@ -135,6 +140,17 @@ def main() -> int:
         errors.append("partial status must include coverage misses")
     if not any("run_managed_kubernetes_smoke.py" in command for command in partial_payload.get("nextCommands", [])):
         errors.append("partial status must include next provider commands")
+    next_task = partial_payload.get("nextTask") or {}
+    selected = next_task.get("selected") or {}
+    if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
+        errors.append("partial status must include next-task schema")
+    if selected.get("id") != "01-controller-resource-budget":
+        errors.append("partial status must preserve selected next task")
+    resolved_next = "\n".join(selected.get("resolvedCommands", []))
+    if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
+        errors.append("partial status must preserve resolved next-task raw path")
+    if partial_text.returncode != 0 or "next-task: 01-controller-resource-budget" not in partial_text.stdout:
+        errors.append("partial text status must print the selected next task")
 
     if complete_payload.get("summary", {}).get("status") != "complete":
         errors.append("full evidence directory must report complete")
@@ -147,7 +163,7 @@ def main() -> int:
     if complete_payload.get("summary", {}).get("coverageErrors") != 0:
         errors.append("full evidence directory must have no coverage errors")
 
-    for snippet in ("inspect_release_evidence_directory.py", "kube-actuary.release-evidence-status.v1"):
+    for snippet in ("inspect_release_evidence_directory.py", "kube-actuary.release-evidence-status.v1", NEXT_TASK_SCHEMA):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
         if snippet not in LIVE_VALIDATION.read_text():

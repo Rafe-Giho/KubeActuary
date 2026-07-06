@@ -20,6 +20,32 @@ from scripts.evaluate_external_gate_evidence import evaluate, load_supplemental 
 
 
 SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
+NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+
+
+def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "next-version-task.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != NEXT_TASK_SCHEMA:
+        raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")
+    selected = payload.get("selected") or {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "selected": {
+            "id": selected.get("id"),
+            "version": selected.get("version"),
+            "item": selected.get("item"),
+            "kind": selected.get("kind"),
+            "captureStatus": selected.get("captureStatus"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "missingTools": selected.get("missingTools", []),
+            "commands": selected.get("commands", []),
+            "resolvedCommands": selected.get("resolvedCommands", []),
+        },
+    }
 
 
 def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
@@ -46,6 +72,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     evaluation = evaluate(manifest, supplemental_paths)
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
+    next_task = load_next_task(evidence_dir)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -62,6 +89,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
             "totalGates": summary.get("total", 0),
             "coverageErrors": len(coverage_errors),
         },
+        "nextTask": next_task,
         "liveReports": manifest.get("reports", []),
         "supplementalEvidence": [
             {
@@ -99,6 +127,13 @@ def render_text(status: dict[str, Any]) -> str:
     ]
     for command in status["nextCommands"][:5]:
         lines.append(f"next: {command}")
+    next_task = status.get("nextTask")
+    selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+    if selected:
+        lines.append(f"next-task: {selected.get('id')}")
+        lines.append(f"next-task-status: {selected.get('captureStatus')}")
+        for command in selected.get("resolvedCommands", [])[:2]:
+            lines.append(f"next-task-command: {command}")
     return "\n".join(lines) + "\n"
 
 

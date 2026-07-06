@@ -180,8 +180,10 @@ python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format
 ```
 
 The status inspector uses schema `kube-actuary.release-evidence-status.v1`,
-reports covered and uncovered external gates, and prints next evidence commands
-without requiring complete release closure.
+reports covered and uncovered external gates, prints next evidence commands,
+and includes the persisted `kube-actuary.next-version-task.v1` artifact when
+the evidence directory was prepared by the scaffold. It does not require
+complete release closure.
 
 Supported evidence schemas:
 
