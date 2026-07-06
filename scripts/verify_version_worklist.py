@@ -480,6 +480,24 @@ def main() -> int:
             str(history_status_output),
         )
         history_status_output_written = history_status_output.is_file()
+        recorded_history_status = run_inspect_history(
+            str(history_dir),
+            "--format",
+            "json",
+            "--record",
+        )
+        history_status_record_json = history_dir / "status.json"
+        history_status_record_md = history_dir / "status.md"
+        history_status_record_payload = (
+            json.loads(history_status_record_json.read_text())
+            if history_status_record_json.is_file()
+            else {}
+        )
+        history_status_record_md_text = (
+            history_status_record_md.read_text()
+            if history_status_record_md.is_file()
+            else ""
+        )
         evidence_history_index_path = evidence_history_dir / "index.json"
         evidence_history_index = (
             json.loads(evidence_history_index_path.read_text()) if evidence_history_index_path.is_file() else {}
@@ -759,6 +777,14 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest blocker drilldown command")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
+    if recorded_history_status.returncode != 0:
+        errors.append("version iteration history inspector must record status reports")
+    if history_status_record_payload.get("record", {}).get("json") != str(history_status_record_json):
+        errors.append("version iteration history recorded JSON should include record metadata")
+    if "# KubeActuary Version Iteration History Status" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should include a title")
+    if "environment `cluster-unavailable`: 1 items" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest blockers")
     evidence_runs = evidence_history_index.get("runs", [])
     if len(evidence_runs) != 2:
         errors.append("evidence-aware history should record two runs")

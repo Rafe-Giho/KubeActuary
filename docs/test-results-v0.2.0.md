@@ -271,7 +271,7 @@ Result:
   next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,
   iteration history queue-source and blocker drilldown preservation across
-  text, JSON, and Markdown,
+  text, JSON, Markdown, and recorded status reports,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,
   next-task selection,

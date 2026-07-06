@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,8 @@ SCHEMA_VERSION = "kube-actuary.version-iteration-history-status.v1"
 HISTORY_SCHEMA = "kube-actuary.version-iteration-history.v1"
 WORKLIST_SCHEMA = "kube-actuary.version-worklist.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
+STATUS_JSON = "status.json"
+STATUS_MD = "status.md"
 
 
 def load_json(path: Path, errors: list[str]) -> dict[str, Any]:
@@ -203,14 +206,28 @@ def render_markdown(status: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def record_status(history_dir: Path, status: dict[str, Any]) -> dict[str, str]:
+    json_path = history_dir / STATUS_JSON
+    markdown_path = history_dir / STATUS_MD
+    record = {"json": str(json_path), "markdown": str(markdown_path)}
+    history_dir.mkdir(parents=True, exist_ok=True)
+    status["record"] = record
+    json_path.write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
+    markdown_path.write_text(render_markdown(status))
+    return record
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Inspect a KubeActuary version iteration history directory.")
     parser.add_argument("history_dir")
     parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
+    parser.add_argument("--record", action="store_true", help="write status JSON and Markdown into the history directory")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
-    status = inspect_history(Path(args.history_dir))
+    history_dir = Path(args.history_dir)
+    status = inspect_history(history_dir)
+    recorded = record_status(history_dir, status) if args.record else None
     if args.format == "json":
         rendered = json.dumps(status, indent=2, sort_keys=True) + "\n"
     elif args.format == "markdown":
@@ -222,6 +239,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         Path(args.output).write_text(rendered)
         print(f"version-iteration-history-status: wrote {args.output}")
+    if recorded:
+        print(f"version-iteration-history-status: recorded {recorded['json']}", file=sys.stderr)
     return 0 if status["valid"] else 1
 
 

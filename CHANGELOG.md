@@ -48,6 +48,7 @@ Evidence collector release:
 - preserve prepared queue source in version iteration history records and status;
 - show latest blocker summaries and drilldowns in version iteration history status;
 - add Markdown output for version iteration history status;
+- add recorded version iteration history status reports;
 - preserve prepared queue source in next-task runner and advance reports;
 - preserve environment blocker status and next steps in advance reports;
 - surface runner and advance queue source in release evidence status/progress;
