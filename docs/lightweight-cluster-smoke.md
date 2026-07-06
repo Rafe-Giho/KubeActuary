@@ -22,12 +22,19 @@ python3 -B scripts/run_lightweight_cluster_smoke.py --provider k3s
 
 Plan mode prints the exact `kubectl` commands that would be run.
 
+To save the plan as structured evidence:
+
+```sh
+python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --output /tmp/kubeactuary-kind-plan.json
+```
+
 ## Run Mode
 
 After starting the target cluster and selecting its kubeconfig context:
 
 ```sh
 python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run
+python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run --output /tmp/kubeactuary-kind-smoke.json
 ```
 
 The run uses server-side dry-run for manifests:
@@ -41,6 +48,11 @@ kubectl apply --dry-run=server -f deploy/controller/cluster-scoped-rbac.yaml
 It also checks `kubectl auth can-i` boundaries and captures `kubectl top pod`
 output for the controller resource-budget measurement. It does not apply
 workloads, delete resources, run LLMs, or execute proposed Kubernetes writes.
+
+The optional `--output` file uses `kube-actuary.lightweight-smoke.v1` and records
+provider, namespace, mode, `clusterWrites: server-side-dry-run-only`, each
+command, exit code, and raw stdout/stderr. Keep this file as provider run
+evidence when moving a matrix entry from `VERIFY` to `DONE`.
 
 Use `--kubectl` for wrappers such as `microk8s kubectl` exposed as a local
 script.

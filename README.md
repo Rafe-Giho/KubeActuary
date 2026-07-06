@@ -365,7 +365,7 @@ scripts/
   verify_controller_sync.py       read-only controller sync verifier
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
-  run_lightweight_cluster_smoke.py lightweight cluster smoke harness
+  run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier
   verify_helm_chart.py        offline Helm chart contract check

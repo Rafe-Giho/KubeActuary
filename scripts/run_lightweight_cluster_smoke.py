@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shlex
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -40,8 +42,36 @@ def print_plan(provider: str, commands: list[list[str]]) -> None:
         print(shlex.join(command))
 
 
-def run_commands(commands: list[list[str]]) -> int:
+def write_evidence(
+    output: str,
+    provider: str,
+    namespace: str,
+    mode: str,
+    commands: list[list[str]],
+    records: list[dict[str, object]] | None = None,
+) -> None:
+    records = records or [{"command": command} for command in commands]
+    failed = sum(1 for record in records if record.get("ok") is False)
+    report = {
+        "schemaVersion": "kube-actuary.lightweight-smoke.v1",
+        "provider": provider,
+        "namespace": namespace,
+        "mode": mode,
+        "clusterWrites": "server-side-dry-run-only",
+        "capturedAt": datetime.now(timezone.utc).isoformat(),
+        "commands": records,
+        "summary": {
+            "total": len(records),
+            "passed": len(records) - failed,
+            "failed": failed,
+        },
+    }
+    Path(output).write_text(json.dumps(report, indent=2, sort_keys=True))
+
+
+def run_commands(commands: list[list[str]], provider: str, namespace: str, output: str | None = None) -> int:
     failed = 0
+    records: list[dict[str, object]] = []
     for command in commands:
         result = subprocess.run(
             command,
@@ -53,11 +83,22 @@ def run_commands(commands: list[list[str]]) -> int:
         )
         status = "PASS" if result.returncode == 0 else "FAIL"
         print(f"{status} {shlex.join(command)}")
+        records.append(
+            {
+                "command": command,
+                "exitCode": result.returncode,
+                "ok": result.returncode == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        )
         if result.returncode != 0:
             failed += 1
             message = (result.stderr or result.stdout).strip()
             if message:
                 print(f"  {message.splitlines()[0]}")
+    if output:
+        write_evidence(output, provider, namespace, "run", commands, records)
     if failed:
         print(f"lightweight-cluster-smoke: failed ({failed}/{len(commands)} failed)")
         return 1
@@ -71,14 +112,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--namespace", default="kubeactuary-system")
     parser.add_argument("--kubectl", default="kubectl")
     parser.add_argument("--run", action="store_true", help="execute checks instead of printing the plan")
+    parser.add_argument("--output", help="write structured evidence JSON for the plan or run")
     args = parser.parse_args(argv)
 
     commands = smoke_commands(args.kubectl, args.namespace)
     if not args.run:
         print_plan(args.provider, commands)
+        if args.output:
+            write_evidence(args.output, args.provider, args.namespace, "plan", commands)
         return 0
     print(f"lightweight-cluster-smoke: run provider={args.provider}")
-    return run_commands(commands)
+    return run_commands(commands, args.provider, args.namespace, output=args.output)
 
 
 if __name__ == "__main__":

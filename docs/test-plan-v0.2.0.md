@@ -209,8 +209,9 @@ Confirm from code and tests:
   status-only patch plans with `writeExecution` disabled;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets
   and parses `kubectl top` samples;
-- lightweight cluster smoke helper uses server-side dry-run plans and covers
-  kind, minikube, MicroK8s, and k3s without default writes;
+- lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
+  evidence output, and covers kind, minikube, MicroK8s, and k3s without default
+  writes;
 - Helm chart packages the CRD under `crds/` and keeps optional controller RBAC
   disabled by default;
 - Kustomize base renders only the CRD, while controller overlays add only

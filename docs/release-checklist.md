@@ -83,7 +83,7 @@ Expected:
 - controller sync verifies a read-only OperationCapsule list call and disabled
   write execution;
 - controller resource budget contract and measurement parser verify offline;
-- lightweight cluster smoke plan verifies offline;
+- lightweight cluster smoke plan and JSON evidence output verify offline;
 - Helm chart contract verifies offline;
 - Kustomize base and overlays render with `kubectl kustomize`;
 - release archives verify SHA-256 sidecars and install smoke;
@@ -135,7 +135,7 @@ Expected:
 - [ ] controller status patch plan check passes.
 - [ ] controller read-only sync check passes.
 - [ ] controller resource budget check passes.
-- [ ] lightweight cluster smoke plan check passes.
+- [ ] lightweight cluster smoke plan and evidence-output check passes.
 - [ ] upstream N/N-1/N-2 conformance suite passes.
 - [ ] live kind/minikube/MicroK8s/k3s evidence is attached before claiming
       matrix support.

@@ -33,7 +33,7 @@ Evidence collector release:
 - add read-only controller sync planning with disabled write execution;
 - add controller resource-budget contract and kubectl-top measurement harness;
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
-  k3s;
+  k3s with JSON evidence output for live runs;
 - add Helm chart seed with CRD packaging and optional controller RBAC;
 - add Kustomize base and controller RBAC overlays with render verification;
 - add multi-target release archive packager with SHA-256 and install smoke

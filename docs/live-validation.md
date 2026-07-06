@@ -38,6 +38,9 @@ cluster-writes: disabled
 - Do not run proposed workload writes as part of KubeActuary validation.
 - Attach raw command output, cluster version, tool version, and timestamp.
 - Keep provider run evidence separate from offline verifier output.
+- For lightweight cluster smoke runs, use
+  `scripts/run_lightweight_cluster_smoke.py --run --output <path>` and keep the
+  `kube-actuary.lightweight-smoke.v1` report.
 
 Provider run evidence means captured output from the target provider or tool,
 not a local assumption that the path should work.

@@ -97,7 +97,7 @@ Current local progress:
 - resource budget target is set to idle <50m CPU and <64Mi memory, with a
   `kubectl top` measurement harness for live cluster evidence;
 - lightweight cluster smoke harness prints or runs the kind, minikube, MicroK8s,
-  and k3s server-side dry-run plan;
+  and k3s server-side dry-run plan and can write JSON run evidence;
 - live controller process, HTTP serving, deployment manifests, status
   subresource writes, and live matrix evidence remain future work.
 

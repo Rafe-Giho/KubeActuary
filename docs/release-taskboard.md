@@ -35,7 +35,7 @@ Status legend:
 | Controller status patch plan | DONE | `scripts/verify_controller_patch_plan.py` verifies status-only patch plans without executing writes |
 | Controller read-only sync | DONE | `scripts/verify_controller_sync.py` verifies `kubectl get` plus disabled write execution |
 | Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
-| Lightweight cluster smoke | VERIFY | offline smoke plan verifier added; live matrix evidence still needed |
+| Lightweight cluster smoke | VERIFY | offline smoke plan and JSON evidence-output verifier added; live matrix evidence still needed |
 | Helm chart | VERIFY | chart seed and offline verifier added; live `helm template` not run because Helm is not installed |
 | Kustomize | DONE | base and controller overlays render with `kubectl kustomize` |
 | Release archives | DONE | multi-target archive generator, SHA-256 sidecars, and install smoke verifier |
@@ -108,7 +108,7 @@ patches status. It must not scan the cluster or execute writes.
 | 0.4.2 | Status patch plan for watched capsules | DONE | `scripts/verify_controller_patch_plan.py`; live patch execution remains v0.4.4 |
 | 0.4.2 | Read-only sync from watched capsules | DONE | `scripts/verify_controller_sync.py`; live status apply loop remains v0.4.4 |
 | 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | VERIFY | `scripts/verify_controller_resource_budget.py`; live kind/minikube/k3s measurement still required |
-| 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | VERIFY | `scripts/verify_lightweight_cluster_smoke.py`; live matrix evidence still required |
+| 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | VERIFY | `scripts/verify_lightweight_cluster_smoke.py` verifies plan and evidence JSON; live matrix evidence still required |
 
 ## v0.5.x: Packaging and Installation
 

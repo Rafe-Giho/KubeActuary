@@ -61,7 +61,8 @@ Coverage included:
 - controller read-only sync that executes only `kubectl get` for
   OperationCapsules and emits disabled-write status patch plans;
 - controller resource budget contract and `kubectl top` measurement parser;
-- lightweight cluster smoke plan for kind, minikube, MicroK8s, and k3s;
+- lightweight cluster smoke plan and JSON evidence output for kind, minikube,
+  MicroK8s, and k3s;
 - Helm chart seed for CRD packaging and optional controller RBAC;
 - Kustomize base and controller RBAC overlays;
 - multi-target release archives with SHA-256 sidecars and install smoke;
