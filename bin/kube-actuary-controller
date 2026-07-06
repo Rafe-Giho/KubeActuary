@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import shlex
+import subprocess
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 from controller.reconcile import (
     WATCH_RESOURCE,
+    list_command,
     reconcile_status,
     status_patch,
     status_patch_plan,
@@ -63,6 +65,37 @@ def print_watch_command(args: argparse.Namespace) -> int:
 def patch_plan(args: argparse.Namespace) -> int:
     document = load_json(args.file)
     plan = status_patch_plan(document, kubectl=args.kubectl)
+    if args.format == "commands":
+        for patch in plan["patches"]:
+            print(shlex.join(patch["command"]))
+    else:
+        write_json(plan)
+    return 0
+
+
+def sync(args: argparse.Namespace) -> int:
+    command = list_command(args.namespace, kubectl=args.kubectl)
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or f"kubectl get failed with exit code {result.returncode}"
+        print(message, file=sys.stderr)
+        return result.returncode
+    try:
+        document = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        print(f"invalid JSON from kubectl get: {exc}", file=sys.stderr)
+        return 1
+
+    plan = status_patch_plan(document, kubectl=args.kubectl)
+    plan["readExecution"] = "kubectl-get"
+    plan["readCommand"] = command
     if args.format == "commands":
         for patch in plan["patches"]:
             print(shlex.join(patch["command"]))
@@ -178,6 +211,12 @@ def build_parser() -> argparse.ArgumentParser:
     patch_plan_parser.add_argument("--format", choices=["json", "commands"], default="json")
     patch_plan_parser.add_argument("--kubectl", default="kubectl")
     patch_plan_parser.set_defaults(func=patch_plan)
+
+    sync_parser = sub.add_parser("sync", help="read OperationCapsules and compute status patch plans without writes")
+    sync_parser.add_argument("--namespace", help="limit the read to one namespace")
+    sync_parser.add_argument("--format", choices=["json", "commands"], default="json")
+    sync_parser.add_argument("--kubectl", default="kubectl")
+    sync_parser.set_defaults(func=sync)
 
     health_parser = sub.add_parser("health", help="emit liveness payload for future /healthz wiring")
     health_parser.add_argument("--started-at", type=int)

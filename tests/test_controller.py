@@ -207,6 +207,57 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertIn("status", patch["command"])
         self.assertNotIn("apply", patch["command"])
 
+    def test_sync_reads_operationcapsules_and_emits_plan_without_writes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            payload = {"items": [self.capsule([{"id": "intent", "ok": True, "summary": "reviewed", "actor": "reviewer", "attachedAt": "now"}])]}
+            log_path = Path(tmpdir) / "kubectl-calls.json"
+            kubectl = Path(tmpdir) / "kubectl"
+            kubectl.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env python3",
+                        "import json",
+                        "import sys",
+                        "from pathlib import Path",
+                        f"log_path = Path({str(log_path)!r})",
+                        "calls = json.loads(log_path.read_text()) if log_path.exists() else []",
+                        "calls.append(sys.argv[1:])",
+                        "log_path.write_text(json.dumps(calls))",
+                        f"payload = {json.dumps(payload)!r}",
+                        "if sys.argv[1] == 'get':",
+                        "    print(payload)",
+                        "    raise SystemExit(0)",
+                        "print('unexpected kubectl call', file=sys.stderr)",
+                        "raise SystemExit(9)",
+                    ]
+                )
+            )
+            kubectl.chmod(0o755)
+
+            result = self.run_controller("sync", "--kubectl", str(kubectl))
+            namespaced = self.run_controller("sync", "--kubectl", str(kubectl), "--namespace", "team-a")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(namespaced.returncode, 0, namespaced.stderr)
+            calls = json.loads(log_path.read_text())
+
+        self.assertEqual(
+            calls,
+            [
+                ["get", "operationcapsules.ops.kubeactuary.dev", "-o", "json", "--all-namespaces"],
+                ["get", "operationcapsules.ops.kubeactuary.dev", "-o", "json", "-n", "team-a"],
+            ],
+        )
+        for call in calls:
+            for forbidden in ("patch", "apply", "delete"):
+                self.assertNotIn(forbidden, call)
+        plan = json.loads(result.stdout)
+        self.assertEqual(plan["readExecution"], "kubectl-get")
+        self.assertEqual(plan["writeExecution"], "disabled")
+        self.assertEqual(plan["count"], 1)
+        self.assertEqual(set(plan["patches"][0]["patch"]), {"status"})
+        self.assertIn("patch", plan["patches"][0]["command"])
+
 
 if __name__ == "__main__":
     unittest.main()

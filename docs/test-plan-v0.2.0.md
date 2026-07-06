@@ -16,9 +16,10 @@ Expected:
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
-  controller runtime contract, controller deployment seed, controller resource
-  status patch plan, controller resource budget, lightweight cluster smoke
-  harness, upstream conformance suite, Helm chart contract, Kustomize rendering,
+  controller runtime contract, controller deployment seed, controller status
+  patch plan, controller read-only sync, controller resource budget,
+  lightweight cluster smoke harness, upstream conformance suite, Helm chart
+  contract, Kustomize rendering,
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory,
@@ -58,6 +59,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
+python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -109,6 +111,7 @@ Expected:
 - controller runtime check prints `controller-runtime: passed`;
 - controller deployment check prints `controller-deployment: passed`;
 - controller patch plan check prints `controller-patch-plan: passed`;
+- controller sync check prints `controller-sync: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
@@ -202,6 +205,8 @@ Confirm from code and tests:
   probes, resource limits, and hardened security defaults;
 - controller patch planner emits status-only patch plans and keeps
   `writeExecution` disabled;
+- controller sync executes only `kubectl get` for OperationCapsules and emits
+  status-only patch plans with `writeExecution` disabled;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets
   and parses `kubectl top` samples;
 - lightweight cluster smoke helper uses server-side dry-run plans and covers
@@ -277,7 +282,8 @@ Expected:
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
-  controller runtime, controller deployment, controller patch plan, controller resource budget, lightweight cluster smoke, digest, CRD render,
+  controller runtime, controller deployment, controller patch plan, controller
+  sync, controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, project
   governance, air-gapped bundle, agent help contract, agent examples, Kyverno

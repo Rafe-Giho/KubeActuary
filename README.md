@@ -362,6 +362,7 @@ scripts/
   verify_controller_runtime_contract.py offline controller runtime check
   verify_controller_deployment.py optional controller Deployment seed check
   verify_controller_patch_plan.py status patch plan verifier
+  verify_controller_sync.py       read-only controller sync verifier
   verify_controller_resource_budget.py offline controller resource budget check
   measure_controller_resources.py kubectl top budget measurement helper
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness
@@ -432,6 +433,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
+python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -500,7 +502,8 @@ Current v0.2.0:
   managed-service support notes.
 - CRD upgrade and rollback fixtures with offline verification.
 - kubectl explain descriptions and offline quality checks.
-- pure low-overhead controller reconcile model and watch boundary contract.
+- pure low-overhead controller reconcile model, watch boundary, and read-only
+  sync plan contract.
 - Helm, Kustomize, release archive, and Krew manifest verification paths.
 
 Later:

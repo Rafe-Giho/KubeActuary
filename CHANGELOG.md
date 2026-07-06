@@ -30,6 +30,7 @@ Evidence collector release:
   contracts;
 - add optional controller runtime Deployment seed and verifier;
 - add controller status patch planner with status-only verifier;
+- add read-only controller sync planning with disabled write execution;
 - add controller resource-budget contract and kubectl-top measurement harness;
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
   k3s;

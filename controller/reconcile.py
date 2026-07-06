@@ -197,3 +197,12 @@ def watch_command(namespace: str | None = None) -> list[str]:
     else:
         command.append("--all-namespaces")
     return command
+
+
+def list_command(namespace: str | None = None, kubectl: str = "kubectl") -> list[str]:
+    command = [kubectl, "get", WATCH_RESOURCE, "-o", "json"]
+    if namespace:
+        command.extend(["-n", namespace])
+    else:
+        command.append("--all-namespaces")
+    return command

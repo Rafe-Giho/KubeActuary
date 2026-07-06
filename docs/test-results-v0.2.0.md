@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (55 checks)
-Ran 86 tests
+verification: passed (56 checks)
+Ran 88 tests
 OK
 ```
 
@@ -58,6 +58,8 @@ Coverage included:
   limits, and hardened security defaults;
 - controller status patch planner with status-only patch bodies and disabled
   write execution;
+- controller read-only sync that executes only `kubectl get` for
+  OperationCapsules and emits disabled-write status patch plans;
 - controller resource budget contract and `kubectl top` measurement parser;
 - lightweight cluster smoke plan for kind, minikube, MicroK8s, and k3s;
 - Helm chart seed for CRD packaging and optional controller RBAC;
@@ -119,6 +121,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
+python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -172,6 +175,7 @@ Result:
 - controller runtime check prints `controller-runtime: passed`;
 - controller deployment check prints `controller-deployment: passed`;
 - controller patch plan check prints `controller-patch-plan: passed`;
+- controller sync check prints `controller-sync: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
@@ -267,5 +271,5 @@ Result:
 v0.2.0 is suitable as a local-first evidence collector alpha release.
 
 It is not production-ready as a live controller or admission system. The current
-controller work is an offline status reconcile contract, not a deployed
-controller.
+controller work is an offline status reconcile contract plus a read-only sync
+planner, not a status-writing controller.

@@ -131,6 +131,11 @@ COMMON_CHECKS = (
         contains=("controller-patch-plan: passed", "patch-scope: status", "write-execution: disabled"),
     ),
     Check(
+        "controller sync",
+        ("python3", "-B", "scripts/verify_controller_sync.py"),
+        contains=("controller-sync: passed", "read: operationcapsules", "write-execution: disabled"),
+    ),
+    Check(
         "controller resource budget",
         ("python3", "-B", "scripts/verify_controller_resource_budget.py"),
         contains=(

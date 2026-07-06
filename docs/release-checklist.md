@@ -28,6 +28,7 @@ python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
 python3 -B scripts/verify_controller_patch_plan.py
+python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -79,6 +80,8 @@ Expected:
 - controller deployment seed verifies optional probes, resource limits, and
   hardened runtime defaults;
 - controller patch plan verifies status-only patches without executing writes;
+- controller sync verifies a read-only OperationCapsule list call and disabled
+  write execution;
 - controller resource budget contract and measurement parser verify offline;
 - lightweight cluster smoke plan verifies offline;
 - Helm chart contract verifies offline;
@@ -130,6 +133,7 @@ Expected:
 - [ ] controller runtime contract check passes.
 - [ ] controller deployment seed check passes.
 - [ ] controller status patch plan check passes.
+- [ ] controller read-only sync check passes.
 - [ ] controller resource budget check passes.
 - [ ] lightweight cluster smoke plan check passes.
 - [ ] upstream N/N-1/N-2 conformance suite passes.

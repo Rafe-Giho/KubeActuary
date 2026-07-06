@@ -211,3 +211,29 @@ Offline verifier:
 ```sh
 python3 -B scripts/verify_controller_patch_plan.py
 ```
+
+## Read-Only Sync
+
+The optional `sync` helper performs one read-only list call, then emits the same
+status patch plan contract. It does not execute any generated patch command:
+
+```sh
+python3 bin/kube-actuary-controller sync
+python3 bin/kube-actuary-controller sync --namespace platform
+```
+
+The only Kubernetes command it runs is:
+
+```sh
+kubectl get operationcapsules.ops.kubeactuary.dev -o json --all-namespaces
+```
+
+or the namespace-scoped equivalent with `-n <namespace>`. The JSON output
+includes `readExecution: kubectl-get`, the exact `readCommand`,
+`writeExecution: disabled`, and status-only patch plans.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_sync.py
+```
