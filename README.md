@@ -497,6 +497,7 @@ python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
@@ -604,7 +605,8 @@ it does not reattempt live capture commands until the evidence directory is
 refreshed. Release evidence status recommends only `tool-ready` next commands;
 blocked or missing-tool actions stay in blocker summaries with local worklist
 drilldowns. Release progress
-uses the same rule for JSON `nextActions` runnable commands, prints every
+can run the same read-only environment probe without requiring a prepared
+evidence directory. It uses the same rule for JSON `nextActions` runnable commands, prints every
 tool-ready action, selected next-task file/command/worklist detail, and
 evidence next command in Markdown, and links blocker summaries to filtered
 local worklist commands.

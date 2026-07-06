@@ -499,6 +499,7 @@ python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
@@ -606,7 +607,8 @@ evidence 디렉터리를 갱신하기 전에는 live capture 명령을 재시도
 Release evidence status는 `tool-ready` next command만 추천하고,
 blocked 또는 missing-tool action은 로컬 worklist drilldown과 함께 blocker
 summary에 남깁니다. Release
-progress JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
+progress는 준비된 evidence 디렉터리 없이도 같은 read-only environment
+probe를 실행할 수 있습니다. JSON `nextActions`의 runnable command도 같은 규칙을 따르며,
 Markdown에는 tool-ready action, 선택된 next-task 파일/명령/worklist 상세,
 evidence next command를 모두 표시합니다.
 

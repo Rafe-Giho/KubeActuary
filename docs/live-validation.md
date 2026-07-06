@@ -10,6 +10,7 @@ Run:
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_validation_readiness.py --probe-environment
+python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_live_validation_queue.py --format markdown
 python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
@@ -63,7 +64,10 @@ also records a stable `reason` such as `connection-refused`,
 `network-not-permitted`, or `kubeconfig-missing` so repeated local validation
 can compare why a cluster is unavailable without parsing raw `kubectl` stderr.
 
-The release progress report can also inspect `--evidence-dir`. If that
+The release progress report can also run `--probe-environment` directly to
+classify tool-ready actions as environment-blocked when a disposable cluster is
+not reachable. The probe is read-only and uses the same stable reason labels as
+the readiness verifier. It can also inspect `--evidence-dir`. If that
 directory has not been prepared yet, it reports `not-prepared` instead of
 failing and prints the `prepare_live_evidence_directory.py` command needed to
 start the local evidence loop. For prepared directories, the Markdown progress

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -29,6 +30,39 @@ def run_generator(*args: str) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.PIPE,
         check=False,
     )
+
+
+def run_generator_with_env(*args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(GENERATOR), *args],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def fake_probe_env(path: Path) -> dict[str, str]:
+    path.mkdir(parents=True, exist_ok=True)
+    kubectl = path / "kubectl"
+    kubectl.write_text(
+        "#!/bin/sh\n"
+        "if [ \"$1\" = \"version\" ]; then\n"
+        "  echo 'Client Version: fake'\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [ \"$1\" = \"cluster-info\" ]; then\n"
+        "  echo 'connect: connection refused' >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "exit 0\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = str(path)
+    return env
 
 
 def write_payload(path: Path, payload: dict) -> None:
@@ -170,6 +204,22 @@ def main() -> int:
 
         json_result = run_generator("--format", "json")
         markdown_result = run_generator("--format", "markdown")
+        probe_json_result = run_generator_with_env(
+            "--format",
+            "json",
+            "--probe-environment",
+            "--kubectl",
+            "kubectl",
+            env=fake_probe_env(tmpdir / "probe-tools"),
+        )
+        probe_markdown_result = run_generator_with_env(
+            "--format",
+            "markdown",
+            "--probe-environment",
+            "--kubectl",
+            "kubectl",
+            env=fake_probe_env(tmpdir / "probe-tools-md"),
+        )
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
         with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
         missing_evidence_dir = tmpdir / "missing-evidence"
@@ -233,6 +283,27 @@ def main() -> int:
                 errors.append(f"markdown progress must include all runnable entries: {snippet}")
     if markdown_result.returncode != 0 or "# KubeActuary Release Progress" not in markdown_result.stdout:
         errors.append("markdown progress output must include heading")
+    if probe_json_result.returncode != 0:
+        errors.append(f"probe progress failed: {probe_json_result.stderr.strip() or probe_json_result.stdout.strip()}")
+        probe_progress = {}
+    else:
+        probe_progress = json.loads(probe_json_result.stdout)
+    if probe_markdown_result.returncode != 0:
+        errors.append(
+            f"probe progress markdown failed: {probe_markdown_result.stderr.strip() or probe_markdown_result.stdout.strip()}"
+        )
+    else:
+        for snippet in (
+            "readiness-mode: `inventory-plus-environment-probe`",
+            "environment-probe: `unavailable`",
+            "environment-reason: `connection-refused`",
+            "environment-blocked-actions: 4",
+            "environment-blocker: `cluster-unavailable` (4 actions)",
+            "--capture-status blocked-by-environment --environment-status cluster-unavailable",
+            "--capture-status blocked-by-environment --environment-reason connection-refused",
+        ):
+            if snippet not in probe_markdown_result.stdout:
+                errors.append(f"probe progress markdown missing detail: {snippet}")
     for snippet in (
         "VERIFY: Krew manifest",
         "VERIFY: Managed Kubernetes smoke",
@@ -343,6 +414,27 @@ def main() -> int:
             errors.append("blocked inventory next actions must not expose runnable firstCommand")
     if not any(action.get("firstCommand") for action in next_actions.get("actions", [])):
         errors.append("next actions must include recommended commands")
+    probe_readiness = probe_progress.get("liveValidationReadiness", {})
+    probe_summary = probe_progress.get("nextActions", {}).get("summary", {})
+    probe_blockers = probe_progress.get("nextActions", {}).get("blockers", {})
+    if probe_readiness.get("mode") != "inventory-plus-environment-probe":
+        errors.append("probe progress must run readiness in environment-probe mode")
+    probe = probe_readiness.get("environmentProbe") or {}
+    if probe.get("clusterAccess") != "unavailable" or probe.get("reason") != "connection-refused":
+        errors.append("probe progress must preserve environment probe result and reason")
+    if probe_summary.get("toolReady") != 0 or probe_summary.get("blockedByEnvironment") != 4:
+        errors.append("probe progress must move kubectl-only actions to environment blockers")
+    probe_actions = probe_progress.get("nextActions", {}).get("actions", [])
+    if any(action.get("status") == "blocked-by-environment" and action.get("firstCommand") for action in probe_actions):
+        errors.append("probe progress must not expose runnable commands for environment-blocked actions")
+    if not all(
+        action.get("environmentReason") == "connection-refused"
+        for action in probe_actions
+        if action.get("status") == "blocked-by-environment"
+    ):
+        errors.append("probe progress must preserve environment reason on blocked actions")
+    if probe_blockers.get("environment") != [{"status": "cluster-unavailable", "actions": 4, "worklistCommand": "python3 -B scripts/generate_version_worklist.py --format markdown --open-only --capture-status blocked-by-environment --environment-status cluster-unavailable"}]:
+        errors.append("probe progress must summarize environment blocker drilldowns")
     evidence_status = evidence_progress.get("evidenceStatus", {})
     if evidence_status.get("summary", {}).get("status") != "partial":
         errors.append("progress report must include partial evidence-dir status")

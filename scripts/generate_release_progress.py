@@ -95,7 +95,7 @@ def summarize_gate_plan(plan: dict[str, Any]) -> dict[str, Any]:
 
 
 def summarize_readiness(readiness: dict[str, Any]) -> dict[str, Any]:
-    return {
+    summary = {
         "schemaVersion": readiness.get("schemaVersion"),
         "mode": readiness.get("mode"),
         "clusterWrites": readiness.get("clusterWrites"),
@@ -109,6 +109,45 @@ def summarize_readiness(readiness: dict[str, Any]) -> dict[str, Any]:
             if gate.get("status") != "tool-ready"
         ],
     }
+    if readiness.get("environmentProbe"):
+        probe = readiness["environmentProbe"]
+        summary["environmentProbe"] = {
+            "clusterAccess": probe.get("clusterAccess"),
+            "reason": probe.get("reason"),
+            "kubectl": probe.get("kubectl"),
+        }
+    return summary
+
+
+def environment_status_for_action(gate: dict[str, Any], readiness_by_gate: dict[str, dict[str, Any]]) -> str | None:
+    readiness_gates = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
+    statuses = [
+        readiness_by_gate.get(name, {}).get("environmentStatus")
+        for name in readiness_gates
+        if readiness_by_gate.get(name, {}).get("environmentStatus")
+    ]
+    if "cluster-unavailable" in statuses:
+        return "cluster-unavailable"
+    if "cluster-available" in statuses:
+        return "cluster-available"
+    if statuses:
+        return "not-required"
+    return None
+
+
+def environment_reason_for_action(gate: dict[str, Any], readiness_by_gate: dict[str, dict[str, Any]]) -> str | None:
+    readiness_gates = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
+    reasons = [
+        readiness_by_gate.get(name, {}).get("environmentReason")
+        for name in readiness_gates
+        if readiness_by_gate.get(name, {}).get("environmentReason")
+    ]
+    for reason in reasons:
+        if reason != "not-required":
+            return str(reason)
+    if reasons:
+        return str(reasons[0])
+    return None
 
 
 def build_next_actions(
@@ -131,27 +170,43 @@ def build_next_actions(
                 for tool in readiness_by_gate.get(name, {}).get("missingTools", [])
             }
         )
+        environment_status = environment_status_for_action(gate, readiness_by_gate)
+        environment_reason = environment_reason_for_action(gate, readiness_by_gate)
         commands = gate.get("recommendedCommands") or []
         status = "tool-ready" if not missing_tools else "missing-tools"
-        actions.append(
-            {
-                "id": gate.get("id"),
-                "item": gate.get("item"),
-                "kind": gate.get("kind"),
-                "version": gate.get("version") or gate.get("section"),
-                "status": status,
-                "missingTools": missing_tools,
-                "firstCommand": commands[0] if status == "tool-ready" and commands else None,
-            }
-        )
+        if status == "tool-ready" and environment_status == "cluster-unavailable":
+            status = "blocked-by-environment"
+        action = {
+            "id": gate.get("id"),
+            "item": gate.get("item"),
+            "kind": gate.get("kind"),
+            "version": gate.get("version") or gate.get("section"),
+            "status": status,
+            "missingTools": missing_tools,
+            "nextStep": (
+                "capture evidence with the listed commands"
+                if status == "tool-ready"
+                else "start or select a disposable cluster, then rerun the probe"
+                if status == "blocked-by-environment"
+                else "install missing tools or run on a host that has them"
+            ),
+            "firstCommand": commands[0] if status == "tool-ready" and commands else None,
+        }
+        if environment_status is not None:
+            action["environmentStatus"] = environment_status
+        if environment_reason is not None:
+            action["environmentReason"] = environment_reason
+        actions.append(action)
     tool_ready = sum(1 for action in actions if action["status"] == "tool-ready")
+    blocked_by_environment = sum(1 for action in actions if action["status"] == "blocked-by-environment")
+    blocked_by_tools = sum(1 for action in actions if action["status"] == "missing-tools")
     return {
         "source": "live-readiness-inventory",
         "summary": {
             "total": len(actions),
             "toolReady": tool_ready,
-            "blockedByTools": len(actions) - tool_ready,
-            "blockedByEnvironment": 0,
+            "blockedByTools": blocked_by_tools,
+            "blockedByEnvironment": blocked_by_environment,
         },
         "blockers": next_action_blockers(actions, evidence_dir=evidence_dir),
         "actions": actions,
@@ -345,10 +400,15 @@ def unprepared_evidence_status(evidence_dir: Path, output_dir: Path, plan: dict[
     }
 
 
-def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = None) -> dict[str, Any]:
+def build_progress(
+    evidence_dir: Path | None = None,
+    output_dir: Path | None = None,
+    probe_environment: bool = False,
+    kubectl: str = "kubectl",
+) -> dict[str, Any]:
     rows = taskboard_rows(TASKBOARD.read_text())
     plan = build_plan()
-    readiness = build_readiness_report()
+    readiness = build_readiness_report(probe_environment=probe_environment, kubectl=kubectl)
     report: dict[str, Any] = {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(TASKBOARD.relative_to(ROOT)),
@@ -418,6 +478,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
             "",
             "## Live Readiness",
             "",
+            f"- readiness-mode: `{progress['liveValidationReadiness'].get('mode')}`",
             f"- tool-ready-gates: {readiness['toolReadyGates']}/{readiness['liveGates']}",
             f"- tools: {readiness['toolsAvailable']}/{readiness['toolsTotal']} available",
             f"- next-action-source: `{next_action_source}`",
@@ -426,6 +487,10 @@ def render_markdown(progress: dict[str, Any]) -> str:
             f"- environment-blocked-actions: {next_actions.get('blockedByEnvironment', 0)}",
         ]
     )
+    readiness_probe = progress["liveValidationReadiness"].get("environmentProbe")
+    if isinstance(readiness_probe, dict):
+        lines.append(f"- environment-probe: `{readiness_probe.get('clusterAccess')}`")
+        lines.append(f"- environment-reason: `{readiness_probe.get('reason')}`")
     tool_ready_actions = [action for action in progress["nextActions"]["actions"] if action["status"] == "tool-ready"]
     blockers = progress["nextActions"].get("blockers", {})
     missing_tool_blockers = blockers.get("missingTools") or []
@@ -545,13 +610,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--format", choices=["json", "markdown"], default="json")
     parser.add_argument("--evidence-dir", help="optional local evidence directory to inspect")
     parser.add_argument("--output-dir", help="artifact output directory for evidence-dir status")
+    parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
+    parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
     try:
         evidence_dir = Path(args.evidence_dir) if args.evidence_dir else None
         output_dir = Path(args.output_dir) if args.output_dir else None
-        progress = build_progress(evidence_dir, output_dir)
+        progress = build_progress(
+            evidence_dir,
+            output_dir,
+            probe_environment=args.probe_environment,
+            kubectl=args.kubectl,
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("release-progress: failed")
         print(f"error: {exc}")
