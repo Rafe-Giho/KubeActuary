@@ -77,6 +77,7 @@ Evidence collector release:
 - add API freeze contract and additive compatibility verifier;
 - add documentation freeze and public examples verifier;
 - add live validation readiness ledger for external evidence gates;
+- add gate-level tool readiness inventory for live validation planning;
 - add live evidence JSON validator for captured smoke reports;
 - add live evidence manifest builder for captured smoke reports;
 - add live evidence coverage checks for release-gate provider evidence;

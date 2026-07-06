@@ -25,8 +25,13 @@ Expected:
 ```text
 live-validation-readiness: passed
 mode: inventory-only
+tool-ready-gates: <ready>/<total>
 cluster-writes: disabled
 ```
+
+The JSON form includes `gateToolReadiness`, which lists each live gate, the
+required local tools, missing tools, and whether the gate is `tool-ready` from an
+inventory perspective.
 
 ## Open Live Gates
 

@@ -36,6 +36,15 @@ GATES = (
     "managed Kubernetes EKS/GKE/AKS smoke",
     "admission webhook live kind smoke",
 )
+GATE_TOOL_REQUIREMENTS = (
+    ("CRD live apply/explain smoke", ("kubectl",)),
+    ("controller resource budget measurement", ("kubectl",)),
+    ("lightweight cluster smoke matrix", ("kubectl", "kind", "minikube", "microk8s", "k3s")),
+    ("Helm template and install smoke", ("kubectl", "helm")),
+    ("Krew install smoke", ("kubectl-krew",)),
+    ("managed Kubernetes EKS/GKE/AKS smoke", ("kubectl", "aws", "gcloud", "az")),
+    ("admission webhook live kind smoke", ("kubectl", "kind")),
+)
 
 DOC_SNIPPETS = (
     "inventory-only",
@@ -45,6 +54,7 @@ DOC_SNIPPETS = (
     "EKS, GKE, and AKS",
     "provider run evidence",
     "cluster-writes: disabled",
+    "tool-ready-gates",
 )
 
 TASKBOARD_SNIPPETS = (
@@ -65,19 +75,38 @@ def tool_status() -> dict[str, dict[str, str | None]]:
     return status
 
 
+def gate_tool_readiness(tools: dict[str, dict[str, str | None]]) -> list[dict[str, Any]]:
+    readiness: list[dict[str, Any]] = []
+    for gate, required in GATE_TOOL_REQUIREMENTS:
+        missing = [tool for tool in required if tools[tool]["status"] != "available"]
+        readiness.append(
+            {
+                "gate": gate,
+                "requiredTools": list(required),
+                "missingTools": missing,
+                "status": "tool-ready" if not missing else "missing-tools",
+            }
+        )
+    return readiness
+
+
 def build_report() -> dict[str, Any]:
     tools = tool_status()
+    gates = gate_tool_readiness(tools)
     available = sum(1 for item in tools.values() if item["status"] == "available")
+    ready_gates = sum(1 for gate in gates if gate["status"] == "tool-ready")
     return {
         "schemaVersion": "kube-actuary.live-validation-readiness.v1",
         "mode": "inventory-only",
         "clusterWrites": "disabled",
         "liveGates": list(GATES),
+        "gateToolReadiness": gates,
         "tools": tools,
         "summary": {
             "toolsAvailable": available,
             "toolsTotal": len(TOOLS),
             "liveGates": len(GATES),
+            "toolReadyGates": ready_gates,
         },
     }
 
@@ -130,6 +159,7 @@ def main(argv: list[str] | None = None) -> int:
     print("live-validation-readiness: passed")
     print("mode: inventory-only")
     print(f"live-gates: {summary['liveGates']}")
+    print(f"tool-ready-gates: {summary['toolReadyGates']}/{summary['liveGates']}")
     print(f"tools: {summary['toolsAvailable']}/{summary['toolsTotal']} available")
     print("cluster-writes: disabled")
     print(f"evidence-ledger: {DOC.relative_to(ROOT)}")

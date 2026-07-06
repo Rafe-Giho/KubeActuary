@@ -131,7 +131,7 @@ Expected:
   schema diff;
 - documentation freeze verifies public docs and examples;
 - live validation readiness inventories external tool availability without
-  running cluster or cloud checks;
+  running cluster or cloud checks and reports gate-level missing tools;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

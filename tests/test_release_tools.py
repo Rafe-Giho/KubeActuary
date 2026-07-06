@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import tempfile
@@ -563,7 +564,22 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("live-validation-readiness: passed", result.stdout)
         self.assertIn("mode: inventory-only", result.stdout)
+        self.assertIn("tool-ready-gates:", result.stdout)
         self.assertIn("cluster-writes: disabled", result.stdout)
+
+        json_result = subprocess.run(
+            [sys.executable, str(LIVE_VALIDATION_READINESS), "--json"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(json_result.returncode, 0, json_result.stderr)
+        report = json.loads(json_result.stdout)
+        self.assertEqual(report["schemaVersion"], "kube-actuary.live-validation-readiness.v1")
+        self.assertEqual(len(report["gateToolReadiness"]), 7)
+        self.assertTrue(all("missingTools" in gate for gate in report["gateToolReadiness"]))
 
     def test_verify_live_evidence_schema(self):
         result = subprocess.run(

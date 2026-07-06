@@ -76,7 +76,8 @@ Coverage included:
 - security policy, threat model, and disclosure process verification;
 - API freeze and additive compatibility gate verification;
 - documentation freeze and public examples audit verification;
-- live validation readiness inventory verification;
+- live validation readiness inventory and gate-level tool readiness
+  verification;
 - live evidence schema validation for captured smoke reports;
 - live evidence manifest generation for captured smoke reports;
 - live evidence coverage validation for captured smoke report manifests;

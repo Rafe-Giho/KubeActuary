@@ -256,7 +256,7 @@ COMMON_CHECKS = (
     Check(
         "live validation readiness",
         ("python3", "-B", "scripts/verify_live_validation_readiness.py"),
-        contains=("live-validation-readiness: passed", "mode: inventory-only", "cluster-writes: disabled"),
+        contains=("live-validation-readiness: passed", "mode: inventory-only", "tool-ready-gates:", "cluster-writes: disabled"),
     ),
     Check(
         "live evidence schema",

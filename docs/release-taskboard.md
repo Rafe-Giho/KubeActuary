@@ -57,7 +57,7 @@ Status legend:
 | kube-score adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Pluto adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Adapter contract | DONE | common fields and normalized severity verifier |
-| Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates without running them |
+| Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates and missing tools without running them |
 | Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |
 | Live evidence manifest | DONE | `scripts/verify_live_evidence_manifest.py` verifies captured report manifest generation |
 | Live evidence coverage | DONE | `scripts/verify_live_evidence_coverage.py` verifies release-gate and provider coverage rules |
@@ -190,7 +190,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 | 0.9.1 | Security policy, threat model, disclosure process | DONE | `scripts/verify_security_docs.py` validates `SECURITY.md` and threat model |
 | 0.9.2 | API freeze and upgrade compatibility gate | DONE | `scripts/verify_api_freeze.py` guards additive-only no breaking schema diff |
 | 0.9.3 | Documentation freeze and public examples audit | DONE | `scripts/verify_docs_freeze.py` checks public docs and examples |
-| 0.9.4 | Live validation readiness ledger | DONE | `scripts/verify_live_validation_readiness.py` tracks remaining external evidence gates |
+| 0.9.4 | Live validation readiness ledger | DONE | `scripts/verify_live_validation_readiness.py` tracks remaining external evidence gates and missing tools |
 | 0.9.4 | Captured live evidence schema validator | DONE | `scripts/verify_live_evidence_schema.py` validates five smoke evidence schemas |
 | 0.9.4 | Captured live evidence manifest | DONE | `scripts/verify_live_evidence_manifest.py` maps smoke reports to release gates |
 | 0.9.4 | Captured live evidence coverage | DONE | `scripts/verify_live_evidence_coverage.py` requires provider and gate coverage |

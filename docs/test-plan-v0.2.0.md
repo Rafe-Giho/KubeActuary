@@ -26,7 +26,8 @@ Expected:
   contract, managed Kubernetes smoke harness, Kustomize rendering,
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
-  freeze and public examples audit, live validation readiness inventory,
+  freeze and public examples audit, live validation readiness inventory with
+  gate-level tool readiness,
   live evidence schema validation, live evidence manifest generation, live
   evidence coverage validation, project governance, air-gapped manifest generation, agent help schema
   compatibility, local CI and Codex agent runbooks, Kyverno adapter fixtures,
@@ -282,7 +283,7 @@ Confirm from code and tests:
 - docs freeze verifier checks public docs, capsule examples, YAML examples, and
   agent runbooks;
 - live validation readiness verifier inventories remaining external validation
-  gates without contacting clusters or cloud APIs;
+  gates and missing local tools without contacting clusters or cloud APIs;
 - live evidence schema verifier validates all supported smoke report schemas;
 - live evidence manifest verifier maps captured reports to release gates and
   records report SHA-256 digests without contacting clusters;
