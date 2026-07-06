@@ -185,6 +185,11 @@ def main() -> int:
             blocked_payload = json.loads(blocked.stdout)
         if blocked_payload.get("status") != "blocked-by-environment":
             errors.append("probe advance must report blocked-by-environment without running evidence commands")
+        if blocked_payload.get("after", {}).get("runId") != "blocked-advance-blocked":
+            errors.append("probe-blocked advance must record a blocked follow-up history snapshot")
+        blocked_diff = blocked_payload.get("after", {}).get("diffSummary", {})
+        if blocked_diff.get("captureReadyDelta") != 0 or blocked_diff.get("blockedByEnvironmentDelta") != 0:
+            errors.append("probe-blocked follow-up history snapshot should preserve zero evidence-state delta")
         blocked_runner = blocked_payload.get("runner") or {}
         if blocked_runner.get("status") != "blocked-by-environment":
             errors.append("probe-blocked advance must record blocked next-task runner status")
@@ -208,8 +213,10 @@ def main() -> int:
             blocked_advance_payload = json.loads(blocked_advance_json.read_text())
             if blocked_advance_payload.get("status") != "blocked-by-environment":
                 errors.append("probe-blocked advance record must preserve blocked status")
-        if blocked_payload.get("history", {}).get("runs") != 1:
-            errors.append("probe-blocked advance must record one history run")
+        if blocked_payload.get("history", {}).get("runs") != 2:
+            errors.append("probe-blocked advance must record before and blocked history runs")
+        if blocked_payload.get("history", {}).get("latestRunId") != "blocked-advance-blocked":
+            errors.append("probe-blocked advance history must make the blocked snapshot latest")
         if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
             errors.append("probe-blocked advance must not capture raw evidence")
 

@@ -41,6 +41,8 @@ Evidence collector release:
   source for prepared evidence directories;
 - record zero-run blocked runner status during probe-blocked version
   iteration advance;
+- record a blocked history snapshot as the latest run during probe-blocked
+  version iteration advance;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

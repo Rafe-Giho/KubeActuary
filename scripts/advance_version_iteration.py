@@ -143,6 +143,16 @@ def run_advance(
     if probe_environment and selected.get("captureStatus") != "tool-ready":
         runner = blocked_runner_result(evidence_dir, prepared.get("nextTask") or {}, selected, created_at)
         runner_record = record_next_task_run(evidence_dir, runner)
+        blocked = record_iteration(
+            history_dir,
+            run_id=f"{run_id}-blocked",
+            created_at=created_at,
+            version_filters=[],
+            open_only=True,
+            probe_environment=probe_environment,
+            kubectl=kubectl,
+            evidence_dir=evidence_dir,
+        )
         history = inspect_history(history_dir)
         return {
             "schemaVersion": SCHEMA_VERSION,
@@ -162,7 +172,11 @@ def run_advance(
             },
             "runner": runner,
             "runnerRecord": runner_record,
-            "after": None,
+            "after": {
+                "runId": blocked.get("runId"),
+                "summary": blocked.get("summary"),
+                "diffSummary": blocked.get("diffSummary"),
+            },
             "nextTask": {
                 "schemaVersion": (prepared.get("nextTask") or {}).get("schemaVersion"),
                 "selected": selected.get("id"),
