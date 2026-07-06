@@ -210,11 +210,14 @@ into local supplemental evidence records.
 The selected next-task runner validates the persisted
 `kube-actuary.next-version-task.v1` commands before execution. Without `--run`
 it prints a plan only; with `--run` it executes the selected commands and
-reports schema `kube-actuary.next-version-task-run.v1`:
+reports schema `kube-actuary.next-version-task-run.v1`. Add `--record` to
+persist the runner report as `.kubeactuary/next-version-task-run.json` and
+`.kubeactuary/next-version-task-run.md`:
 
 ```sh
 python3 -B scripts/run_next_version_task.py <evidence-dir>
 python3 -B scripts/run_next_version_task.py <evidence-dir> --run
+python3 -B scripts/run_next_version_task.py <evidence-dir> --run --record
 ```
 
 The iteration advance helper wraps that runner with before/after version

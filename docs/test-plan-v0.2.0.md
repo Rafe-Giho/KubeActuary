@@ -159,7 +159,8 @@ Expected:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   and idempotent output-exists handling;
-- next version task runner check prints `next-version-task-runner: passed`;
+- next version task runner check prints `next-version-task-runner: passed`
+  and verifies `.kubeactuary/next-version-task-run.{json,md}` recording;
 - version iteration advance check prints `version-iteration-advance: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

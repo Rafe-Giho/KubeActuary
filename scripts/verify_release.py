@@ -128,7 +128,7 @@ COMMON_CHECKS = (
     Check(
         "next version task runner",
         ("python3", "-B", "scripts/verify_next_version_task_runner.py"),
-        contains=("next-version-task-runner: passed", "mode: plan,run", "evidence: raw,supplemental"),
+        contains=("next-version-task-runner: passed", "mode: plan,run", "record: metadata"),
     ),
     Check(
         "version iteration advance",

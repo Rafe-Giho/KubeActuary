@@ -22,6 +22,8 @@ from scripts.verify_external_gate_command_safety import validate_command  # noqa
 SCHEMA_VERSION = "kube-actuary.next-version-task-run.v1"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_PATH = ".kubeactuary/next-version-task.json"
+RUN_REPORT_JSON = ".kubeactuary/next-version-task-run.json"
+RUN_REPORT_MD = ".kubeactuary/next-version-task-run.md"
 
 
 def load_next_task(evidence_dir: Path) -> dict[str, Any]:
@@ -176,16 +178,74 @@ def render_text(result: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_markdown(result: dict[str, Any]) -> str:
+    summary = result["summary"]
+    selected = result["nextTask"]["selected"]
+    lines = [
+        "# KubeActuary Next Version Task Run",
+        "",
+        f"Schema: `{result['schemaVersion']}`",
+        f"Mode: `{result['mode']}`",
+        f"Status: `{result['status']}`",
+        f"Evidence directory: `{result['evidenceDir']}`",
+        f"Cluster writes: `{result['clusterWrites']}`",
+        "",
+        "## Selected",
+        "",
+        f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('version')})",
+        f"- capture status: `{selected.get('captureStatus')}`",
+        f"- kind: `{selected.get('kind')}`",
+        "",
+        "## Summary",
+        "",
+        f"- commands: {summary['commands']}",
+        f"- valid commands: {summary['validCommands']}",
+        f"- ran: {summary['ran']}",
+        f"- failed: {summary['failed']}",
+        f"- validation errors: {summary['validationErrors']}",
+        "",
+        "## Commands",
+        "",
+    ]
+    for record in result["validations"]:
+        status = "valid" if record["valid"] else "invalid"
+        lines.append(f"- `{status}` {record['command']}")
+        for error in record["errors"]:
+            lines.append(f"  error: {error}")
+    if result["records"]:
+        lines.extend(["", "## Run Records", ""])
+        for record in result["records"]:
+            status = "passed" if record.get("ok") else "failed"
+            lines.append(f"- `{status}` {record['command']}")
+            if record.get("stdoutPath"):
+                lines.append(f"  stdout: `{record['stdoutPath']}`")
+            if record.get("exitCode") is not None:
+                lines.append(f"  exit code: {record['exitCode']}")
+    return "\n".join(lines) + "\n"
+
+
+def record_result(evidence_dir: Path, result: dict[str, Any]) -> dict[str, str]:
+    json_path = evidence_dir / RUN_REPORT_JSON
+    markdown_path = evidence_dir / RUN_REPORT_MD
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    markdown_path.write_text(render_markdown(result))
+    return {"json": str(json_path), "markdown": str(markdown_path)}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Plan or run the selected next version task commands.")
     parser.add_argument("evidence_dir", help="prepared evidence directory with .kubeactuary/next-version-task.json")
     parser.add_argument("--run", action="store_true", help="execute validated selected commands")
+    parser.add_argument("--record", action="store_true", help="write run status JSON and Markdown under .kubeactuary")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
+    evidence_dir = Path(args.evidence_dir)
     try:
-        result = build_result(Path(args.evidence_dir), run=args.run)
+        result = build_result(evidence_dir, run=args.run)
+        recorded = record_result(evidence_dir, result) if args.record else None
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("next-version-task-run: failed")
         print(f"error: {exc}")
@@ -199,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(rendered)
         print(f"next-version-task-run: wrote {args.output}")
+    if recorded:
+        print(f"next-version-task-run: recorded {recorded['json']}", file=sys.stderr)
     return 0 if result["status"] in {"plan", "passed"} else 1
 
 

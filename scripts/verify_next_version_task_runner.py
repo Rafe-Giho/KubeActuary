@@ -55,6 +55,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
+        recorded_dir = tmpdir / "recorded"
         prepared = run_script(PREPARE, str(evidence_dir))
         raw = evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt"
         supplemental = evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
@@ -111,9 +112,36 @@ def main() -> int:
         if written.returncode != 0 or not output.is_file():
             errors.append("runner must write requested status output")
 
+        recorded_prepared = run_script(PREPARE, str(recorded_dir))
+        recorded_json = recorded_dir / ".kubeactuary" / "next-version-task-run.json"
+        recorded_md = recorded_dir / ".kubeactuary" / "next-version-task-run.md"
+        recorded = run_script(RUNNER, str(recorded_dir), "--run", "--format", "json", "--record", env=run_env)
+        if recorded_prepared.returncode != 0:
+            errors.append(f"recorded evidence dir prepare failed: {recorded_prepared.stderr.strip() or recorded_prepared.stdout.strip()}")
+        if recorded.returncode != 0:
+            errors.append(f"runner record execution failed: {recorded.stderr.strip() or recorded.stdout.strip()}")
+            recorded_stdout = {}
+        else:
+            recorded_stdout = json.loads(recorded.stdout)
+        if "next-version-task-run: recorded" in recorded.stdout:
+            errors.append("runner record notice must not corrupt JSON stdout")
+        if not recorded_json.is_file() or not recorded_md.is_file():
+            errors.append("runner --record must write JSON and Markdown reports")
+            recorded_payload = {}
+        else:
+            recorded_payload = json.loads(recorded_json.read_text())
+            if "# KubeActuary Next Version Task Run" not in recorded_md.read_text():
+                errors.append("runner recorded Markdown must include the run report title")
+        if recorded_payload.get("schemaVersion") != "kube-actuary.next-version-task-run.v1":
+            errors.append("runner recorded JSON schemaVersion mismatch")
+        if recorded_payload.get("status") != "passed" or recorded_payload.get("mode") != "run":
+            errors.append("runner recorded JSON must preserve passed run status")
+        if recorded_stdout.get("schemaVersion") != recorded_payload.get("schemaVersion"):
+            errors.append("runner recorded stdout and file JSON must use the same schema")
+
     for path in (README, README_KO, LIVE_VALIDATION):
         text = path.read_text()
-        for snippet in ("run_next_version_task.py", "kube-actuary.next-version-task-run.v1"):
+        for snippet in ("run_next_version_task.py", "kube-actuary.next-version-task-run.v1", "--record"):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing next task runner detail: {snippet}")
 
@@ -127,6 +155,7 @@ def main() -> int:
     print("mode: plan,run")
     print("cluster-writes: disabled-or-server-side-dry-run-only")
     print("evidence: raw,supplemental")
+    print("record: metadata")
     return 0
 
 

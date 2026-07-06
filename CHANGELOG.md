@@ -41,6 +41,8 @@ Evidence collector release:
 - add local next-task evidence builder for prepared evidence directories;
 - add selected next-version task runner for plan-by-default evidence command
   execution;
+- add opt-in next-version task runner recording under prepared evidence
+  directories;
 - add version iteration advance workflow for selected-task execution plus
   before/after history recording;
 - add probe-aware live evidence directory and iteration advance status for
