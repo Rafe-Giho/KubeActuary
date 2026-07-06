@@ -525,6 +525,8 @@ def main() -> int:
         evidence_history_status_payload = (
             json.loads(evidence_history_status.stdout) if evidence_history_status.returncode == 0 else {}
         )
+        evidence_history_status_text = run_inspect_history(str(evidence_history_dir))
+        evidence_history_status_markdown = run_inspect_history(str(evidence_history_dir), "--format", "markdown")
         prepared_history_dir = tmpdir / "prepared-history"
         prepared_history_record = run_record(
             str(prepared_history_dir),
@@ -1006,6 +1008,12 @@ def main() -> int:
     evidence_status_next_task = evidence_history_status_payload.get("latestNextTask", {})
     if evidence_status_next_task.get("version") != "Current Baseline":
         errors.append("evidence-aware history status should preserve latest next-task version")
+    if not evidence_status_next_task.get("files"):
+        errors.append("evidence-aware history status should preserve latest next-task files")
+    if "latest-next-task-file:" not in evidence_history_status_text.stdout:
+        errors.append("evidence-aware history text should show latest next-task files")
+    if "file `" not in evidence_history_status_markdown.stdout:
+        errors.append("evidence-aware history Markdown should show latest next-task files")
     evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
     if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history status should preserve latest evidence diff summary")

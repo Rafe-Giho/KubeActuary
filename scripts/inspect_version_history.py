@@ -154,6 +154,7 @@ def summarize_task(version: dict[str, Any], item: dict[str, Any], version_index:
         "missingTools": list_value(item.get("missingTools")),
         "nextStep": item.get("nextStep"),
         "evidenceSummary": dict_value(item.get("evidenceSummary")),
+        "files": list_value(item.get("files")),
         "commands": list_value(item.get("commands")),
         "resolvedCommands": list_value(item.get("resolvedCommands")),
     }
@@ -438,6 +439,14 @@ def render_text(status: dict[str, Any]) -> str:
         evidence = dict_value(latest_next_task.get("evidenceSummary"))
         if evidence:
             lines.append(f"latest-next-task-evidence-files: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
+        for file_item in list_value(latest_next_task.get("files")):
+            if not isinstance(file_item, dict):
+                continue
+            exists = "yes" if file_item.get("exists") is True else "no"
+            lines.append(
+                f"latest-next-task-file: {file_item.get('role')} "
+                f"{file_item.get('path')} exists={exists}"
+            )
         commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
         for command in commands:
             lines.append(f"latest-next-task-command: {command}")
@@ -555,6 +564,14 @@ def render_markdown(status: dict[str, Any]) -> str:
         evidence = dict_value(latest_next_task.get("evidenceSummary"))
         if evidence:
             lines.append(f"  - evidence files: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
+        for file_item in list_value(latest_next_task.get("files")):
+            if not isinstance(file_item, dict):
+                continue
+            exists = "yes" if file_item.get("exists") is True else "no"
+            lines.append(
+                f"  - file `{file_item.get('role')}` "
+                f"`{file_item.get('path')}` exists=`{exists}`"
+            )
         commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
         for command in commands:
             lines.append(f"  - `{command}`")

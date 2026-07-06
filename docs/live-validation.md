@@ -104,6 +104,9 @@ Markdown, and `--record` writes `status.json` and `status.md` into the history
 directory. It also includes latest run filters, latest run/worklist/diff
 artifact paths, the selected latest next task, and next local loop commands for
 refreshing the recorded status and rerunning the latest iteration filters. When
+a latest task has resolved evidence files, history status lists each file role,
+path, and readiness so the next capture target is visible from the status
+report. When
 a latest run has a diff from the prior run, history status surfaces both
 aggregate and per-version diff summaries so repeated validation can distinguish
 no-op reruns from changed evidence readiness or blocker state for each release
