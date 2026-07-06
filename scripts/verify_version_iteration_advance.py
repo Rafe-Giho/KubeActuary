@@ -99,6 +99,20 @@ def main() -> int:
             errors.append("advance run must pass in run mode")
         if payload.get("runner", {}).get("status") != "passed":
             errors.append("advance must include a passing next-task runner result")
+        runner_record = payload.get("runnerRecord") or {}
+        runner_record_json = Path(runner_record.get("json", ""))
+        runner_record_md = Path(runner_record.get("markdown", ""))
+        if not runner_record_json.is_file() or not runner_record_md.is_file():
+            errors.append("advance must record next-task runner JSON and Markdown reports")
+            runner_record_payload = {}
+        else:
+            runner_record_payload = json.loads(runner_record_json.read_text())
+            if "# KubeActuary Next Version Task Run" not in runner_record_md.read_text():
+                errors.append("advance runner record Markdown must include the run report title")
+        if runner_record_payload.get("schemaVersion") != "kube-actuary.next-version-task-run.v1":
+            errors.append("advance runner record schemaVersion mismatch")
+        if runner_record_payload.get("status") != "passed":
+            errors.append("advance runner record must preserve passing runner status")
         if payload.get("before", {}).get("runId") != "test-advance-before":
             errors.append("advance must record before history run")
         if payload.get("after", {}).get("runId") != "test-advance-after":
@@ -159,6 +173,8 @@ def main() -> int:
             errors.append("probe advance must report blocked-by-environment without running evidence commands")
         if blocked_payload.get("runner") is not None:
             errors.append("probe-blocked advance must not run the next-task runner")
+        if blocked_payload.get("runnerRecord") is not None:
+            errors.append("probe-blocked advance must not write a runner record")
         if blocked_payload.get("history", {}).get("runs") != 1:
             errors.append("probe-blocked advance must record one history run")
         if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
@@ -171,7 +187,7 @@ def main() -> int:
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()
-        for snippet in ("advance_version_iteration.py", "kube-actuary.version-iteration-advance.v1"):
+        for snippet in ("advance_version_iteration.py", "kube-actuary.version-iteration-advance.v1", "next-version-task-run.json"):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing advance workflow detail: {snippet}")
 
@@ -185,6 +201,7 @@ def main() -> int:
     print("mode: plan,run")
     print("history-runs: 2")
     print("evidence: raw,supplemental")
+    print("runner-record: metadata")
     return 0
 
 

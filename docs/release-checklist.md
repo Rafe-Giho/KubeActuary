@@ -174,7 +174,8 @@ Expected:
 - next-version task runner verifies selected evidence commands in plan mode and
   fake-run mode before live use;
 - version iteration advance verifies selected-task execution or environment
-  blocking with before/after evidence-aware history recording;
+  blocking with before/after evidence-aware history recording and
+  `.kubeactuary/next-version-task-run.json` runner status output;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

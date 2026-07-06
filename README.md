@@ -437,7 +437,8 @@ scripts/
   run_next_version_task.py selected next-task plan/run/record helper
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
-  advance_version_iteration.py selected next-task runner plus before/after history recorder
+  next-version-task-run.json persisted selected runner status report
+  advance_version_iteration.py selected next-task runner plus before/after history and runner status recorder
   verify_version_iteration_advance.py version iteration advance verifier
   kube-actuary.version-iteration-advance.v1 version iteration advance schema
   verify_live_evidence_directory_scaffold.py live evidence directory scaffold verifier

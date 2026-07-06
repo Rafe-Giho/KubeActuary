@@ -222,7 +222,9 @@ python3 -B scripts/run_next_version_task.py <evidence-dir> --run --record
 
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema
-`kube-actuary.version-iteration-advance.v1`:
+`kube-actuary.version-iteration-advance.v1`. In run mode it also records the
+selected runner status as `.kubeactuary/next-version-task-run.json` and
+`.kubeactuary/next-version-task-run.md`:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>

@@ -18,6 +18,7 @@ from scripts.inspect_version_history import inspect_history  # noqa: E402
 from scripts.prepare_live_evidence_directory import prepare_directory  # noqa: E402
 from scripts.record_version_iteration import record_iteration  # noqa: E402
 from scripts.run_next_version_task import build_result as run_next_task  # noqa: E402
+from scripts.run_next_version_task import record_result as record_next_task_run  # noqa: E402
 from scripts.select_next_version_task import build_selection  # noqa: E402
 
 
@@ -116,6 +117,7 @@ def run_advance(
                 "summary": before.get("summary"),
             },
             "runner": None,
+            "runnerRecord": None,
             "after": None,
             "nextTask": {
                 "schemaVersion": (prepared.get("nextTask") or {}).get("schemaVersion"),
@@ -130,6 +132,7 @@ def run_advance(
             "history": history.get("summary", {}),
         }
     runner = run_next_task(evidence_dir, run=True)
+    runner_record = record_next_task_run(evidence_dir, runner)
     prepare_directory(
         evidence_dir,
         skip_complete_evidence=True,
@@ -166,6 +169,7 @@ def run_advance(
             "summary": before.get("summary"),
         },
         "runner": runner,
+        "runnerRecord": runner_record,
         "after": {
             "runId": after.get("runId"),
             "summary": after.get("summary"),
@@ -202,6 +206,8 @@ def render_text(result: dict[str, Any]) -> str:
         if result.get("after"):
             lines.append(f"after-run-id: {result['after']['runId']}")
         lines.append(f"runner-status: {result['runner']['status'] if result.get('runner') else 'not-run'}")
+        if result.get("runnerRecord"):
+            lines.append(f"runner-record: {result['runnerRecord'].get('json')}")
         lines.append(f"history-runs: {result['history'].get('runs')}")
         lines.append(f"next-task: {result['nextTask'].get('selected')}")
         if result["nextTask"].get("captureStatus"):

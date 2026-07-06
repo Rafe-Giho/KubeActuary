@@ -133,7 +133,7 @@ COMMON_CHECKS = (
     Check(
         "version iteration advance",
         ("python3", "-B", "scripts/verify_version_iteration_advance.py"),
-        contains=("version-iteration-advance: passed", "history-runs: 2", "evidence: raw,supplemental"),
+        contains=("version-iteration-advance: passed", "history-runs: 2", "runner-record: metadata"),
     ),
     Check(
         "clean artifacts",

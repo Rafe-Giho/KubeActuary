@@ -262,7 +262,8 @@ Result:
   build, and idempotent output-exists handling;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording;
-- version iteration advance check prints `version-iteration-advance: passed`;
+- version iteration advance check prints `version-iteration-advance: passed`
+  and verifies persisted runner status reports;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
