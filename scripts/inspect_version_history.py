@@ -17,6 +17,18 @@ WORKLIST_SCHEMA = "kube-actuary.version-worklist.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
 STATUS_JSON = "status.json"
 STATUS_MD = "status.md"
+DIFF_SUMMARY_KEYS = (
+    "statusChanged",
+    "openItemsDelta",
+    "captureReadyDelta",
+    "blockedByToolsDelta",
+    "blockedByEnvironmentDelta",
+    "existingEvidenceFilesDelta",
+    "completeEvidenceItemsDelta",
+    "changedItems",
+    "addedItems",
+    "removedItems",
+)
 
 
 def shell_join(args: list[str]) -> str:
@@ -28,6 +40,10 @@ def add_repeated_filter_args(args: list[str], flag: str, values: Any) -> None:
         return
     for value in values:
         args.extend([flag, str(value)])
+
+
+def dash_label(value: str) -> str:
+    return "".join(f"-{character.lower()}" if character.isupper() else character for character in value)
 
 
 def probe_message(check: dict[str, Any]) -> str | None:
@@ -207,6 +223,9 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_summary = latest.get("summary", {}) if latest else {}
     latest_blockers = latest.get("blockers", {}) if latest else {}
     latest_environment_probe = latest.get("environmentProbe", {}) if latest else {}
+    latest_diff_summary = latest.get("diffSummary", {}) if latest else {}
+    if not isinstance(latest_diff_summary, dict):
+        latest_diff_summary = {}
     next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -229,6 +248,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         },
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
+        "latestDiffSummary": latest_diff_summary,
         "nextCommands": next_commands,
         "runs": inspected_runs,
     }
@@ -250,6 +270,11 @@ def render_text(status: dict[str, Any]) -> str:
         f"complete-evidence-items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"diffs: {summary['diffs']}",
     ]
+    latest_diff = status.get("latestDiffSummary", {})
+    if isinstance(latest_diff, dict) and latest_diff:
+        for key in DIFF_SUMMARY_KEYS:
+            if key in latest_diff:
+                lines.append(f"latest-diff-{dash_label(key)}: {latest_diff[key]}")
     for command in status.get("nextCommands", []):
         lines.append(f"next-command: {command}")
     blockers = status.get("latestBlockers", {})
@@ -304,9 +329,23 @@ def render_markdown(status: dict[str, Any]) -> str:
         f"- complete evidence items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"- diffs: {summary['diffs']}",
         "",
-        "## Next Commands",
+        "## Latest Diff",
         "",
     ]
+    latest_diff = status.get("latestDiffSummary", {})
+    if isinstance(latest_diff, dict) and latest_diff:
+        for key in DIFF_SUMMARY_KEYS:
+            if key in latest_diff:
+                lines.append(f"- {dash_label(key)}: {latest_diff[key]}")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Next Commands",
+            "",
+        ]
+    )
     next_commands = status.get("nextCommands", [])
     if next_commands:
         for command in next_commands:

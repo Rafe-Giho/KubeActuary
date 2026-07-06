@@ -766,6 +766,11 @@ def main() -> int:
         errors.append("version iteration history status should report latest run")
     if status_summary.get("blockedByEnvironment") != 1 or status_summary.get("diffs") != 1:
         errors.append("version iteration history status should summarize latest blockers and diffs")
+    latest_diff_summary = history_status_payload.get("latestDiffSummary", {})
+    if latest_diff_summary.get("statusChanged") != 1:
+        errors.append("version iteration history status should preserve latest diff status changes")
+    if latest_diff_summary.get("blockedByEnvironmentDelta") != 1:
+        errors.append("version iteration history status should preserve latest environment delta")
     history_next_commands = history_status_payload.get("nextCommands", [])
     for command in (history_status_record_command, history_status_iteration_command):
         if command not in history_next_commands:
@@ -795,6 +800,10 @@ def main() -> int:
         errors.append("version iteration history text should show latest environment probe status")
     if "environment-probe-failure: cluster-info exit=1 message=cluster unavailable from fake kubectl" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment probe failure")
+    if "latest-diff-status-changed: 1" not in history_status.stdout:
+        errors.append("version iteration history text should show latest diff status changes")
+    if "latest-diff-blocked-by-environment-delta: 1" not in history_status.stdout:
+        errors.append("version iteration history text should show latest environment diff delta")
     if f"next-command: {history_status_record_command}" not in history_status.stdout:
         errors.append("version iteration history text should show the record next command")
     if f"next-command: {history_status_iteration_command}" not in history_status.stdout:
@@ -803,6 +812,12 @@ def main() -> int:
         errors.append("version iteration history Markdown status must pass")
     if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown status should include a title")
+    if "## Latest Diff" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include latest diff details")
+    if "- status-changed: 1" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest diff status changes")
+    if "- blocked-by-environment-delta: 1" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest environment diff delta")
     if "## Next Commands" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include next commands")
     for command in (history_status_record_command, history_status_iteration_command):
@@ -826,8 +841,15 @@ def main() -> int:
     for command in (history_status_record_command, history_status_iteration_command):
         if command not in recorded_next_commands:
             errors.append(f"version iteration history recorded JSON should preserve next command: {command}")
+    recorded_latest_diff = history_status_record_payload.get("latestDiffSummary", {})
+    if recorded_latest_diff.get("blockedByEnvironmentDelta") != 1:
+        errors.append("version iteration history recorded JSON should preserve latest diff summary")
     if "# KubeActuary Version Iteration History Status" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should include a title")
+    if "## Latest Diff" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest diff details")
+    if "- blocked-by-environment-delta: 1" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest diff summary")
     if "## Next Commands" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve next commands")
     for command in (history_status_record_command, history_status_iteration_command):
@@ -857,6 +879,9 @@ def main() -> int:
         errors.append("evidence-aware history status should summarize complete evidence items")
     if evidence_status_summary.get("existingEvidenceFiles", 0) < 3:
         errors.append("evidence-aware history status should summarize existing evidence files")
+    evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
+    if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
+        errors.append("evidence-aware history status should preserve latest evidence diff summary")
     if prepared_history_record.returncode != 0:
         errors.append(
             f"prepared queue history failed: "

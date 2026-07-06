@@ -270,9 +270,9 @@ Result:
   blocker drilldown commands, blocker-focused filters, plus missing-tool and
   next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,
-  iteration history queue-source, blocker drilldown, and next-command
-  preservation across text, JSON, Markdown, recorded status reports, and latest
-  probe failures,
+  iteration history queue-source, blocker drilldown, latest diff summary, and
+  next-command preservation across text, JSON, Markdown, recorded status
+  reports, and latest probe failures,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,
   next-task selection,
