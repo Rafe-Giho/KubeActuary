@@ -168,8 +168,9 @@ Expected:
 - version iteration history status preserves latest blocker summaries,
   repeated latest blocker streaks, blocker action guidance, retry guards, and
   drilldown commands in text, JSON, and Markdown output;
-- version worklist `--history-dir` attaches matching latest blocker
-  streak/action guidance to the selected open item in text, JSON, and Markdown;
+- version worklist and next-task selector `--history-dir` attach matching latest
+  blocker streak/action guidance to the selected open item in text, JSON, and
+  Markdown;
 - version iteration history status preserves latest run filters in text, JSON,
   Markdown, and recorded status reports;
 - version iteration history status preserves selected latest next-task details

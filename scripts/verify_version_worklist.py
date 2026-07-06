@@ -620,6 +620,39 @@ def main() -> int:
             str(repeated_history_dir),
             env=probe_env,
         )
+        history_context_next_task = run_select(
+            "--format",
+            "json",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--history-dir",
+            str(repeated_history_dir),
+            env=probe_env,
+        )
+        history_context_next_task_payload = (
+            json.loads(history_context_next_task.stdout) if history_context_next_task.returncode == 0 else {}
+        )
+        history_context_next_task_text = run_select(
+            "--format",
+            "text",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--history-dir",
+            str(repeated_history_dir),
+            env=probe_env,
+        )
+        history_context_next_task_markdown = run_select(
+            "--format",
+            "markdown",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--history-dir",
+            str(repeated_history_dir),
+            env=probe_env,
+        )
         evidence_history_index_path = evidence_history_dir / "index.json"
         evidence_history_index = (
             json.loads(evidence_history_index_path.read_text()) if evidence_history_index_path.is_file() else {}
@@ -1064,6 +1097,36 @@ def main() -> int:
     ):
         if snippet not in history_context_worklist_markdown.stdout:
             errors.append(f"history-context worklist Markdown should show history detail: {snippet}")
+    if history_context_next_task.returncode != 0:
+        errors.append(
+            "history-context next task failed: "
+            f"{history_context_next_task.stderr.strip() or history_context_next_task.stdout.strip()}"
+        )
+    history_context_selected = history_context_next_task_payload.get("selected") or {}
+    selected_history_context = history_context_selected.get("historyContext") or {}
+    if history_context_next_task_payload.get("filters", {}).get("historyDir") != str(repeated_history_dir):
+        errors.append("history-context next task should preserve history directory filter")
+    if selected_history_context.get("latestBlockerStreak", {}).get("streak") != 2:
+        errors.append("history-context next task should attach latest blocker streak")
+    if selected_history_context.get("latestBlockerAction", {}).get("action") != "resolve-environment":
+        errors.append("history-context next task should attach latest blocker action")
+    if selected_history_context.get("latestBlockerAction", {}).get("retryRecommended") is not False:
+        errors.append("history-context next task should attach retry guard")
+    for snippet in (
+        "history-blocker-streak: 2",
+        "history-blocker-status: repeated",
+        "history-blocker-action: resolve-environment",
+        "history-blocker-retry-recommended: false",
+    ):
+        if snippet not in history_context_next_task_text.stdout:
+            errors.append(f"history-context next task text should show history detail: {snippet}")
+    for snippet in (
+        "history: `repeated` streak=2",
+        "history action: `resolve-environment`",
+        "history retry: `false`",
+    ):
+        if snippet not in history_context_next_task_markdown.stdout:
+            errors.append(f"history-context next task Markdown should show history detail: {snippet}")
     for snippet in (
         "latest-blocker-streak: 2",
         "latest-blocker-status: repeated",

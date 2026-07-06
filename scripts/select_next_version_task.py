@@ -100,6 +100,7 @@ def build_selection(
     probe_environment: bool,
     kubectl: str,
     evidence_dir: Path | None = None,
+    history_dir: Path | None = None,
     skip_complete_evidence: bool = False,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
     capture_status_filters: list[str] | None = None,
@@ -121,6 +122,7 @@ def build_selection(
         environment_status_filters=environment_status_filters,
         environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=prefer_prepared_queue,
+        history_dir=history_dir,
     )
     items = candidates(worklist)
     selectable_items = [materialize_item(item, evidence_dir) for item in items] if evidence_dir is not None else items
@@ -146,6 +148,7 @@ def build_selection(
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+            "historyDir": history_dir.as_posix() if history_dir else None,
             "skipCompleteEvidence": skip_complete_evidence,
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
@@ -166,6 +169,8 @@ def build_selection(
     }
     if worklist.get("environmentProbe"):
         selection["environmentProbe"] = worklist["environmentProbe"]
+    if worklist.get("historyStatus"):
+        selection["historyStatus"] = worklist["historyStatus"]
     if evidence_dir is not None:
         selection["evidenceDir"] = evidence_dir.as_posix()
         selection["resolvedClosureCommands"] = resolved_closure_commands(evidence_dir)
@@ -203,6 +208,19 @@ def render_text(selection: dict[str, Any]) -> str:
     if selected.get("evidenceSummary"):
         evidence = selected["evidenceSummary"]
         lines.append(f"evidence-files: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
+    history_context = selected.get("historyContext")
+    if isinstance(history_context, dict):
+        streak = history_context.get("latestBlockerStreak", {})
+        action = history_context.get("latestBlockerAction", {})
+        if isinstance(streak, dict):
+            lines.append(f"history-blocker-streak: {streak.get('streak')}")
+            lines.append(f"history-blocker-status: {streak.get('status')}")
+            lines.append(f"history-latest-run-id: {history_context.get('latestRunId')}")
+        if isinstance(action, dict):
+            lines.append(f"history-blocker-action: {action.get('action')}")
+            lines.append(f"history-blocker-retry-recommended: {str(action.get('retryRecommended')).lower()}")
+            if action.get("nextStep"):
+                lines.append(f"history-blocker-next-step: {action.get('nextStep')}")
     for command in selected.get("commands", []):
         lines.append(f"command: {command}")
     for command in selected.get("resolvedCommands", []):
@@ -244,6 +262,20 @@ def render_markdown(selection: dict[str, Any]) -> str:
         if selected.get("evidenceSummary"):
             evidence = selected["evidenceSummary"]
             lines.append(f"  - evidence files: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
+        history_context = selected.get("historyContext")
+        if isinstance(history_context, dict):
+            streak = history_context.get("latestBlockerStreak", {})
+            action = history_context.get("latestBlockerAction", {})
+            if isinstance(streak, dict):
+                lines.append(
+                    f"  - history: `{streak.get('status')}` streak={streak.get('streak')} "
+                    f"latest=`{history_context.get('latestRunId')}`"
+                )
+            if isinstance(action, dict):
+                lines.append(f"  - history action: `{action.get('action')}`")
+                lines.append(f"  - history retry: `{str(action.get('retryRecommended')).lower()}`")
+                if action.get("nextStep"):
+                    lines.append(f"  - history next: {action.get('nextStep')}")
         for command in selected.get("commands", []):
             lines.append(f"  - `{command}`")
         for command in selected.get("resolvedCommands", []):
@@ -262,6 +294,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--include-complete", action="store_true", help="include complete versions in the search scope")
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
+    parser.add_argument("--history-dir", help="optional version iteration history directory for repeated blocker context")
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
@@ -282,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
+            history_dir=Path(args.history_dir) if args.history_dir else None,
             skip_complete_evidence=args.skip_complete_evidence,
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
