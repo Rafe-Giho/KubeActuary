@@ -310,6 +310,7 @@ docs/
   admission-incident-runbook.md admission audit incident runbook
   api-freeze.md               additive API freeze and compatibility gate
   conformance.md              upstream N/N-1/N-2 conformance suite
+  docs-freeze.md              release-candidate public docs checklist
   threat-model.md             project threat model
   collectors.md                evidence collector contract
   landscape.md                 ecosystem research
@@ -369,6 +370,7 @@ scripts/
   verify_supply_chain.py      SBOM/provenance verifier
   verify_security_docs.py     security policy and threat model verifier
   verify_api_freeze.py        additive API freeze verifier
+  verify_docs_freeze.py       public docs and examples verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -424,6 +426,7 @@ python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
+python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py

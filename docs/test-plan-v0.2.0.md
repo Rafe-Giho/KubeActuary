@@ -19,10 +19,11 @@ Expected:
   controller runtime contract, controller resource budget, lightweight cluster
   smoke harness, upstream conformance suite, Helm chart contract, Kustomize
   rendering, release archives, Krew manifest generation, SBOM/provenance
-  generation, security docs, API freeze compatibility gate, air-gapped manifest
-  generation, agent help schema compatibility, local CI and Codex agent runbooks,
-  Kyverno adapter fixtures, OPA adapter fixtures, kube-linter adapter fixtures,
-  kube-score adapter fixtures, Pluto adapter fixtures, adapter
+  generation, security docs, API freeze compatibility gate, documentation
+  freeze and public examples audit, air-gapped manifest generation, agent help
+  schema compatibility, local CI and Codex agent runbooks, Kyverno adapter
+  fixtures, OPA adapter fixtures, kube-linter adapter fixtures, kube-score
+  adapter fixtures, Pluto adapter fixtures, adapter
   contract severity normalization, MCP safe-tool contract verification, and
   disabled-execute surface verification, optional admission webhook prototype,
   admission identity/annotation policy fixtures, admission digest/gate tamper
@@ -61,6 +62,7 @@ python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
+python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -104,6 +106,7 @@ Expected:
 - supply-chain check prints `supply-chain: passed`;
 - security docs check prints `security-docs: passed`;
 - API freeze check prints `api-freeze: passed`;
+- docs freeze check prints `docs-freeze: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
 - agent help contract check prints `agent-help-contract: passed`;
 - agent examples check prints `agent-examples: passed`;
@@ -195,6 +198,8 @@ Confirm from code and tests:
   threat model, mitigations, and residual risk sections;
 - API freeze verifier guards the additive-only public JSON Schema and CRD
   contract against breaking schema diff;
+- docs freeze verifier checks public docs, capsule examples, YAML examples, and
+  agent runbooks;
 - air-gapped manifest generator lists required release and repository artifacts
   with SHA-256 digests;
 - agent help contract verifier requires schema version, compatibility metadata,
@@ -243,8 +248,9 @@ Expected:
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
-  security docs, API freeze, air-gapped bundle, agent help contract, agent examples, Kyverno adapter, OPA
-  adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
+  security docs, API freeze, docs freeze, air-gapped bundle, agent help
+  contract, agent examples, Kyverno adapter, OPA adapter, kube-linter adapter,
+  kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, disabled-execute check, admission webhook, admission
   policy, admission digest/gate, admission audit, gate behavior, JSON/YAML
   parsing, and `git diff --check`.

@@ -184,6 +184,11 @@ COMMON_CHECKS = (
         contains=("api-freeze: passed", "policy: additive-only", "breaking-schema-diff: guarded"),
     ),
     Check(
+        "docs freeze",
+        ("python3", "-B", "scripts/verify_docs_freeze.py"),
+        contains=("docs-freeze: passed", "public-examples: 10 checked", "writes: disabled"),
+    ),
+    Check(
         "airgap bundle",
         ("python3", "-B", "scripts/verify_airgap_bundle.py"),
         contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),

@@ -25,6 +25,7 @@ KREW_MANIFEST = ROOT / "scripts" / "verify_krew_manifest.py"
 SUPPLY_CHAIN = ROOT / "scripts" / "verify_supply_chain.py"
 SECURITY_DOCS = ROOT / "scripts" / "verify_security_docs.py"
 API_FREEZE = ROOT / "scripts" / "verify_api_freeze.py"
+DOCS_FREEZE = ROOT / "scripts" / "verify_docs_freeze.py"
 AIRGAP_BUNDLE = ROOT / "scripts" / "verify_airgap_bundle.py"
 KYVERNO_ADAPTER = ROOT / "scripts" / "verify_kyverno_adapter.py"
 OPA_ADAPTER = ROOT / "scripts" / "verify_opa_adapter.py"
@@ -328,6 +329,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("api-freeze: passed", result.stdout)
         self.assertIn("breaking-schema-diff: guarded", result.stdout)
+
+    def test_verify_docs_freeze(self):
+        result = subprocess.run(
+            [sys.executable, str(DOCS_FREEZE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("docs-freeze: passed", result.stdout)
+        self.assertIn("public-examples: 10 checked", result.stdout)
 
     def test_verify_airgap_bundle(self):
         result = subprocess.run(

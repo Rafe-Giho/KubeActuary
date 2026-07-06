@@ -54,7 +54,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (47 checks)
+verification: passed (48 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -162,7 +162,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 | 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | TODO | provider run evidence |
 | 0.9.1 | Security policy, threat model, disclosure process | DONE | `scripts/verify_security_docs.py` validates `SECURITY.md` and threat model |
 | 0.9.2 | API freeze and upgrade compatibility gate | DONE | `scripts/verify_api_freeze.py` guards additive-only no breaking schema diff |
-| 0.9.3 | Documentation freeze and public examples audit | TODO | docs checklist |
+| 0.9.3 | Documentation freeze and public examples audit | DONE | `scripts/verify_docs_freeze.py` checks public docs and examples |
 
 ## v1.0.0: GA
 
