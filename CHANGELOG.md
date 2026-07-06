@@ -41,6 +41,8 @@ Evidence collector release:
 - add local next-task evidence builder for prepared evidence directories;
 - add selected next-version task runner for plan-by-default evidence command
   execution;
+- add version iteration advance workflow for selected-task execution plus
+  before/after history recording;
 - add clean-artifact verification for generated Python cache files;
 - add live validation queue generation with ordered external evidence commands,
   optional environment blockers, and deterministic evidence-directory paths;

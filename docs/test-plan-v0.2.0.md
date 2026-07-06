@@ -160,6 +160,7 @@ Expected:
   verifies persisted next-task output, file readiness, next-task evidence build,
   and idempotent output-exists handling;
 - next version task runner check prints `next-version-task-runner: passed`;
+- version iteration advance check prints `version-iteration-advance: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -288,6 +289,9 @@ Confirm from code and tests:
 - next version task runner verifier validates selected commands, stays
   plan-by-default, and with fake kubectl produces raw and supplemental evidence
   for the selected task;
+- version iteration advance verifier wraps the selected-task runner with
+  before/after evidence-aware history recording and validates the resulting
+  diff;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -407,7 +411,7 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, release taskboard audit, release progress, version worklist, external gate plan, external gate command safety, external gate evidence,
-  evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build, next-version task run,
+  evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build, next-version task run, version iteration advance,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller

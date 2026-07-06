@@ -68,8 +68,8 @@ def main() -> int:
 
     if progress.get("schemaVersion") != "kube-actuary.release-progress.v1":
         errors.append("release progress schemaVersion mismatch")
-    if progress.get("releaseSuite", {}).get("checks") != 78:
-        errors.append("release progress must report 78 release checks")
+    if progress.get("releaseSuite", {}).get("checks") != 79:
+        errors.append("release progress must report 79 release checks")
     if progress.get("summary", {}).get("verify") != 16:
         errors.append("release progress must report 16 VERIFY rows")
     if progress.get("summary", {}).get("doing") != 0 or progress.get("summary", {}).get("todo") != 0:
@@ -119,7 +119,7 @@ def main() -> int:
     print("release-progress: passed")
     print("versions: ok")
     print("verify: 16")
-    print("checks: 78")
+    print("checks: 79")
     return 0
 
 

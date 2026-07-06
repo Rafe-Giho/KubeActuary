@@ -172,6 +172,8 @@ Expected:
   `--skip-complete-evidence` artifact advancement;
 - next-version task runner verifies selected evidence commands in plan mode and
   fake-run mode before live use;
+- version iteration advance verifies selected-task execution with before/after
+  evidence-aware history recording;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records
@@ -225,6 +227,7 @@ Expected:
 - [ ] release evidence status check passes.
 - [ ] next-task evidence builder check passes through release evidence status.
 - [ ] next-version task runner check passes.
+- [ ] version iteration advance check passes.
 - [ ] clean artifact check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.

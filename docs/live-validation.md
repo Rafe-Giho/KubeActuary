@@ -217,6 +217,15 @@ python3 -B scripts/run_next_version_task.py <evidence-dir>
 python3 -B scripts/run_next_version_task.py <evidence-dir> --run
 ```
 
+The iteration advance helper wraps that runner with before/after version
+history recording and reports schema
+`kube-actuary.version-iteration-advance.v1`:
+
+```sh
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
+```
+
 Supported evidence schemas:
 
 - `kube-actuary.lightweight-smoke.v1`

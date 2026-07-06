@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (78 checks)
-Ran 112 tests
+verification: passed (79 checks)
+Ran 113 tests
 OK
 ```
 
@@ -87,6 +87,8 @@ Coverage included:
   including next-task artifacts and `--skip-complete-evidence` advancement;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
+- version iteration advance workflow with before/after evidence-aware history
+  recording;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
@@ -258,6 +260,7 @@ Result:
   verifies persisted next-task output, file readiness, next-task evidence
   build, and idempotent output-exists handling;
 - next version task runner check prints `next-version-task-runner: passed`;
+- version iteration advance check prints `version-iteration-advance: passed`;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

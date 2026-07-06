@@ -21,6 +21,7 @@ EXTERNAL_EVIDENCE_BUNDLE = ROOT / "scripts" / "verify_external_evidence_bundle.p
 RELEASE_EVIDENCE_DIRECTORY = ROOT / "scripts" / "verify_release_evidence_directory.py"
 RELEASE_EVIDENCE_STATUS = ROOT / "scripts" / "verify_release_evidence_status.py"
 NEXT_VERSION_TASK_RUNNER = ROOT / "scripts" / "verify_next_version_task_runner.py"
+VERSION_ITERATION_ADVANCE = ROOT / "scripts" / "verify_version_iteration_advance.py"
 CLEAN_ARTIFACTS = ROOT / "scripts" / "verify_clean_artifacts.py"
 AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
@@ -130,7 +131,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 78", result.stdout)
+        self.assertIn("checks: 79", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(
@@ -259,6 +260,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("next-version-task-runner: passed", result.stdout)
         self.assertIn("mode: plan,run", result.stdout)
+
+    def test_verify_version_iteration_advance(self):
+        result = subprocess.run(
+            [sys.executable, str(VERSION_ITERATION_ADVANCE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("version-iteration-advance: passed", result.stdout)
+        self.assertIn("history-runs: 2", result.stdout)
 
     def test_verify_clean_artifacts(self):
         result = subprocess.run(

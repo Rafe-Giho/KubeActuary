@@ -34,6 +34,7 @@ Status legend:
 | Release evidence status | DONE | `scripts/verify_release_evidence_status.py` verifies partial evidence directory status inspection plus persisted next-task output and file readiness |
 | Next task evidence builder | DONE | `scripts/build_next_task_evidence.py` and `scripts/verify_release_evidence_status.py` build selected local supplemental evidence from captured raw files |
 | Next version task runner | DONE | `scripts/run_next_version_task.py` and `scripts/verify_next_version_task_runner.py` plan or run the selected safe evidence commands from a prepared evidence directory |
+| Version iteration advance | DONE | `scripts/advance_version_iteration.py` and `scripts/verify_version_iteration_advance.py` verify schema `kube-actuary.version-iteration-advance.v1` for one selected task plus before/after history |
 | Clean artifact hygiene | DONE | `scripts/verify_clean_artifacts.py` verifies no generated Python cache artifacts remain |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |
@@ -81,7 +82,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (78 checks)
+verification: passed (79 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

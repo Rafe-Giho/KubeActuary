@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Advance one selected version task and record before/after iteration history."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.inspect_version_history import inspect_history  # noqa: E402
+from scripts.prepare_live_evidence_directory import prepare_directory  # noqa: E402
+from scripts.record_version_iteration import record_iteration  # noqa: E402
+from scripts.run_next_version_task import build_result as run_next_task  # noqa: E402
+from scripts.select_next_version_task import build_selection  # noqa: E402
+
+
+SCHEMA_VERSION = "kube-actuary.version-iteration-advance.v1"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def planned_result(evidence_dir: Path, history_dir: Path) -> dict[str, Any]:
+    selection = build_selection(
+        version_filters=[],
+        include_complete=False,
+        probe_environment=False,
+        kubectl="kubectl",
+        evidence_dir=evidence_dir,
+        skip_complete_evidence=True,
+    )
+    selected = selection.get("selected") or {}
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "mode": "plan",
+        "status": "plan",
+        "clusterWrites": "disabled-or-server-side-dry-run-only",
+        "evidenceDir": evidence_dir.as_posix(),
+        "historyDir": history_dir.as_posix(),
+        "selected": {
+            "id": selected.get("id"),
+            "version": selected.get("version"),
+            "item": selected.get("item"),
+            "kind": selected.get("kind"),
+            "captureStatus": selected.get("captureStatus"),
+            "commands": selected.get("resolvedCommands", selected.get("commands", [])),
+        },
+        "plannedSteps": [
+            "prepare live evidence directory with skip-complete evidence",
+            "record before iteration history",
+            "run selected next-task evidence commands",
+            "refresh next-task artifacts after evidence capture",
+            "record after iteration history and diff",
+            "inspect version history status",
+        ],
+    }
+
+
+def run_advance(evidence_dir: Path, history_dir: Path, run_id: str, created_at: str) -> dict[str, Any]:
+    prepare_directory(evidence_dir, skip_complete_evidence=True)
+    before = record_iteration(
+        history_dir,
+        run_id=f"{run_id}-before",
+        created_at=created_at,
+        version_filters=[],
+        open_only=True,
+        probe_environment=False,
+        kubectl="kubectl",
+        evidence_dir=evidence_dir,
+    )
+    runner = run_next_task(evidence_dir, run=True)
+    prepare_directory(evidence_dir, skip_complete_evidence=True)
+    after = record_iteration(
+        history_dir,
+        run_id=f"{run_id}-after",
+        created_at=created_at,
+        version_filters=[],
+        open_only=True,
+        probe_environment=False,
+        kubectl="kubectl",
+        evidence_dir=evidence_dir,
+    )
+    history = inspect_history(history_dir)
+    status = "passed" if runner.get("status") == "passed" and history.get("valid") is True else "failed"
+    next_task = json.loads((evidence_dir / ".kubeactuary" / "next-version-task.json").read_text())
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "mode": "run",
+        "status": status,
+        "clusterWrites": "disabled-or-server-side-dry-run-only",
+        "evidenceDir": evidence_dir.as_posix(),
+        "historyDir": history_dir.as_posix(),
+        "runId": run_id,
+        "createdAt": created_at,
+        "before": {
+            "runId": before.get("runId"),
+            "summary": before.get("summary"),
+        },
+        "runner": runner,
+        "after": {
+            "runId": after.get("runId"),
+            "summary": after.get("summary"),
+            "diffSummary": after.get("diffSummary"),
+        },
+        "nextTask": {
+            "schemaVersion": next_task.get("schemaVersion"),
+            "selected": (next_task.get("selected") or {}).get("id"),
+            "skippedCompleteEvidence": next_task.get("summary", {}).get("skippedCompleteEvidence", 0),
+        },
+        "history": history.get("summary", {}),
+    }
+
+
+def render_text(result: dict[str, Any]) -> str:
+    lines = [
+        f"version-iteration-advance: {result['status']}",
+        f"mode: {result['mode']}",
+        f"evidence-dir: {result['evidenceDir']}",
+        f"history-dir: {result['historyDir']}",
+        f"cluster-writes: {result['clusterWrites']}",
+    ]
+    if result["mode"] == "plan":
+        selected = result.get("selected", {})
+        lines.append(f"selected: {selected.get('id')}")
+        for command in selected.get("commands", []):
+            lines.append(f"command: {command}")
+        for step in result.get("plannedSteps", []):
+            lines.append(f"step: {step}")
+    else:
+        lines.append(f"run-id: {result['runId']}")
+        lines.append(f"before-run-id: {result['before']['runId']}")
+        lines.append(f"after-run-id: {result['after']['runId']}")
+        lines.append(f"runner-status: {result['runner']['status']}")
+        lines.append(f"history-runs: {result['history'].get('runs')}")
+        lines.append(f"next-task: {result['nextTask'].get('selected')}")
+        lines.append(f"skipped-complete-evidence: {result['nextTask'].get('skippedCompleteEvidence')}")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Advance one selected KubeActuary version task.")
+    parser.add_argument("evidence_dir")
+    parser.add_argument("history_dir")
+    parser.add_argument("--run", action="store_true", help="execute the selected safe evidence commands")
+    parser.add_argument("--run-id", help="stable run id prefix; defaults to UTC timestamp")
+    parser.add_argument("--created-at", help="stable timestamp for tests")
+    parser.add_argument("--format", choices=("text", "json"), default="text")
+    parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
+    args = parser.parse_args(argv)
+
+    created_at = args.created_at or utc_now()
+    run_id = args.run_id or created_at.replace(":", "").replace("+", "z")
+    try:
+        if args.run:
+            result = run_advance(Path(args.evidence_dir), Path(args.history_dir), run_id=run_id, created_at=created_at)
+        else:
+            result = planned_result(Path(args.evidence_dir), Path(args.history_dir))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print("version-iteration-advance: failed")
+        print(f"error: {exc}")
+        return 1
+
+    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n" if args.format == "json" else render_text(result)
+    if args.output == "-":
+        print(rendered, end="")
+    else:
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered)
+        print(f"version-iteration-advance: wrote {args.output}")
+    return 0 if result["status"] in {"plan", "passed"} else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
