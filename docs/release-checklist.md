@@ -141,8 +141,8 @@ Expected:
 - release evidence status inspector reports partial directory coverage, next
   commands, persisted next-task output, next-task runner status, environment
   metadata, advance workflow status, and next-task file readiness without
-  requiring complete release closure; text/Markdown output does not truncate
-  local next commands, selected next-task files, or selected next-task
+  requiring complete release closure; CLI and recorded Markdown output do not
+  truncate local next commands, selected next-task files, or selected next-task
   commands; next commands exclude missing-tool and environment-blocked capture
   commands, and it can also record
   `.kubeactuary/release-evidence-status.json`;

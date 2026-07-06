@@ -225,6 +225,12 @@ def main() -> int:
             errors.append(f"text evidence status must include all local task details: {snippet}")
     if "python3 -B scripts/synthetic_next_6.py" not in synthetic_markdown:
         errors.append("markdown evidence status must include all next commands")
+    for snippet in (
+        "file: `missing` `output` `evidence/live/raw/synthetic-5.txt`",
+        "command: `python3 -B scripts/synthetic_command_3.py`",
+    ):
+        if snippet not in synthetic_markdown:
+            errors.append(f"markdown evidence status must include all selected next-task details: {snippet}")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
 
@@ -242,6 +248,7 @@ def main() -> int:
         write_advance_record(partial_dir)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
+        partial_markdown = run_script(INSPECTOR, str(partial_dir), "--format", "markdown")
         recorded = run_script(INSPECTOR, str(partial_dir), "--format", "json", "--record")
         recorded_json = partial_dir / ".kubeactuary" / "release-evidence-status.json"
         recorded_md = partial_dir / ".kubeactuary" / "release-evidence-status.md"
@@ -347,6 +354,16 @@ def main() -> int:
 
     if partial_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("status schemaVersion mismatch")
+    if partial_markdown.returncode != 0:
+        errors.append(f"partial Markdown status failed: {partial_markdown.stderr.strip() or partial_markdown.stdout.strip()}")
+    for snippet in (
+        "# KubeActuary Release Evidence Status",
+        "file: `present` `output`",
+        "command: `python3 -B scripts/capture_controller_resource_budget.py",
+        "history runs: 2",
+    ):
+        if snippet not in partial_markdown.stdout:
+            errors.append(f"partial Markdown status should include detail: {snippet}")
     if recorded_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("recorded status stdout schemaVersion mismatch")
     if "release-evidence-status: recorded" in recorded.stdout:

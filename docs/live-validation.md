@@ -261,6 +261,7 @@ Inspect a partial evidence directory while gathering external runs:
 ```sh
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir>
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format json
+python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format markdown
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --record
 ```
 
@@ -268,9 +269,9 @@ The status inspector uses schema `kube-actuary.release-evidence-status.v1`,
 reports covered and uncovered external gates, prints next evidence commands,
 and includes the persisted `kube-actuary.next-version-task.v1` artifact when
 the evidence directory was prepared by the scaffold. It does not require
-complete release closure. For resolved next-task file paths, it reports whether
-the raw input and supplemental output files are present or still missing, and
-prints every selected next-task command. It also prints every computed next
+complete release closure. Text and Markdown output both report whether resolved
+next-task raw input and supplemental output files are present or still missing,
+and print every selected next-task command. They also print every computed next
 command instead of truncating local follow-up work. When the prepared live
 validation queue is available, `nextCommands` uses the queue's resolved
 evidence paths for all uncovered gates instead of repeating placeholder

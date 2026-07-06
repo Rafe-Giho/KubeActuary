@@ -682,6 +682,11 @@ def render_markdown(status: dict[str, Any]) -> str:
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
             lines.append(f"- files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
+        for item in selected.get("files", []):
+            file_status = "present" if item.get("exists") else "missing"
+            lines.append(f"- file: `{file_status}` `{item.get('role')}` `{item.get('path')}`")
+        for command in selected.get("resolvedCommands", []):
+            lines.append(f"- command: `{command}`")
     else:
         lines.append("- none")
     next_task_run = status.get("nextTaskRun")
@@ -728,6 +733,9 @@ def render_markdown(status: dict[str, Any]) -> str:
                 lines.append(f"- next-task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         if advance.get("runId"):
             lines.append(f"- run id: `{advance.get('runId')}`")
+        history = advance.get("history", {})
+        if isinstance(history, dict) and history.get("runs") is not None:
+            lines.append(f"- history runs: {history.get('runs')}")
     if status.get("nextCommands"):
         lines.extend(["", "## Next Commands", ""])
         for command in status["nextCommands"]:
@@ -755,7 +763,7 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help=f"artifact output directory, default: <evidence-dir>/{DEFAULT_OUTPUT_DIR}",
     )
-    parser.add_argument("--format", choices=["text", "json"], default="text")
+    parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     parser.add_argument("--record", action="store_true", help="write status JSON and Markdown under .kubeactuary")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -772,6 +780,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.format == "json":
         rendered = json.dumps(status, indent=2, sort_keys=True) + "\n"
+    elif args.format == "markdown":
+        rendered = render_markdown(status)
     else:
         rendered = render_text(status)
 
