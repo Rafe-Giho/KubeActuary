@@ -22,8 +22,10 @@ Evidence collector release:
 - add local version iteration packs for repeated per-version verification with
   evidence readiness;
 - add local version iteration diffs for comparing repeated verification runs;
-- add local version iteration history recording for run-to-run tracking;
-- add local version iteration history inspection for latest-run status checks;
+- add local version iteration history recording for run-to-run evidence
+  tracking;
+- add local version iteration history inspection for latest-run evidence status
+  checks;
 - add deterministic next-task selection from version worklists;
 - add evidence-aware next-task selection that skips completed local evidence files;
 - add tool-ready and missing-tool next actions to release progress reports;

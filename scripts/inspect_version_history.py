@@ -107,6 +107,10 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
             "captureReady": latest_summary.get("captureReady", 0),
             "blockedByTools": latest_summary.get("blockedByTools", 0),
             "blockedByEnvironment": latest_summary.get("blockedByEnvironment", 0),
+            "evidenceItems": latest_summary.get("evidenceItems", 0),
+            "completeEvidenceItems": latest_summary.get("completeEvidenceItems", 0),
+            "evidenceFiles": latest_summary.get("evidenceFiles", 0),
+            "existingEvidenceFiles": latest_summary.get("existingEvidenceFiles", 0),
             "diffs": sum(1 for run in inspected_runs if run.get("diffStatus") == "present"),
         },
         "runs": inspected_runs,
@@ -124,6 +128,8 @@ def render_text(status: dict[str, Any]) -> str:
         f"capture-ready: {summary['captureReady']}",
         f"blocked-by-tools: {summary['blockedByTools']}",
         f"blocked-by-environment: {summary['blockedByEnvironment']}",
+        f"evidence-files: {summary['existingEvidenceFiles']}/{summary['evidenceFiles']}",
+        f"complete-evidence-items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"diffs: {summary['diffs']}",
     ]
     for error in status["errors"]:

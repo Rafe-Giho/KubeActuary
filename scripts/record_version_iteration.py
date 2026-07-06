@@ -65,7 +65,8 @@ def render_history(index: dict[str, Any]) -> str:
             f"- `{run['runId']}` versions={run['summary']['versions']} "
             f"open={run['summary']['openItems']} "
             f"capture-ready={run['summary']['captureReady']} "
-            f"blocked-by-environment={run['summary'].get('blockedByEnvironment', 0)}"
+            f"blocked-by-environment={run['summary'].get('blockedByEnvironment', 0)} "
+            f"evidence-files={run['summary'].get('existingEvidenceFiles', 0)}/{run['summary'].get('evidenceFiles', 0)}"
         )
         if run.get("previousRunId"):
             lines.append(f"  previous: `{run['previousRunId']}`")
@@ -74,7 +75,8 @@ def render_history(index: dict[str, Any]) -> str:
             lines.append(
                 f"  diff: status-changed={diff['statusChanged']} "
                 f"capture-ready-delta={diff['captureReadyDelta']} "
-                f"blocked-by-environment-delta={diff['blockedByEnvironmentDelta']}"
+                f"blocked-by-environment-delta={diff['blockedByEnvironmentDelta']} "
+                f"existing-evidence-files-delta={diff.get('existingEvidenceFilesDelta', 0)}"
             )
     return "\n".join(lines) + "\n"
 
@@ -92,6 +94,7 @@ def record_iteration(
     open_only: bool,
     probe_environment: bool,
     kubectl: str,
+    evidence_dir: Path | None = None,
 ) -> dict[str, Any]:
     history_dir.mkdir(parents=True, exist_ok=True)
     index = load_index(history_dir)
@@ -106,6 +109,7 @@ def record_iteration(
         open_only=open_only,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        evidence_dir=evidence_dir,
     )
 
     previous = latest_run(index)
@@ -130,6 +134,7 @@ def record_iteration(
             "openOnly": open_only,
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
+            "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
         },
         "summary": worklist["summary"],
         "previousRunId": previous.get("runId") if previous else None,
@@ -149,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--created-at", help="stable creation timestamp for tests")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -164,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
             open_only=args.open_only,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
         )
     except ValueError as exc:
         print("version-iteration-history: failed")
@@ -177,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"capture-ready: {entry['summary']['captureReady']}")
     print(f"blocked-by-tools: {entry['summary']['blockedByTools']}")
     print(f"blocked-by-environment: {entry['summary'].get('blockedByEnvironment', 0)}")
+    print(f"evidence-files: {entry['summary'].get('existingEvidenceFiles', 0)}/{entry['summary'].get('evidenceFiles', 0)}")
     if entry.get("previousRunId"):
         print(f"previous-run-id: {entry['previousRunId']}")
         print(f"diff-path: {entry['diffPath']}")

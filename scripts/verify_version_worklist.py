@@ -272,6 +272,27 @@ def main() -> int:
             "--probe-environment",
             env=probe_env,
         )
+        evidence_history_dir = tmpdir / "evidence-history"
+        evidence_history_before = run_record(
+            str(evidence_history_dir),
+            "--run-id",
+            "before-evidence",
+            "--created-at",
+            "2026-07-06T00:02:00+00:00",
+            "--version",
+            "Current Baseline",
+        )
+        evidence_history_after = run_record(
+            str(evidence_history_dir),
+            "--run-id",
+            "after-evidence",
+            "--created-at",
+            "2026-07-06T00:03:00+00:00",
+            "--version",
+            "Current Baseline",
+            "--evidence-dir",
+            str(completed_evidence_dir),
+        )
         history_index_path = history_dir / "index.json"
         history_index = json.loads(history_index_path.read_text()) if history_index_path.is_file() else {}
         history_readme_text = (history_dir / "README.md").read_text() if (history_dir / "README.md").is_file() else ""
@@ -289,6 +310,21 @@ def main() -> int:
             str(history_status_output),
         )
         history_status_output_written = history_status_output.is_file()
+        evidence_history_index_path = evidence_history_dir / "index.json"
+        evidence_history_index = (
+            json.loads(evidence_history_index_path.read_text()) if evidence_history_index_path.is_file() else {}
+        )
+        evidence_history_readme = (
+            evidence_history_dir / "README.md"
+        ).read_text() if (evidence_history_dir / "README.md").is_file() else ""
+        evidence_history_diff_path = evidence_history_dir / "runs" / "after-evidence" / "diff-from-previous.json"
+        evidence_history_diff = (
+            json.loads(evidence_history_diff_path.read_text()) if evidence_history_diff_path.is_file() else {}
+        )
+        evidence_history_status = run_inspect_history(str(evidence_history_dir), "--format", "json")
+        evidence_history_status_payload = (
+            json.loads(evidence_history_status.stdout) if evidence_history_status.returncode == 0 else {}
+        )
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
@@ -379,6 +415,16 @@ def main() -> int:
         errors.append(f"first version iteration history failed: {first_record.stderr.strip() or first_record.stdout.strip()}")
     if second_record.returncode != 0:
         errors.append(f"second version iteration history failed: {second_record.stderr.strip() or second_record.stdout.strip()}")
+    if evidence_history_before.returncode != 0:
+        errors.append(
+            f"first evidence-aware history failed: "
+            f"{evidence_history_before.stderr.strip() or evidence_history_before.stdout.strip()}"
+        )
+    if evidence_history_after.returncode != 0:
+        errors.append(
+            f"second evidence-aware history failed: "
+            f"{evidence_history_after.stderr.strip() or evidence_history_after.stdout.strip()}"
+        )
     if history_index.get("schemaVersion") != HISTORY_SCHEMA:
         errors.append("version iteration history schemaVersion mismatch")
     if len(history_index.get("runs", [])) != 2:
@@ -403,6 +449,26 @@ def main() -> int:
         errors.append("version iteration history status should summarize latest blockers and diffs")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
+    evidence_runs = evidence_history_index.get("runs", [])
+    if len(evidence_runs) != 2:
+        errors.append("evidence-aware history should record two runs")
+    evidence_second_run = evidence_runs[-1] if evidence_runs else {}
+    if evidence_second_run.get("filters", {}).get("evidenceDir") != str(completed_evidence_dir):
+        errors.append("evidence-aware history should preserve evidence directory filter")
+    if evidence_second_run.get("summary", {}).get("completeEvidenceItems") != 1:
+        errors.append("evidence-aware history should preserve complete evidence item count")
+    evidence_diff_summary = evidence_history_diff.get("summary", {})
+    if evidence_diff_summary.get("completeEvidenceItemsDelta") != 1:
+        errors.append("evidence-aware history diff should record complete evidence item delta")
+    if evidence_diff_summary.get("existingEvidenceFilesDelta", 0) < 3:
+        errors.append("evidence-aware history diff should record existing evidence file delta")
+    if "evidence-files=3/" not in evidence_history_readme:
+        errors.append("evidence-aware history README should summarize evidence file readiness")
+    evidence_status_summary = evidence_history_status_payload.get("summary", {})
+    if evidence_status_summary.get("completeEvidenceItems") != 1:
+        errors.append("evidence-aware history status should summarize complete evidence items")
+    if evidence_status_summary.get("existingEvidenceFiles", 0) < 3:
+        errors.append("evidence-aware history status should summarize existing evidence files")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")

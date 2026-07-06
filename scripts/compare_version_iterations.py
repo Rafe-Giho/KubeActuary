@@ -31,6 +31,7 @@ def comparable_item(item: dict[str, Any]) -> dict[str, Any]:
         "captureStatus": item.get("captureStatus"),
         "missingTools": item.get("missingTools", []),
         "environmentStatus": item.get("environmentStatus"),
+        "evidenceSummary": item.get("evidenceSummary"),
         "commands": item.get("commands", []),
         "nextStep": item.get("nextStep"),
     }
@@ -70,6 +71,10 @@ def compare_version(name: str, before: dict[str, Any] | None, after: dict[str, A
             "captureReady": delta(after_summary, before_summary, "captureReady"),
             "blockedByTools": delta(after_summary, before_summary, "blockedByTools"),
             "blockedByEnvironment": delta(after_summary, before_summary, "blockedByEnvironment"),
+            "evidenceItems": delta(after_summary, before_summary, "evidenceItems"),
+            "completeEvidenceItems": delta(after_summary, before_summary, "completeEvidenceItems"),
+            "evidenceFiles": delta(after_summary, before_summary, "evidenceFiles"),
+            "existingEvidenceFiles": delta(after_summary, before_summary, "existingEvidenceFiles"),
         },
         "addedItems": sorted(after_keys - before_keys),
         "removedItems": sorted(before_keys - after_keys),
@@ -86,6 +91,14 @@ def summarize(version_diffs: list[dict[str, Any]]) -> dict[str, int]:
         "blockedByToolsDelta": sum(version["summaryDelta"]["blockedByTools"] for version in version_diffs),
         "blockedByEnvironmentDelta": sum(
             version["summaryDelta"]["blockedByEnvironment"] for version in version_diffs
+        ),
+        "evidenceItemsDelta": sum(version["summaryDelta"]["evidenceItems"] for version in version_diffs),
+        "completeEvidenceItemsDelta": sum(
+            version["summaryDelta"]["completeEvidenceItems"] for version in version_diffs
+        ),
+        "evidenceFilesDelta": sum(version["summaryDelta"]["evidenceFiles"] for version in version_diffs),
+        "existingEvidenceFilesDelta": sum(
+            version["summaryDelta"]["existingEvidenceFiles"] for version in version_diffs
         ),
         "addedItems": sum(len(version["addedItems"]) for version in version_diffs),
         "removedItems": sum(len(version["removedItems"]) for version in version_diffs),
@@ -137,6 +150,8 @@ def render_markdown(diff: dict[str, Any]) -> str:
         f"- capture-ready-delta: {summary['captureReadyDelta']}",
         f"- blocked-by-tools-delta: {summary['blockedByToolsDelta']}",
         f"- blocked-by-environment-delta: {summary['blockedByEnvironmentDelta']}",
+        f"- existing-evidence-files-delta: {summary['existingEvidenceFilesDelta']}",
+        f"- complete-evidence-items-delta: {summary['completeEvidenceItemsDelta']}",
         f"- changed-items: {summary['changedItems']}",
         "",
         "## Versions",
@@ -147,7 +162,8 @@ def render_markdown(diff: dict[str, Any]) -> str:
             f"- `{version['version']}` {version['beforeStatus']} -> {version['afterStatus']} "
             f"open={version['summaryDelta']['open']} "
             f"capture-ready={version['summaryDelta']['captureReady']} "
-            f"blocked-by-environment={version['summaryDelta']['blockedByEnvironment']}"
+            f"blocked-by-environment={version['summaryDelta']['blockedByEnvironment']} "
+            f"evidence-files={version['summaryDelta']['existingEvidenceFiles']}"
         )
         for item in version["changedItems"]:
             lines.append(f"  changed: `{item}`")

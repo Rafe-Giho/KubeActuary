@@ -104,8 +104,8 @@ Expected:
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving evidence readiness when `--evidence-dir` is used,
   compares packs with schema `kube-actuary.version-iteration-diff.v1`,
-  records run history with schema `kube-actuary.version-iteration-history.v1`,
-  inspects history status with schema `kube-actuary.version-iteration-history-status.v1`,
+  records evidence-aware run history with schema `kube-actuary.version-iteration-history.v1`,
+  inspects evidence-aware history status with schema `kube-actuary.version-iteration-history-status.v1`,
   selects the next task with schema `kube-actuary.next-version-task.v1`,
   resolves next-task evidence paths under a requested evidence directory,
   skips completed local evidence file sets when requested,
