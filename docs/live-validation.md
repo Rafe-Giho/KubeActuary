@@ -18,6 +18,7 @@ python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --sk
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
@@ -79,7 +80,7 @@ does not run cluster, cloud, or workload write commands.
 
 ```sh
 python3 -B scripts/build_next_task_evidence.py evidence/live
-python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 ```
 
 ## Open Live Gates

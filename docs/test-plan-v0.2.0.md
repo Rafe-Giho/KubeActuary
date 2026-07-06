@@ -30,7 +30,7 @@ Expected:
   freeze and public examples audit, live validation readiness inventory with
   gate-level tool readiness and optional environment probing, live validation
   queue generation, queue command safety,
-  and live evidence directory scaffold generation,
+  and live evidence directory scaffold generation with next-task advancement,
   live evidence schema validation, live evidence manifest generation, live
   evidence coverage validation, next-task evidence build from prepared raw
   files, project governance, air-gapped manifest generation, agent help schema
@@ -177,7 +177,8 @@ Expected:
 - live validation queue check prints `live-validation-queue: passed`;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
-  `live-evidence-directory-scaffold: passed`;
+  `live-evidence-directory-scaffold: passed` and verifies
+  `--skip-complete-evidence` next-task advancement;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;
@@ -328,7 +329,8 @@ Confirm from code and tests:
   commands stay dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,
   `supplemental/`, and `.kubeactuary/` directories plus queue snapshots and
-  next-task artifacts;
+  next-task artifacts, then advances past completed evidence file sets when
+  `--skip-complete-evidence` is used;
 - live evidence schema verifier validates all supported smoke report schemas;
 - live evidence manifest verifier maps captured reports to release gates and
   records report SHA-256 digests without contacting clusters;

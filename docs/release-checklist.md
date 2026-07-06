@@ -165,7 +165,8 @@ Expected:
 - live validation queue safety verifies placeholder and resolved queue commands
   remain dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifies the local reports/raw/supplemental
-  directory layout, generated queue snapshots, and next-task artifacts;
+  directory layout, generated queue snapshots, next-task artifacts, and
+  `--skip-complete-evidence` artifact advancement;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

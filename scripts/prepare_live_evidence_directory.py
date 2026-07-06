@@ -42,6 +42,8 @@ def readme_text(evidence_dir: Path, queue: dict) -> str:
             "`reports/`, `raw/`, and `supplemental/` directories.",
             "Use `.kubeactuary/next-version-task.*` for the deterministic next",
             "task and its resolved evidence paths.",
+            "After a selected task's evidence files exist, rerun this helper with",
+            "`--skip-complete-evidence` to advance the next-task artifact.",
             "",
             "Closure commands:",
             "",
@@ -56,7 +58,7 @@ def write_text(path: Path, text: str) -> None:
     path.write_text(text if text.endswith("\n") else text + "\n")
 
 
-def prepare_directory(evidence_dir: Path) -> dict[str, Path | dict]:
+def prepare_directory(evidence_dir: Path, skip_complete_evidence: bool = False) -> dict[str, Path | dict]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     for subdir in SUBDIRS:
         (evidence_dir / subdir).mkdir(parents=True, exist_ok=True)
@@ -71,6 +73,7 @@ def prepare_directory(evidence_dir: Path) -> dict[str, Path | dict]:
         probe_environment=False,
         kubectl="kubectl",
         evidence_dir=evidence_dir,
+        skip_complete_evidence=skip_complete_evidence,
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD
@@ -94,12 +97,17 @@ def prepare_directory(evidence_dir: Path) -> dict[str, Path | dict]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Prepare a KubeActuary live evidence directory.")
     parser.add_argument("evidence_dir", help="directory to create or update")
+    parser.add_argument(
+        "--skip-complete-evidence",
+        action="store_true",
+        help="advance next-task artifacts past tasks whose resolved evidence files already exist",
+    )
     args = parser.parse_args(argv)
 
     evidence_dir = Path(args.evidence_dir)
     try:
-        result = prepare_directory(evidence_dir)
-    except OSError as exc:
+        result = prepare_directory(evidence_dir, skip_complete_evidence=args.skip_complete_evidence)
+    except (OSError, ValueError) as exc:
         print("live-evidence-directory: failed")
         print(f"error: {exc}")
         return 1
@@ -113,6 +121,10 @@ def main(argv: list[str] | None = None) -> int:
     print("cluster-writes: disabled")
     print(f"queue: {result['queueJson']}")
     print(f"next-task: {result['nextTaskJson']}")
+    next_task = result["nextTask"]
+    next_task_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
+    print(f"skip-complete-evidence: {str(args.skip_complete_evidence).lower()}")
+    print(f"skipped-complete-evidence: {next_task_summary.get('skippedCompleteEvidence', 0)}")
     return 0
 
 

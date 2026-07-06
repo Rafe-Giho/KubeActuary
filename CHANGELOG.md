@@ -42,7 +42,7 @@ Evidence collector release:
 - add live validation queue command safety verification for placeholder and
   resolved evidence commands;
 - add live evidence directory scaffold generation for repeated external
-  evidence capture;
+  evidence capture with next-task advancement;
 - add GitHub Actions CI for the local verification suite;
 - add release checklist and generated release notes dry-run tooling;
 - render CRD objects with capsule digest annotations, post-checks, and richer

@@ -22,9 +22,9 @@ NEXT_TASK_TOOL = "select_next_version_task.py"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 
 
-def run_prepare(path: Path) -> subprocess.CompletedProcess[str]:
+def run_prepare(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "-B", str(PREPARE), str(path)],
+        [sys.executable, "-B", str(PREPARE), str(path), *args],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -47,6 +47,13 @@ def main() -> int:
         expected_dirs = [evidence_dir / name for name in ("reports", "raw", "supplemental", ".kubeactuary")]
         queue = json.loads(queue_json.read_text()) if queue_json.is_file() else {}
         next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
+        initial_next_task_md = next_task_md.read_text() if next_task_md.is_file() else ""
+        (evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
+            "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
+        )
+        (evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json").write_text("{}\n")
+        advanced = run_prepare(evidence_dir, "--skip-complete-evidence")
+        advanced_next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -55,6 +62,12 @@ def main() -> int:
             errors.append("scaffold must report prepared status")
         if "cluster-writes: disabled" not in second.stdout:
             errors.append("scaffold must report disabled writes")
+        if advanced.returncode != 0:
+            errors.append(f"advanced scaffold failed: {advanced.stderr.strip() or advanced.stdout.strip()}")
+        if "skip-complete-evidence: true" not in advanced.stdout:
+            errors.append("advanced scaffold must report skip-complete mode")
+        if "skipped-complete-evidence: 1" not in advanced.stdout:
+            errors.append("advanced scaffold must report one skipped completed task")
         for path in expected_dirs:
             if not path.is_dir():
                 errors.append(f"scaffold missing directory: {path.name}")
@@ -94,12 +107,20 @@ def main() -> int:
             errors.append("scaffold next task must resolve supplemental evidence path")
         if "<kubectl-top-output.txt>" in resolved_next or "<external-evidence.json>" in resolved_next:
             errors.append("scaffold next task must not keep placeholders in resolved commands")
-        if "Controller resource budget" not in next_task_md.read_text():
+        if "Controller resource budget" not in initial_next_task_md:
             errors.append("scaffold next task markdown must summarize selected task")
+        advanced_selected = advanced_next_task.get("selected") or {}
+        advanced_summary = advanced_next_task.get("summary", {})
+        if advanced_summary.get("skippedCompleteEvidence") != 1:
+            errors.append("advanced scaffold should skip one completed evidence task")
+        if advanced_selected.get("id") != "06-controller":
+            errors.append("advanced scaffold should select the next incomplete tool-ready task")
+        if advanced_selected.get("evidenceSummary", {}).get("complete") is True:
+            errors.append("advanced scaffold must not select a completed evidence task")
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()
-        for snippet in (PREPARE_TOOL, VERIFY_TOOL, NEXT_TASK_TOOL, NEXT_TASK_SCHEMA):
+        for snippet in (PREPARE_TOOL, VERIFY_TOOL, NEXT_TASK_TOOL, NEXT_TASK_SCHEMA, "--skip-complete-evidence"):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing scaffold detail: {snippet}")
 
