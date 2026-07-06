@@ -318,23 +318,31 @@ def command_string(args: list[str]) -> str:
     return " ".join(shlex.quote(arg) for arg in args)
 
 
-def blocker_worklist_command(capture_status: str, filter_flag: str, filter_value: str, evidence_dir: Path) -> str:
-    return command_string(
-        [
-            "python3",
-            "-B",
-            "scripts/generate_version_worklist.py",
-            "--format",
-            "markdown",
-            "--open-only",
-            "--evidence-dir",
-            evidence_dir.as_posix(),
-            "--capture-status",
-            capture_status,
-            filter_flag,
-            filter_value,
-        ]
-    )
+def add_repeated_args(args: list[str], flag: str, values: list[str]) -> None:
+    for value in values:
+        args.extend([flag, str(value)])
+
+
+def blocker_worklist_command(
+    capture_status: str,
+    filter_flag: str,
+    filter_value: str,
+    evidence_dir: Path,
+    version_filters: list[str] | None = None,
+) -> str:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+        "--evidence-dir",
+        evidence_dir.as_posix(),
+    ]
+    add_repeated_args(args, "--version", list(version_filters or []))
+    args.extend(["--capture-status", capture_status, filter_flag, filter_value])
+    return command_string(args)
 
 
 def selected_worklist_commands(selected: dict[str, Any], evidence_dir: Path) -> list[str]:
@@ -369,10 +377,19 @@ def sorted_counts(counter: Counter[str]) -> list[tuple[str, int]]:
     return sorted(counter.items(), key=lambda item: (-item[1], item[0]))
 
 
-def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -> dict[str, Any] | None:
+def live_queue_blockers(
+    live_queue: dict[str, Any] | None,
+    evidence_dir: Path,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any] | None:
     if not isinstance(live_queue, dict):
         return None
-    items = [item for item in live_queue.get("items", []) if isinstance(item, dict)]
+    requested = set(version_filters or [])
+    items = [
+        item
+        for item in live_queue.get("items", [])
+        if isinstance(item, dict) and (not requested or item.get("version") in requested)
+    ]
     missing_tools = Counter(
         str(tool)
         for item in items
@@ -404,6 +421,7 @@ def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -
                     "--missing-tool",
                     tool,
                     evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for tool, count in sorted_counts(missing_tools)
@@ -417,6 +435,7 @@ def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -
                     "--environment-status",
                     status,
                     evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for status, count in sorted_counts(environment_statuses)
@@ -430,6 +449,7 @@ def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -
                     "--environment-reason",
                     reason,
                     evidence_dir,
+                    version_filters=version_filters,
                 ),
             }
             for reason, count in sorted_counts(environment_reasons)
@@ -563,16 +583,20 @@ def queue_resolved_commands(
     gates: list[dict[str, Any]],
     live_queue: dict[str, Any] | None,
     skip_gate_ids: set[str],
+    version_filters: list[str] | None = None,
 ) -> tuple[list[str], set[str]]:
     commands: list[str] = []
     command_gate_ids: set[str] = set()
     items = queue_items_by_id(live_queue)
+    requested = set(version_filters or [])
     for gate in gates:
         gate_id = str(gate.get("id"))
         if gate_id in skip_gate_ids:
             continue
         item = items.get(gate_id)
         if not item:
+            continue
+        if requested and item.get("version") not in requested:
             continue
         if item.get("status") != "tool-ready":
             continue
@@ -603,24 +627,38 @@ def next_commands(
     environment_probe: dict[str, Any] | None,
     environment_blockers: dict[str, Any] | None,
     next_task_run: dict[str, Any] | None,
+    version_filters: list[str] | None = None,
 ) -> list[str]:
     commands: list[str] = []
+    requested = set(version_filters or [])
+    scoped_gates = [
+        gate
+        for gate in gates
+        if not requested or (gate.get("version") or gate.get("section")) in requested
+    ]
     resolved = selected_resolved_commands(next_task)
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     selected_id = str(selected.get("id")) if selected.get("id") else None
+    selected_version = selected.get("version")
+    selected_in_scope = not requested or selected_version in requested
     selected_status = selected.get("captureStatus")
     blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
     selected_blocked = blocker_summary.get("selectedBlocked") is True
     selected_ready = selected_status == "tool-ready" and not selected_blocked
-    skip_gate_ids = {selected_id} if selected_id else set()
-    queue_commands, queue_gate_ids = queue_resolved_commands(gates, live_queue, skip_gate_ids)
+    skip_gate_ids = {selected_id} if selected_id and selected_in_scope else set()
+    queue_commands, queue_gate_ids = queue_resolved_commands(
+        scoped_gates,
+        live_queue,
+        skip_gate_ids,
+        version_filters=version_filters,
+    )
     closure_commands = queue_closure_commands(live_queue)
     fallback_commands = unique_commands(
-        gates,
+        scoped_gates,
         skip_gate_ids | queue_gate_ids,
         include_closure=not closure_commands and live_queue is None,
     )
-    selected_commands = resolved if selected_ready else []
+    selected_commands = resolved if selected_ready and selected_in_scope else []
     queue_or_fallback_commands = queue_commands if live_queue is not None else fallback_commands
     include_closure = bool(queue_or_fallback_commands or selected_commands)
     for command in [
@@ -633,13 +671,26 @@ def next_commands(
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
     if selected_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
-        probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --probe-environment"
+        probe_args = [
+            "python3",
+            "-B",
+            "scripts/prepare_live_evidence_directory.py",
+            evidence_dir.as_posix(),
+        ]
+        add_repeated_args(probe_args, "--version", list(version_filters or []))
+        probe_args.append("--probe-environment")
+        probe_command = command_string(probe_args)
         if probe_command not in commands:
             commands.insert(0, probe_command)
     return commands
 
 
-def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
+def inspect_directory(
+    evidence_dir: Path,
+    output_dir: Path,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any]:
+    version_filters = list(version_filters or [])
     if not evidence_dir.is_dir():
         raise ValueError(f"{evidence_dir}: evidence directory not found")
     live_reports, supplemental_paths, errors = scan_directory(evidence_dir, output_dir, require_live_reports=False)
@@ -651,7 +702,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     live_queue = load_live_validation_queue(evidence_dir)
-    blockers = live_queue_blockers(live_queue, evidence_dir)
+    blockers = live_queue_blockers(live_queue, evidence_dir, version_filters=version_filters)
     fallback_queue_source, fallback_queue_source_origin = default_queue_source(live_queue)
     next_task = load_next_task(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     if next_task is not None:
@@ -688,6 +739,9 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
         "schemaVersion": SCHEMA_VERSION,
         "evidenceDir": str(evidence_dir),
         "outputDir": str(output_dir),
+        "filters": {
+            "versions": version_filters,
+        },
         "summary": {
             "status": "complete" if complete else "partial",
             "liveReports": len(live_reports),
@@ -733,6 +787,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
             environment_probe,
             environment_blockers,
             next_task_run,
+            version_filters=version_filters,
         ),
     }
 
@@ -747,6 +802,10 @@ def render_text(status: dict[str, Any]) -> str:
         f"coverage-errors: {summary['coverageErrors']}",
         f"next-commands: {len(status['nextCommands'])}",
     ]
+    filters = status.get("filters", {})
+    if isinstance(filters, dict):
+        for version in filters.get("versions", []) or []:
+            lines.append(f"filter-version: {version}")
     for command in status["nextCommands"]:
         lines.append(f"next: {command}")
     next_task = status.get("nextTask")
@@ -871,9 +930,11 @@ def render_markdown(status: dict[str, Any]) -> str:
         f"- covered gates: {summary['coveredGates']}/{summary['totalGates']}",
         f"- coverage errors: {summary['coverageErrors']}",
         "",
-        "## Next Task",
-        "",
     ]
+    filters = status.get("filters", {})
+    if isinstance(filters, dict) and filters.get("versions"):
+        lines.extend(["## Filters", "", f"- versions: `{', '.join(str(version) for version in filters['versions'])}`", ""])
+    lines.extend(["## Next Task", ""])
     next_task = status.get("nextTask")
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     if selected:
@@ -1012,6 +1073,7 @@ def main(argv: list[str] | None = None) -> int:
         help=f"artifact output directory, default: <evidence-dir>/{DEFAULT_OUTPUT_DIR}",
     )
     parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
+    parser.add_argument("--version", action="append", default=[], help="filter live queue blockers and next commands to a release version; repeatable")
     parser.add_argument("--record", action="store_true", help="write status JSON and Markdown under .kubeactuary")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -1019,7 +1081,7 @@ def main(argv: list[str] | None = None) -> int:
     evidence_dir = Path(args.evidence_dir)
     output_dir = Path(args.output_dir) if args.output_dir else evidence_dir / DEFAULT_OUTPUT_DIR
     try:
-        status = inspect_directory(evidence_dir, output_dir)
+        status = inspect_directory(evidence_dir, output_dir, version_filters=args.version)
         record = record_status(evidence_dir, status) if args.record else None
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("release-evidence-status: failed")

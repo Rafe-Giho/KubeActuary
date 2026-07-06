@@ -284,6 +284,32 @@ def main() -> int:
         )
         blocked = run_script(INSPECTOR, str(blocked_dir), "--format", "json")
         blocked_text = run_script(INSPECTOR, str(blocked_dir))
+        version_blocked_dir = tmpdir / "version-blocked"
+        version_blocked_prepared = run_script_with_env(
+            PREPARE,
+            str(version_blocked_dir),
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            env=fake_probe_env(tmpdir / "version-probe-tools"),
+        )
+        version_blocked = run_script(
+            INSPECTOR,
+            str(version_blocked_dir),
+            "--format",
+            "json",
+            "--version",
+            "0.4.3",
+        )
+        version_blocked_text = run_script(INSPECTOR, str(version_blocked_dir), "--version", "0.4.3")
+        version_blocked_markdown = run_script(
+            INSPECTOR,
+            str(version_blocked_dir),
+            "--format",
+            "markdown",
+            "--version",
+            "0.4.3",
+        )
 
         stale_dir = tmpdir / "stale"
         stale_prepared = run_script(PREPARE, str(stale_dir))
@@ -383,6 +409,19 @@ def main() -> int:
         blocked_payload = {}
     else:
         blocked_payload = json.loads(blocked.stdout)
+    if version_blocked_prepared.returncode != 0:
+        errors.append(
+            "version-blocked evidence prepare failed: "
+            f"{version_blocked_prepared.stderr.strip() or version_blocked_prepared.stdout.strip()}"
+        )
+    if version_blocked.returncode != 0:
+        errors.append(
+            f"version-blocked evidence status failed: "
+            f"{version_blocked.stderr.strip() or version_blocked.stdout.strip()}"
+        )
+        version_blocked_payload = {}
+    else:
+        version_blocked_payload = json.loads(version_blocked.stdout)
     if stale_prepared.returncode != 0:
         errors.append(f"stale evidence prepare failed: {stale_prepared.stderr.strip() or stale_prepared.stdout.strip()}")
     if stale.returncode != 0:
@@ -698,6 +737,51 @@ def main() -> int:
         errors.append("blocked text status must print selected environment next step")
     if "environment-worklist: python3 -B scripts/generate_version_worklist.py" not in blocked_text.stdout:
         errors.append("blocked text status must print environment worklist drilldowns")
+    if version_blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:
+        errors.append("version-blocked status must preserve version filters")
+    version_environment_blockers = (version_blocked_payload.get("blockers") or {}).get("environment") or []
+    if version_environment_blockers != [
+        {
+            "status": "cluster-unavailable",
+            "items": 1,
+            "worklistCommand": (
+                "python3 -B scripts/generate_version_worklist.py --format markdown --open-only "
+                f"--evidence-dir {version_blocked_dir} --version 0.4.3 "
+                "--capture-status blocked-by-environment --environment-status cluster-unavailable"
+            ),
+        }
+    ]:
+        errors.append("version-blocked status must scope environment blocker drilldowns to the requested version")
+    version_reason_blockers = (version_blocked_payload.get("blockers") or {}).get("environmentReasons") or []
+    if not any(
+        item.get("reason") == "command-failed"
+        and item.get("items") == 1
+        and "--version 0.4.3 --capture-status blocked-by-environment --environment-reason command-failed"
+        in item.get("worklistCommand", "")
+        for item in version_reason_blockers
+    ):
+        errors.append("version-blocked status must scope environment-reason drilldowns to the requested version")
+    expected_version_probe_command = (
+        f"python3 -B scripts/prepare_live_evidence_directory.py {version_blocked_dir} "
+        "--version 0.4.3 --probe-environment"
+    )
+    if version_blocked_payload.get("nextCommands", [None])[0] != expected_version_probe_command:
+        errors.append("version-blocked status must preserve version filters in the probe next command")
+    for snippet in (
+        "filter-version: 0.4.3",
+        f"next: {expected_version_probe_command}",
+        "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",
+        "--version 0.4.3 --capture-status blocked-by-environment --environment-reason command-failed",
+    ):
+        if snippet not in version_blocked_text.stdout:
+            errors.append(f"version-blocked text status should include: {snippet}")
+    for snippet in (
+        "versions: `0.4.3`",
+        f"`{expected_version_probe_command}`",
+        "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",
+    ):
+        if snippet not in version_blocked_markdown.stdout:
+            errors.append(f"version-blocked Markdown status should include: {snippet}")
 
     stale_next_task = stale_payload.get("nextTask") or {}
     stale_consistency = stale_next_task.get("queueConsistency") or {}

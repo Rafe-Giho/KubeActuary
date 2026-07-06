@@ -283,6 +283,7 @@ Inspect a partial evidence directory while gathering external runs:
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir>
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format json
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format markdown
+python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --version 0.4.3
 python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --record
 ```
 
@@ -315,7 +316,9 @@ kind, and resolved commands still match, making stale next-task artifacts
 visible before another capture attempt. The same status and progress reports
 compare persisted runner and advance records against the current next-task
 artifact, so stale local execution records are visible before repeated
-iteration. The status `nextCommands` list recommends only commands whose
+iteration. Use `--version <version>` to keep blocker drilldowns and
+environment-probe follow-up commands scoped to one release version. The status
+`nextCommands` list recommends only commands whose
 prepared queue item is `tool-ready`; `missing-tools` and
 `blocked-by-environment` actions stay in blocker summaries and next-step text
 instead of being suggested as runnable capture commands. Release progress uses

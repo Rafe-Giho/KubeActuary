@@ -238,6 +238,14 @@ def main() -> int:
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
         with_evidence_text = run_generator("--format", "text", "--evidence-dir", str(evidence_dir))
         with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
+        version_with_evidence_text = run_generator(
+            "--format",
+            "text",
+            "--version",
+            "Current Baseline",
+            "--evidence-dir",
+            str(evidence_dir),
+        )
         missing_evidence_dir = tmpdir / "missing-evidence"
         missing_evidence = run_generator("--format", "json", "--evidence-dir", str(missing_evidence_dir))
         missing_evidence_markdown = run_generator(
@@ -461,6 +469,20 @@ def main() -> int:
         ):
             if snippet not in with_evidence_text.stdout:
                 errors.append(f"evidence progress text missing status detail: {snippet}")
+    if version_with_evidence_text.returncode != 0:
+        errors.append(
+            "version evidence progress text failed: "
+            f"{version_with_evidence_text.stderr.strip() or version_with_evidence_text.stdout.strip()}"
+        )
+    else:
+        for snippet in (
+            "filter-version: Current Baseline",
+            "--version 'Current Baseline' --capture-status blocked-by-environment --environment-status cluster-unavailable",
+            "--version 'Current Baseline' --capture-status blocked-by-environment --environment-reason connection-refused",
+            f"next: python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --version 'Current Baseline' --probe-environment",
+        ):
+            if snippet not in version_with_evidence_text.stdout:
+                errors.append(f"version evidence progress text missing status detail: {snippet}")
     if missing_evidence.returncode != 0:
         errors.append(f"missing evidence progress failed: {missing_evidence.stderr.strip() or missing_evidence.stdout.strip()}")
         missing_evidence_progress = {}

@@ -513,7 +513,11 @@ def build_progress(
                     evidence_dir=evidence_dir,
                     version_filters=version_filters,
                 )
-            report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
+            report["evidenceStatus"] = inspect_directory(
+                evidence_dir,
+                target_output,
+                version_filters=version_filters,
+            )
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
     return report
