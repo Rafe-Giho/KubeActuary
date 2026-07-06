@@ -79,6 +79,7 @@ def main() -> int:
             evidence_dir / ".kubeactuary" / "next-version-task.json",
             {
                 "schemaVersion": "kube-actuary.next-version-task.v1",
+                "sourceWorklistQueueSource": "prepared-live-validation-queue",
                 "selected": {
                     "id": "01-controller-resource-budget",
                     "version": "Current Baseline",
@@ -98,9 +99,11 @@ def main() -> int:
                 "schemaVersion": "kube-actuary.next-version-task-run.v1",
                 "mode": "run",
                 "status": "failed",
+                "queueSource": "prepared-live-validation-queue",
                 "clusterWrites": "disabled-or-server-side-dry-run-only",
                 "ranAt": "2026-07-06T00:00:00+00:00",
                 "nextTask": {
+                    "queueSource": "prepared-live-validation-queue",
                     "selected": {
                         "id": "01-controller-resource-budget",
                         "version": "Current Baseline",
@@ -154,11 +157,16 @@ def main() -> int:
                 "schemaVersion": "kube-actuary.version-iteration-advance.v1",
                 "mode": "run",
                 "status": "failed",
+                "queueSource": "prepared-live-validation-queue",
                 "clusterWrites": "disabled-or-server-side-dry-run-only",
                 "runId": "test-progress",
                 "createdAt": "2026-07-06T00:00:00+00:00",
                 "runner": {"status": "failed"},
-                "nextTask": {"selected": "01-controller-resource-budget", "skippedCompleteEvidence": 0},
+                "nextTask": {
+                    "queueSource": "prepared-live-validation-queue",
+                    "selected": "01-controller-resource-budget",
+                    "skippedCompleteEvidence": 0,
+                },
                 "history": {"runs": 1},
             },
         )
@@ -196,11 +204,14 @@ def main() -> int:
     else:
         for snippet in (
             "next-task: `01-controller-resource-budget`",
+            "next-task-queue-source: `prepared-live-validation-queue`",
             "next-task-run: `failed`",
+            "next-task-run-queue-source: `prepared-live-validation-queue`",
             "next-task-run-error: `error: test cluster unavailable`",
             "environment-probe: `not-run`",
             "environment-next: start or select a disposable cluster, then rerun the probe",
             "version-iteration-advance: `failed`",
+            "version-iteration-advance-queue-source: `prepared-live-validation-queue`",
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
             "prepare_live_evidence_directory.py",
@@ -253,6 +264,12 @@ def main() -> int:
         errors.append("progress report must include partial evidence-dir status")
     if not evidence_status.get("nextCommands"):
         errors.append("partial evidence progress must include next commands")
+    if (evidence_status.get("nextTask") or {}).get("queueSource") != "prepared-live-validation-queue":
+        errors.append("evidence progress must preserve next-task queue source")
+    if (evidence_status.get("nextTaskRun") or {}).get("queueSource") != "prepared-live-validation-queue":
+        errors.append("evidence progress must preserve next-task-run queue source")
+    if (evidence_status.get("versionIterationAdvance") or {}).get("queueSource") != "prepared-live-validation-queue":
+        errors.append("evidence progress must preserve advance queue source")
     evidence_queue = evidence_progress.get("liveValidationQueue", {})
     evidence_next_actions = evidence_progress.get("nextActions", {})
     if evidence_queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":

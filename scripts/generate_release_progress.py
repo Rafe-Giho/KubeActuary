@@ -341,12 +341,16 @@ def render_markdown(progress: dict[str, Any]) -> str:
         selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
         if selected.get("id"):
             lines.append(f"- next-task: `{selected.get('id')}` ({selected.get('captureStatus')})")
+            if next_task.get("queueSource"):
+                lines.append(f"- next-task-queue-source: `{next_task.get('queueSource')}`")
             file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
             if file_summary:
                 lines.append(f"- next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
         next_task_run = evidence_status.get("nextTaskRun")
         if isinstance(next_task_run, dict):
             lines.append(f"- next-task-run: `{next_task_run.get('status')}` ({next_task_run.get('mode')})")
+            if next_task_run.get("queueSource"):
+                lines.append(f"- next-task-run-queue-source: `{next_task_run.get('queueSource')}`")
             failure = next_task_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- next-task-run-error: `{failure.get('message')}`")
@@ -363,6 +367,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
         advance = evidence_status.get("versionIterationAdvance")
         if isinstance(advance, dict):
             lines.append(f"- version-iteration-advance: `{advance.get('status')}`")
+            if advance.get("queueSource"):
+                lines.append(f"- version-iteration-advance-queue-source: `{advance.get('queueSource')}`")
         next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands[:3]:
             lines.append(f"- next: `{command}`")

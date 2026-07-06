@@ -142,7 +142,7 @@ Expected:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directories use the persisted live validation queue as the
-  next-action source;
+  next-action source and show persisted queue-source status;
 - version worklist check prints `version-worklist: passed` and covers next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
@@ -170,9 +170,9 @@ Expected:
   directories;
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
-  next-task-run status, environment metadata, advance status, and idempotent
-  output-exists handling plus `.kubeactuary/release-evidence-status.{json,md}`
-  recording;
+  next-task-run status, environment metadata, advance status, queue-source
+  visibility, and idempotent output-exists handling plus
+  `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
   queue-source preservation and zero-run reporting for non-`tool-ready`

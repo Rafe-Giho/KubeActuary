@@ -94,10 +94,12 @@ def write_next_task_run(evidence_dir: Path) -> None:
             "schemaVersion": NEXT_TASK_RUN_SCHEMA,
             "mode": "run",
             "status": "failed",
+            "queueSource": "prepared-live-validation-queue",
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "ranAt": "2026-07-06T00:00:00+00:00",
             "nextTask": {
                 "schemaVersion": NEXT_TASK_SCHEMA,
+                "queueSource": "prepared-live-validation-queue",
                 "selected": {
                     "id": "01-controller-resource-budget",
                     "version": "Current Baseline",
@@ -133,11 +135,13 @@ def write_advance_record(evidence_dir: Path) -> None:
             "schemaVersion": ADVANCE_SCHEMA,
             "mode": "run",
             "status": "passed",
+            "queueSource": "prepared-live-validation-queue",
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "runId": "test-advance",
             "createdAt": "2026-07-06T00:00:00+00:00",
             "runner": {"status": "passed"},
             "nextTask": {
+                "queueSource": "prepared-live-validation-queue",
                 "selected": "06-controller",
                 "skippedCompleteEvidence": 1,
             },
@@ -297,6 +301,8 @@ def main() -> int:
         errors.append("recorded status file schemaVersion mismatch")
     if recorded_file_payload.get("summary", {}).get("status") != "partial":
         errors.append("recorded status file must preserve partial status")
+    if "prepared-live-validation-queue" not in recorded_markdown:
+        errors.append("recorded status Markdown must preserve queue source")
     if partial_payload.get("summary", {}).get("status") != "partial":
         errors.append("partial evidence directory must report partial")
     if partial_payload.get("summary", {}).get("liveReports") != 1:
@@ -329,6 +335,8 @@ def main() -> int:
     selected = next_task.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
         errors.append("partial status must include next-task schema")
+    if next_task.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("partial status must preserve next-task queue source")
     next_task_summary = next_task.get("summary", {})
     if next_task_summary.get("files") != 3:
         errors.append("partial status must summarize three selected next-task file references")
@@ -339,6 +347,8 @@ def main() -> int:
     next_task_run = partial_payload.get("nextTaskRun") or {}
     if next_task_run.get("schemaVersion") != NEXT_TASK_RUN_SCHEMA:
         errors.append("partial status must include next-task-run schema")
+    if next_task_run.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("partial status must preserve next-task-run queue source")
     if next_task_run.get("status") != "failed" or next_task_run.get("mode") != "run":
         errors.append("partial status must preserve next-task-run status")
     if next_task_run.get("summary", {}).get("ran") != 2:
@@ -359,6 +369,8 @@ def main() -> int:
     advance = partial_payload.get("versionIterationAdvance") or {}
     if advance.get("schemaVersion") != ADVANCE_SCHEMA:
         errors.append("partial status must include version-iteration-advance schema")
+    if advance.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("partial status must preserve version-iteration-advance queue source")
     if advance.get("status") != "passed" or advance.get("runId") != "test-advance":
         errors.append("partial status must preserve version-iteration-advance status")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
@@ -377,8 +389,12 @@ def main() -> int:
         errors.append("partial text status must print the selected next task")
     if "next-task-files: 2/3" not in partial_text.stdout:
         errors.append("partial text status must print next-task file readiness")
+    if "next-task-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
+        errors.append("partial text status must print next-task queue source")
     if "next-task-run: failed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
+    if "next-task-run-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
+        errors.append("partial text status must print next-task-run queue source")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
@@ -391,6 +407,8 @@ def main() -> int:
         errors.append("partial text status must print environment blocker count")
     if "version-iteration-advance: passed" not in partial_text.stdout:
         errors.append("partial text status must print advance status")
+    if "version-iteration-advance-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
+        errors.append("partial text status must print advance queue source")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")

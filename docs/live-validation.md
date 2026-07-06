@@ -66,7 +66,9 @@ failing and prints the `prepare_live_evidence_directory.py` command needed to
 start the local evidence loop. For prepared directories, the Markdown progress
 view also surfaces the selected next task, next-task runner status,
 next-task runner failure reason, environment probe/blocker status, and latest
-iteration advance status.
+iteration advance status. It also prints queue-source details from the
+selected next-task, runner, and advance records when an evidence directory has
+been prepared.
 If the prepared directory contains `.kubeactuary/live-validation-queue.json`,
 progress uses that persisted queue as the next-action source so action counts
 match the last local probe instead of the inventory-only tool snapshot.
@@ -242,7 +244,9 @@ environment probe/blocker metadata from `.kubeactuary/environment-*.json`,
 plus the latest advance workflow status from
 `.kubeactuary/version-iteration-advance.json`. With `--record`, it persists
 the computed status as `.kubeactuary/release-evidence-status.json` and
-`.kubeactuary/release-evidence-status.md`.
+`.kubeactuary/release-evidence-status.md`. The status report preserves and
+prints queue-source metadata from the next-task, runner, and advance records
+when present.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.

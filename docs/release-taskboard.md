@@ -23,7 +23,7 @@ Status legend:
 | GitHub Actions CI | DONE | workflow YAML parse and release verification command |
 | Release checklist and notes | DONE | release checklist doc plus generated notes dry-run |
 | Release taskboard audit | DONE | `scripts/verify_release_taskboard.py` verifies statuses, remaining evidence notes, and release check count |
-| Release progress | DONE | `scripts/verify_release_progress.py` verifies versioned release progress reporting |
+| Release progress | DONE | `scripts/verify_release_progress.py` verifies versioned release progress reporting plus evidence-directory queue-source status |
 | Version worklist | DONE | `scripts/generate_version_worklist.py`, `scripts/prepare_version_iteration.py`, `scripts/compare_version_iterations.py`, `scripts/record_version_iteration.py`, `scripts/inspect_version_history.py`, `scripts/select_next_version_task.py`, and `scripts/verify_version_worklist.py` verify schemas `kube-actuary.version-worklist.v1`, `kube-actuary.version-iteration.v1`, `kube-actuary.version-iteration-diff.v1`, `kube-actuary.version-iteration-history.v1`, `kube-actuary.version-iteration-history-status.v1`, and `kube-actuary.next-version-task.v1` for version-grouped open work, prepared queue reuse, evidence-dir file readiness, evidence-aware local iteration packs, pack diffs, queue-source-preserving run history, history inspection, next-task selection, deterministic evidence-directory command paths, and `--skip-complete-evidence` completed-evidence skipping |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate command safety | DONE | `scripts/verify_external_gate_command_safety.py` verifies generated external commands stay dry-run/read-only/evidence-only |
@@ -31,7 +31,7 @@ Status legend:
 | External evidence builder | DONE | `scripts/verify_external_evidence_builder.py` verifies supplemental evidence record generation |
 | External evidence bundle | DONE | `scripts/verify_external_evidence_bundle.py` verifies auditable evidence bundle generation |
 | Release evidence directory | DONE | `scripts/verify_release_evidence_directory.py` verifies repeated evidence directory artifact generation |
-| Release evidence status | DONE | `scripts/verify_release_evidence_status.py` verifies partial evidence directory status inspection plus persisted next-task output and file readiness |
+| Release evidence status | DONE | `scripts/verify_release_evidence_status.py` verifies partial evidence directory status inspection plus persisted next-task output, file readiness, and queue-source visibility |
 | Next task evidence builder | DONE | `scripts/build_next_task_evidence.py` and `scripts/verify_release_evidence_status.py` build selected local supplemental evidence from captured raw files |
 | Next version task runner | DONE | `scripts/run_next_version_task.py` and `scripts/verify_next_version_task_runner.py` plan, run, record selected safe evidence commands, preserve queue source, and keep non-`tool-ready` tasks at zero-run status from a prepared evidence directory |
 | Version iteration advance | DONE | `scripts/advance_version_iteration.py` and `scripts/verify_version_iteration_advance.py` verify schema `kube-actuary.version-iteration-advance.v1` for one selected task plus probe-aware before/after history, queue-source-preserving `.kubeactuary/next-version-task-run.json`, and `.kubeactuary/version-iteration-advance.json` status recording |

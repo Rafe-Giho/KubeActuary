@@ -72,9 +72,11 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")
     selected = payload.get("selected") or {}
     files = next_task_files(selected)
+    queue_source = payload.get("sourceWorklistQueueSource") or payload.get("queueSource") or "generated"
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
+        "queueSource": queue_source,
         "summary": {
             "files": len(files),
             "existingFiles": sum(1 for item in files if item["exists"]),
@@ -136,9 +138,11 @@ def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported next-task-run schemaVersion: {payload.get('schemaVersion')!r}")
     next_task = payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
+    queue_source = payload.get("queueSource") or next_task.get("queueSource") or "generated"
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
+        "queueSource": queue_source,
         "mode": payload.get("mode"),
         "status": payload.get("status"),
         "clusterWrites": payload.get("clusterWrites"),
@@ -198,9 +202,11 @@ def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported version-iteration-advance schemaVersion: {payload.get('schemaVersion')!r}")
     runner = payload.get("runner") or {}
     next_task = payload.get("nextTask") or {}
+    queue_source = payload.get("queueSource") or next_task.get("queueSource") or "generated"
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
+        "queueSource": queue_source,
         "mode": payload.get("mode"),
         "status": payload.get("status"),
         "clusterWrites": payload.get("clusterWrites"),
@@ -420,6 +426,8 @@ def render_text(status: dict[str, Any]) -> str:
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     if selected:
         lines.append(f"next-task: {selected.get('id')}")
+        if next_task.get("queueSource"):
+            lines.append(f"next-task-queue-source: {next_task.get('queueSource')}")
         lines.append(f"next-task-status: {selected.get('captureStatus')}")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
@@ -434,6 +442,8 @@ def render_text(status: dict[str, Any]) -> str:
     next_task_run = status.get("nextTaskRun")
     if isinstance(next_task_run, dict):
         lines.append(f"next-task-run: {next_task_run.get('status')}")
+        if next_task_run.get("queueSource"):
+            lines.append(f"next-task-run-queue-source: {next_task_run.get('queueSource')}")
         lines.append(f"next-task-run-mode: {next_task_run.get('mode')}")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
@@ -457,6 +467,8 @@ def render_text(status: dict[str, Any]) -> str:
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.append(f"version-iteration-advance: {advance.get('status')}")
+        if advance.get("queueSource"):
+            lines.append(f"version-iteration-advance-queue-source: {advance.get('queueSource')}")
         if advance.get("runId"):
             lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
     return "\n".join(lines) + "\n"
@@ -485,6 +497,8 @@ def render_markdown(status: dict[str, Any]) -> str:
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     if selected:
         lines.append(f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('captureStatus')})")
+        if next_task.get("queueSource"):
+            lines.append(f"- queue source: `{next_task.get('queueSource')}`")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
             lines.append(f"- files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
@@ -493,6 +507,8 @@ def render_markdown(status: dict[str, Any]) -> str:
     next_task_run = status.get("nextTaskRun")
     if isinstance(next_task_run, dict):
         lines.extend(["", "## Runner", "", f"- status: `{next_task_run.get('status')}`"])
+        if next_task_run.get("queueSource"):
+            lines.append(f"- queue source: `{next_task_run.get('queueSource')}`")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"- ran: {run_summary.get('ran', 0)}")
@@ -514,6 +530,8 @@ def render_markdown(status: dict[str, Any]) -> str:
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.extend(["", "## Advance", "", f"- status: `{advance.get('status')}`"])
+        if advance.get("queueSource"):
+            lines.append(f"- queue source: `{advance.get('queueSource')}`")
         if advance.get("runId"):
             lines.append(f"- run id: `{advance.get('runId')}`")
     if status.get("nextCommands"):
