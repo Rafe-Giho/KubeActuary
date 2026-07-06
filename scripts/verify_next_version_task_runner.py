@@ -71,6 +71,7 @@ def main() -> int:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
         blocked_dir = tmpdir / "blocked"
+        missing_tools_dir = tmpdir / "missing-tools"
         recorded_dir = tmpdir / "recorded"
         failing_dir = tmpdir / "failing"
         unprepared_dir = tmpdir / "unprepared"
@@ -155,6 +156,59 @@ def main() -> int:
                 errors.append("blocked runner recorded JSON must preserve zero-run summary")
             if blocked_next_step not in blocked_record_md.read_text():
                 errors.append("blocked runner recorded Markdown must preserve blocker summary")
+
+        missing_metadata = missing_tools_dir / ".kubeactuary"
+        missing_metadata.mkdir(parents=True)
+        missing_output = missing_tools_dir / "reports" / "missing-helm.json"
+        (missing_metadata / "next-version-task.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.next-version-task.v1",
+                    "selected": {
+                        "id": "missing-helm",
+                        "version": "0.5.0",
+                        "item": "Helm chart",
+                        "kind": "helm",
+                        "captureStatus": "missing-tools",
+                        "missingTools": ["helm"],
+                        "nextStep": "install missing tools or run on a host that has them",
+                        "resolvedCommands": [
+                            (
+                                "python3 -B scripts/run_helm_smoke.py "
+                                f"--run --output {missing_output.as_posix()}"
+                            ),
+                        ],
+                    },
+                }
+            )
+            + "\n"
+        )
+        missing = run_script(RUNNER, str(missing_tools_dir), "--run", "--format", "json")
+        missing_record = run_script(RUNNER, str(missing_tools_dir), "--run", "--record", "--format", "json")
+        missing_record_json = missing_tools_dir / ".kubeactuary" / "next-version-task-run.json"
+        missing_record_md = missing_tools_dir / ".kubeactuary" / "next-version-task-run.md"
+        if missing.returncode == 0:
+            errors.append("missing-tools runner must return non-zero while avoiding command execution")
+            missing_payload = {}
+        else:
+            missing_payload = json.loads(missing.stdout)
+        missing_summary = missing_payload.get("summary", {})
+        if missing_payload.get("status") != "missing-tools" or missing_summary.get("ran") != 0:
+            errors.append("missing-tools runner must report missing-tools with zero executed commands")
+        if missing_output.exists():
+            errors.append("missing-tools runner must not create report evidence files")
+        if missing_payload.get("blocker", {}).get("message") != "missing tools: helm":
+            errors.append("missing-tools runner must preserve the missing tool summary")
+        if missing_record.returncode == 0:
+            errors.append("missing-tools runner --record must keep a non-zero exit status")
+        if not missing_record_json.is_file() or not missing_record_md.is_file():
+            errors.append("missing-tools runner --record must persist zero-run reports")
+        else:
+            missing_record_payload = json.loads(missing_record_json.read_text())
+            if missing_record_payload.get("summary", {}).get("ran") != 0:
+                errors.append("missing-tools runner recorded JSON must preserve zero-run summary")
+            if "missing tools: helm" not in missing_record_md.read_text():
+                errors.append("missing-tools runner recorded Markdown must preserve missing-tool summary")
 
         run_env = fake_tool_env(tmpdir / "tools")
         failing_env = fake_failing_tool_env(tmpdir / "failing-tools")
