@@ -155,8 +155,11 @@ def blocked_run_summary(selected: dict[str, Any]) -> dict[str, Any] | None:
     missing_tools = selected.get("missingTools") or []
     next_step = selected.get("nextStep")
     environment_status = selected.get("environmentStatus")
+    environment_reason = selected.get("environmentReason")
     if missing_tools:
         message = f"missing tools: {', '.join(str(tool) for tool in missing_tools)}"
+    elif environment_reason:
+        message = f"environment reason: {environment_reason}"
     elif next_step:
         message = str(next_step)
     elif environment_status:
@@ -166,6 +169,7 @@ def blocked_run_summary(selected: dict[str, Any]) -> dict[str, Any] | None:
     return {
         "captureStatus": capture_status,
         "environmentStatus": environment_status,
+        "environmentReason": environment_reason,
         "missingTools": missing_tools,
         "nextStep": next_step,
         "message": message,
@@ -218,6 +222,7 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
                 "kind": selected.get("kind"),
                 "captureStatus": selected.get("captureStatus"),
                 "environmentStatus": selected.get("environmentStatus"),
+                "environmentReason": selected.get("environmentReason"),
                 "missingTools": selected.get("missingTools", []),
                 "nextStep": selected.get("nextStep"),
             },
@@ -263,6 +268,8 @@ def render_text(result: dict[str, Any]) -> str:
     blocker = result.get("blocker")
     if isinstance(blocker, dict) and blocker.get("message"):
         lines.append(f"blocker: {blocker.get('message')}")
+        if blocker.get("environmentReason"):
+            lines.append(f"blocker-environment-reason: {blocker.get('environmentReason')}")
     return "\n".join(lines) + "\n"
 
 
@@ -284,6 +291,10 @@ def render_markdown(result: dict[str, Any]) -> str:
         f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('version')})",
         f"- capture status: `{selected.get('captureStatus')}`",
         f"- kind: `{selected.get('kind')}`",
+    ]
+    if selected.get("environmentReason"):
+        lines.append(f"- environment reason: `{selected.get('environmentReason')}`")
+    lines.extend([
         "",
         "## Summary",
         "",
@@ -295,7 +306,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "",
         "## Commands",
         "",
-    ]
+    ])
     for record in result["validations"]:
         status = "valid" if record["valid"] else "invalid"
         lines.append(f"- `{status}` {record['command']}")

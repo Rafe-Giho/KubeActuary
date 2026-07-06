@@ -74,6 +74,7 @@ def main() -> int:
             errors.append("queue generator must write requested output path")
         probe_env = fake_tool_dir(tmpdir / "tools", cluster_ok=False)
         probe_result = run_generator("--format", "json", "--probe-environment", env=probe_env)
+        probe_markdown_result = run_generator("--format", "markdown", "--probe-environment", env=probe_env)
 
     if json_result.returncode != 0:
         errors.append(f"json queue failed: {json_result.stderr.strip() or json_result.stdout.strip()}")
@@ -107,6 +108,10 @@ def main() -> int:
         errors.append(f"markdown queue failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# Live Validation Queue" not in markdown_result.stdout:
         errors.append("markdown queue missing heading")
+    if probe_markdown_result.returncode != 0:
+        errors.append(f"probe markdown queue failed: {probe_markdown_result.stderr.strip() or probe_markdown_result.stdout.strip()}")
+    elif "Environment reason: `connection-refused`" not in probe_markdown_result.stdout:
+        errors.append("probe markdown queue must show environment reason")
 
     summary = queue.get("summary", {})
     items = queue.get("items", [])
@@ -200,6 +205,8 @@ def main() -> int:
         errors.append("probe queue must leave only non-cluster Krew items tool-ready")
     if not any(item.get("environmentStatus") == "cluster-unavailable" for item in probe_items if isinstance(item, dict)):
         errors.append("probe queue must annotate cluster-unavailable items")
+    if not any(item.get("environmentReason") == "connection-refused" for item in probe_items if isinstance(item, dict)):
+        errors.append("probe queue must annotate environment reason on blocked items")
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()

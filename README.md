@@ -505,6 +505,7 @@ python3 -B scripts/generate_version_worklist.py --format markdown --open-only --
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind
 python3 -B scripts/select_next_version_task.py --missing-tool kind
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
+python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment --environment-reason connection-refused
 python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
 python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --version 0.4.3
 python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-kind-iteration --open-only --missing-tool kind

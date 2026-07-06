@@ -41,6 +41,7 @@ def planned_result(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     selection = build_selection(
         version_filters=[],
@@ -52,6 +53,7 @@ def planned_result(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
     )
     selected = selection.get("selected") or {}
     queue_source = str(selection.get("sourceWorklistQueueSource") or "generated")
@@ -74,6 +76,7 @@ def planned_result(
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
             "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
             "missingTools": selected.get("missingTools", []),
             "nextStep": selected.get("nextStep"),
             "commands": selected.get("resolvedCommands", selected.get("commands", [])),
@@ -141,6 +144,7 @@ def run_advance(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     prepared = prepare_directory(
         evidence_dir,
@@ -150,6 +154,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
     )
     prepared_next_task = prepared.get("nextTask") or {}
     queue_source = str(prepared_next_task.get("sourceWorklistQueueSource") or "generated")
@@ -165,6 +170,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=True,
     )
     selected = prepared_next_task.get("selected") or {}
@@ -183,6 +189,7 @@ def run_advance(
             capture_status_filters=capture_status_filters,
             missing_tool_filters=missing_tool_filters,
             environment_status_filters=environment_status_filters,
+            environment_reason_filters=environment_reason_filters,
             prefer_prepared_queue=True,
         )
         history = inspect_history(history_dir)
@@ -217,6 +224,7 @@ def run_advance(
                 "selected": selected.get("id"),
                 "captureStatus": selected.get("captureStatus"),
                 "environmentStatus": selected.get("environmentStatus"),
+                "environmentReason": selected.get("environmentReason"),
                 "missingTools": selected.get("missingTools", []),
                 "nextStep": selected.get("nextStep"),
                 "worklistCommands": selected_worklist_commands(selected, evidence_dir),
@@ -237,6 +245,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
     )
     after = record_iteration(
         history_dir,
@@ -250,6 +259,7 @@ def run_advance(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=True,
     )
     history = inspect_history(history_dir)
@@ -287,6 +297,7 @@ def run_advance(
             "selected": refreshed_selected.get("id"),
             "captureStatus": refreshed_selected.get("captureStatus"),
             "environmentStatus": refreshed_selected.get("environmentStatus"),
+            "environmentReason": refreshed_selected.get("environmentReason"),
             "missingTools": refreshed_selected.get("missingTools", []),
             "nextStep": refreshed_selected.get("nextStep"),
             "worklistCommands": selected_worklist_commands(refreshed_selected, evidence_dir),
@@ -313,6 +324,8 @@ def render_text(result: dict[str, Any]) -> str:
             lines.append(f"selected-status: {selected.get('captureStatus')}")
         if selected.get("environmentStatus"):
             lines.append(f"selected-environment: {selected.get('environmentStatus')}")
+        if selected.get("environmentReason"):
+            lines.append(f"selected-environment-reason: {selected.get('environmentReason')}")
         missing_tools = selected.get("missingTools") or []
         if missing_tools:
             tools = ", ".join(str(tool) for tool in missing_tools)
@@ -339,6 +352,8 @@ def render_text(result: dict[str, Any]) -> str:
             lines.append(f"next-task-status: {result['nextTask'].get('captureStatus')}")
         if result["nextTask"].get("environmentStatus"):
             lines.append(f"next-task-environment: {result['nextTask'].get('environmentStatus')}")
+        if result["nextTask"].get("environmentReason"):
+            lines.append(f"next-task-environment-reason: {result['nextTask'].get('environmentReason')}")
         missing_tools = result["nextTask"].get("missingTools") or []
         if missing_tools:
             tools = ", ".join(str(tool) for tool in missing_tools)
@@ -382,6 +397,8 @@ def render_markdown(result: dict[str, Any]) -> str:
             lines.append(f"- next task status: `{next_task.get('captureStatus')}`")
         if next_task.get("environmentStatus"):
             lines.append(f"- next task environment: `{next_task.get('environmentStatus')}`")
+        if next_task.get("environmentReason"):
+            lines.append(f"- next task environment reason: `{next_task.get('environmentReason')}`")
         missing_tools = next_task.get("missingTools") or []
         if missing_tools:
             tools = ", ".join(str(tool) for tool in missing_tools)
@@ -398,6 +415,8 @@ def render_markdown(result: dict[str, Any]) -> str:
             lines.append(f"- selected status: `{selected.get('captureStatus')}`")
         if selected.get("environmentStatus"):
             lines.append(f"- selected environment: `{selected.get('environmentStatus')}`")
+        if selected.get("environmentReason"):
+            lines.append(f"- selected environment reason: `{selected.get('environmentReason')}`")
         missing_tools = selected.get("missingTools") or []
         if missing_tools:
             tools = ", ".join(str(tool) for tool in missing_tools)
@@ -434,6 +453,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter next-task selection by environment reason; repeatable")
     parser.add_argument("--format", choices=("text", "json", "markdown"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -454,6 +474,7 @@ def main(argv: list[str] | None = None) -> int:
                 capture_status_filters=args.capture_status,
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,
+                environment_reason_filters=args.environment_reason,
             )
             record_advance_result(evidence_dir, result)
         else:
@@ -465,6 +486,7 @@ def main(argv: list[str] | None = None) -> int:
                 capture_status_filters=args.capture_status,
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,
+                environment_reason_filters=args.environment_reason,
             )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("version-iteration-advance: failed")

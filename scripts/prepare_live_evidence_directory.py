@@ -137,6 +137,7 @@ def environment_blocker_report(evidence_dir: Path, queue: dict, next_task: dict)
             "kind": item.get("kind"),
             "status": item.get("status"),
             "environmentStatus": item.get("environmentStatus"),
+            "environmentReason": item.get("environmentReason"),
             "nextStep": item.get("nextStep"),
         }
         for item in queue.get("items", [])
@@ -161,6 +162,7 @@ def environment_blocker_report(evidence_dir: Path, queue: dict, next_task: dict)
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
             "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
             "nextStep": selected.get("nextStep"),
         },
         "items": blocked_items,
@@ -191,6 +193,8 @@ def render_environment_blockers(report: dict) -> str:
         lines.append(f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('captureStatus')})")
         if selected.get("environmentStatus"):
             lines.append(f"  environment: `{selected.get('environmentStatus')}`")
+        if selected.get("environmentReason"):
+            lines.append(f"  environment reason: `{selected.get('environmentReason')}`")
         if selected.get("nextStep"):
             lines.append(f"  next: {selected.get('nextStep')}")
     else:
@@ -201,6 +205,8 @@ def render_environment_blockers(report: dict) -> str:
             lines.append(f"- `{item.get('id')}` {item.get('item')} ({item.get('version')})")
             if item.get("environmentStatus"):
                 lines.append(f"  environment: `{item.get('environmentStatus')}`")
+            if item.get("environmentReason"):
+                lines.append(f"  environment reason: `{item.get('environmentReason')}`")
             if item.get("nextStep"):
                 lines.append(f"  next: {item.get('nextStep')}")
     else:
@@ -216,6 +222,7 @@ def prepare_directory(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
 ) -> dict[str, Path | dict]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     for subdir in SUBDIRS:
@@ -240,6 +247,7 @@ def prepare_directory(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=True,
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
@@ -285,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter next-task selection by environment reason; repeatable")
     args = parser.parse_args(argv)
 
     evidence_dir = Path(args.evidence_dir)
@@ -297,6 +306,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
+            environment_reason_filters=args.environment_reason,
         )
     except (OSError, ValueError) as exc:
         print("live-evidence-directory: failed")

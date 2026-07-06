@@ -244,6 +244,7 @@ def load_environment_probe(evidence_dir: Path) -> dict[str, Any] | None:
         "clusterWrites": payload.get("clusterWrites"),
         "probeEnabled": payload.get("probeEnabled"),
         "clusterAccess": payload.get("clusterAccess"),
+        "reason": payload.get("reason"),
         "kubectl": payload.get("kubectl"),
         "summary": payload.get("summary", {}),
     }
@@ -359,6 +360,8 @@ def selected_worklist_commands(selected: dict[str, Any], evidence_dir: Path) -> 
         ]
     if capture_status == "blocked-by-environment" and selected.get("environmentStatus"):
         args.extend(["--environment-status", str(selected["environmentStatus"])])
+    if capture_status == "blocked-by-environment" and selected.get("environmentReason"):
+        args.extend(["--environment-reason", str(selected["environmentReason"])])
     return [command_string(args)]
 
 
@@ -378,6 +381,11 @@ def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -
     )
     environment_statuses = Counter(
         str(item.get("environmentStatus") or "unknown")
+        for item in items
+        if item.get("status") == "blocked-by-environment"
+    )
+    environment_reasons = Counter(
+        str(item.get("environmentReason") or "unknown")
         for item in items
         if item.get("status") == "blocked-by-environment"
     )
@@ -412,6 +420,19 @@ def live_queue_blockers(live_queue: dict[str, Any] | None, evidence_dir: Path) -
                 ),
             }
             for status, count in sorted_counts(environment_statuses)
+        ],
+        "environmentReasons": [
+            {
+                "reason": reason,
+                "items": count,
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-reason",
+                    reason,
+                    evidence_dir,
+                ),
+            }
+            for reason, count in sorted_counts(environment_reasons)
         ],
         "environmentNextSteps": [
             {"nextStep": next_step, "items": count}
@@ -789,6 +810,8 @@ def render_text(status: dict[str, Any]) -> str:
     environment_probe = status.get("environmentProbe")
     if isinstance(environment_probe, dict):
         lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
+        if environment_probe.get("reason"):
+            lines.append(f"environment-probe-reason: {environment_probe.get('reason')}")
         probe_summary = environment_probe.get("summary", {})
         if probe_summary:
             lines.append(f"environment-probe-checks: {probe_summary.get('passed', 0)}/{probe_summary.get('checks', 0)}")
@@ -809,6 +832,10 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"environment-blocker: {item.get('status')} {item.get('items')}")
             if item.get("worklistCommand"):
                 lines.append(f"environment-worklist: {item.get('worklistCommand')}")
+        for item in blockers.get("environmentReasons", []):
+            lines.append(f"environment-reason-blocker: {item.get('reason')} {item.get('items')}")
+            if item.get("worklistCommand"):
+                lines.append(f"environment-reason-worklist: {item.get('worklistCommand')}")
         for item in blockers.get("environmentNextSteps", []):
             lines.append(f"blocker-next-step: {item.get('nextStep')} {item.get('items')}")
     advance = status.get("versionIterationAdvance")
@@ -910,6 +937,8 @@ def render_markdown(status: dict[str, Any]) -> str:
         lines.extend(["", "## Environment", ""])
         if isinstance(environment_probe, dict):
             lines.append(f"- probe: `{environment_probe.get('clusterAccess')}`")
+            if environment_probe.get("reason"):
+                lines.append(f"- probe reason: `{environment_probe.get('reason')}`")
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
             lines.append(f"- blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
@@ -920,8 +949,9 @@ def render_markdown(status: dict[str, Any]) -> str:
     if isinstance(blockers, dict):
         missing_tool_blockers = blockers.get("missingTools") or []
         environment_status_blockers = blockers.get("environment") or []
+        environment_reason_blockers = blockers.get("environmentReasons") or []
         environment_next_steps = blockers.get("environmentNextSteps") or []
-        if missing_tool_blockers or environment_status_blockers:
+        if missing_tool_blockers or environment_status_blockers or environment_reason_blockers:
             lines.extend(["", "## Blockers", ""])
             for item in missing_tool_blockers:
                 lines.append(f"- missing-tool: `{item.get('tool')}` ({item.get('items')} items)")
@@ -929,6 +959,10 @@ def render_markdown(status: dict[str, Any]) -> str:
                     lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
             for item in environment_status_blockers:
                 lines.append(f"- environment: `{item.get('status')}` ({item.get('items')} items)")
+                if item.get("worklistCommand"):
+                    lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+            for item in environment_reason_blockers:
+                lines.append(f"- environment reason: `{item.get('reason')}` ({item.get('items')} items)")
                 if item.get("worklistCommand"):
                     lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
             for item in environment_next_steps:

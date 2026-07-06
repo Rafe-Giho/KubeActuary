@@ -191,13 +191,16 @@ def environment_probe(kubectl: str) -> dict[str, Any]:
 
 def add_environment_status(gates: list[dict[str, Any]], probe: dict[str, Any]) -> None:
     cluster_available = probe.get("clusterAccess") == "available"
+    reason = str(probe.get("reason") or "unknown")
     for gate in gates:
         if gate.get("gate") not in CLUSTER_REQUIRED_GATES:
             gate["environmentStatus"] = "not-required"
         elif cluster_available:
             gate["environmentStatus"] = "cluster-available"
+            gate["environmentReason"] = reason
         else:
             gate["environmentStatus"] = "cluster-unavailable"
+            gate["environmentReason"] = reason
 
 
 def build_report(probe_environment: bool = False, kubectl: str = "kubectl") -> dict[str, Any]:

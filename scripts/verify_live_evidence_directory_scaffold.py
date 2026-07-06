@@ -190,6 +190,18 @@ def main() -> int:
             errors.append("probe scaffold blocker report must record unavailable-cluster reason")
         if probe_blockers.get("summary", {}).get("blockedByEnvironment") != 14:
             errors.append("probe scaffold blocker report must count environment-blocked items")
+        if not any(
+            item.get("environmentReason") == "connection-refused"
+            for item in probe_queue.get("items", [])
+            if isinstance(item, dict)
+        ):
+            errors.append("probe scaffold queue must preserve item environment reason")
+        if not any(
+            item.get("environmentReason") == "connection-refused"
+            for item in probe_blockers.get("items", [])
+            if isinstance(item, dict)
+        ):
+            errors.append("probe scaffold blocker report must preserve item environment reason")
         probe_selected = probe_next_task.get("selected") or {}
         if probe_selected.get("captureStatus") != "tool-ready" or probe_selected.get("kind") != "krew":
             errors.append("probe scaffold should select a non-cluster Krew task when cluster is unavailable")

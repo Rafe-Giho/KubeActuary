@@ -184,6 +184,7 @@ def next_actions_from_queue(queue: dict[str, Any], evidence_dir: Path | None = N
                 "status": status,
                 "missingTools": item.get("missingTools", []),
                 "environmentStatus": item.get("environmentStatus"),
+                "environmentReason": item.get("environmentReason"),
                 "nextStep": item.get("nextStep"),
                 "firstCommand": commands[0] if status == "tool-ready" and commands else None,
             }
@@ -245,6 +246,11 @@ def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | Non
         for action in actions
         if action.get("status") == "blocked-by-environment"
     )
+    environment_reasons = Counter(
+        action.get("environmentReason") or "unknown"
+        for action in actions
+        if action.get("status") == "blocked-by-environment"
+    )
     environment_next_steps = Counter(
         action.get("nextStep")
         for action in actions
@@ -276,6 +282,19 @@ def next_action_blockers(actions: list[dict[str, Any]], evidence_dir: Path | Non
                 ),
             }
             for item in sorted_counts(environment_statuses)
+        ],
+        "environmentReasons": [
+            {
+                "reason": item["value"],
+                "actions": item["actions"],
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-reason",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                ),
+            }
+            for item in sorted_counts(environment_reasons)
         ],
         "environmentNextSteps": [
             {"nextStep": item["value"], "actions": item["actions"]}
@@ -411,8 +430,9 @@ def render_markdown(progress: dict[str, Any]) -> str:
     blockers = progress["nextActions"].get("blockers", {})
     missing_tool_blockers = blockers.get("missingTools") or []
     environment_blockers = blockers.get("environment") or []
+    environment_reason_blockers = blockers.get("environmentReasons") or []
     environment_next_steps = blockers.get("environmentNextSteps") or []
-    if missing_tool_blockers or environment_blockers:
+    if missing_tool_blockers or environment_blockers or environment_reason_blockers:
         lines.extend(["", "## Action Blockers", ""])
         for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['actions']} actions)")
@@ -420,6 +440,10 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['actions']} actions)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
+        for item in environment_reason_blockers:
+            lines.append(f"- environment-reason-blocker: `{item['reason']}` ({item['actions']} actions)")
             if item.get("worklistCommand"):
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_next_steps:

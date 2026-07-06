@@ -68,6 +68,7 @@ def main() -> int:
                         "status": "blocked-by-environment",
                         "missingTools": [],
                         "environmentStatus": "cluster-unavailable",
+                        "environmentReason": "connection-refused",
                         "nextStep": "start or select a disposable cluster, then rerun the probe",
                         "resolvedCommands": [
                             "python3 -B scripts/capture_controller_resource_budget.py --output /tmp/kubectl-top.txt --run",
@@ -281,8 +282,10 @@ def main() -> int:
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
+            "environment-reason-blocker: `connection-refused` (1 actions)",
             "generate_version_worklist.py --format markdown --open-only --evidence-dir",
             "--capture-status blocked-by-environment --environment-status cluster-unavailable",
+            "--capture-status blocked-by-environment --environment-reason connection-refused",
             "blocker-next-step: start or select a disposable cluster, then rerun the probe (1 actions)",
             "prepare_live_evidence_directory.py",
         ):
@@ -390,6 +393,12 @@ def main() -> int:
     ]
     if environment_summary != [{"status": "cluster-unavailable", "actions": 1}]:
         errors.append("evidence progress must summarize environment blockers")
+    environment_reason_summary = [
+        {"reason": item.get("reason"), "actions": item.get("actions")}
+        for item in evidence_blockers.get("environmentReasons", [])
+    ]
+    if environment_reason_summary != [{"reason": "connection-refused", "actions": 1}]:
+        errors.append("evidence progress must summarize environment reason blockers")
     environment_commands = [
         item.get("worklistCommand", "")
         for item in evidence_blockers.get("environment", [])

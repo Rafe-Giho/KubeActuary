@@ -99,6 +99,7 @@ def record_iteration(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
     prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     history_dir.mkdir(parents=True, exist_ok=True)
@@ -118,6 +119,7 @@ def record_iteration(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=prefer_prepared_queue,
     )
 
@@ -147,6 +149,7 @@ def record_iteration(
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
             "environmentStatuses": list(environment_status_filters or []),
+            "environmentReasons": list(environment_reason_filters or []),
         },
         "queueSource": worklist.get("queueSource", "generated"),
         "summary": worklist["summary"],
@@ -170,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter open items by environment reason; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -190,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
+            environment_reason_filters=args.environment_reason,
         )
     except ValueError as exc:
         print("version-iteration-history: failed")

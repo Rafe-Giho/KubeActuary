@@ -43,6 +43,7 @@ FILTER_KEYS = (
     "captureStatuses",
     "missingTools",
     "environmentStatuses",
+    "environmentReasons",
     "evidenceDir",
     "probeEnvironment",
     "kubectl",
@@ -164,6 +165,8 @@ def selected_worklist_commands(selected: dict[str, Any], evidence_dir: Path | No
         ]
     if capture_status == "blocked-by-environment" and selected.get("environmentStatus"):
         args.extend(["--environment-status", str(selected["environmentStatus"])])
+    if capture_status == "blocked-by-environment" and selected.get("environmentReason"):
+        args.extend(["--environment-reason", str(selected["environmentReason"])])
     return [shell_join(args)]
 
 
@@ -179,6 +182,7 @@ def summarize_task(version: dict[str, Any], item: dict[str, Any], version_index:
         "captureStatus": item.get("captureStatus"),
         "kind": item.get("kind"),
         "environmentStatus": item.get("environmentStatus"),
+        "environmentReason": item.get("environmentReason"),
         "missingTools": list_value(item.get("missingTools")),
         "nextStep": item.get("nextStep"),
         "evidenceSummary": dict_value(item.get("evidenceSummary")),
@@ -318,6 +322,7 @@ def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> lis
         add_repeated_filter_args(args, "--capture-status", filters.get("captureStatuses"))
         add_repeated_filter_args(args, "--missing-tool", filters.get("missingTools"))
         add_repeated_filter_args(args, "--environment-status", filters.get("environmentStatuses"))
+        add_repeated_filter_args(args, "--environment-reason", filters.get("environmentReasons"))
         args.append("--run")
     else:
         args = [
@@ -332,6 +337,7 @@ def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> lis
         add_repeated_filter_args(args, "--capture-status", filters.get("captureStatuses"))
         add_repeated_filter_args(args, "--missing-tool", filters.get("missingTools"))
         add_repeated_filter_args(args, "--environment-status", filters.get("environmentStatuses"))
+        add_repeated_filter_args(args, "--environment-reason", filters.get("environmentReasons"))
         if probe_environment:
             args.append("--probe-environment")
         if kubectl != "kubectl":
@@ -468,6 +474,8 @@ def render_text(status: dict[str, Any]) -> str:
         )
         if latest_next_task.get("environmentStatus"):
             lines.append(f"latest-next-task-environment-status: {latest_next_task['environmentStatus']}")
+        if latest_next_task.get("environmentReason"):
+            lines.append(f"latest-next-task-environment-reason: {latest_next_task['environmentReason']}")
         if latest_next_task.get("missingTools"):
             lines.append(f"latest-next-task-missing-tools: {', '.join(str(tool) for tool in latest_next_task['missingTools'])}")
         if latest_next_task.get("nextStep"):
@@ -598,6 +606,8 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"  - kind: `{latest_next_task.get('kind')}`")
         if latest_next_task.get("environmentStatus"):
             lines.append(f"  - environment: `{latest_next_task['environmentStatus']}`")
+        if latest_next_task.get("environmentReason"):
+            lines.append(f"  - environment reason: `{latest_next_task['environmentReason']}`")
         if latest_next_task.get("missingTools"):
             lines.append(f"  - missing tools: `{', '.join(str(tool) for tool in latest_next_task['missingTools'])}`")
         if latest_next_task.get("nextStep"):

@@ -73,8 +73,9 @@ def render_iteration(record: dict[str, Any]) -> str:
     blockers = record.get("blockers", {})
     missing_tool_blockers = blockers.get("missingTools") or []
     environment_blockers = blockers.get("environment") or []
+    environment_reason_blockers = blockers.get("environmentReasons") or []
     environment_next_steps = blockers.get("environmentNextSteps") or []
-    if missing_tool_blockers or environment_blockers:
+    if missing_tool_blockers or environment_blockers or environment_reason_blockers:
         lines.extend(["## Blockers", ""])
         for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
@@ -82,6 +83,10 @@ def render_iteration(record: dict[str, Any]) -> str:
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
+        for item in environment_reason_blockers:
+            lines.append(f"- environment-reason-blocker: `{item['reason']}` ({item['items']} items)")
             if item.get("worklistCommand"):
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_next_steps:
@@ -96,6 +101,8 @@ def render_iteration(record: dict[str, Any]) -> str:
             lines.append(f"  missing-tools: `{', '.join(item['missingTools'])}`")
         if item.get("environmentStatus"):
             lines.append(f"  environment: `{item['environmentStatus']}`")
+        if item.get("environmentReason"):
+            lines.append(f"  environment reason: `{item['environmentReason']}`")
         if item.get("nextStep"):
             lines.append(f"  next: {item['nextStep']}")
         if item.get("evidenceSummary"):
@@ -138,6 +145,7 @@ def render_index(worklist: dict[str, Any]) -> str:
         ("capture-statuses", filters.get("captureStatuses") or []),
         ("missing-tools", filters.get("missingTools") or []),
         ("environment-statuses", filters.get("environmentStatuses") or []),
+        ("environment-reasons", filters.get("environmentReasons") or []),
     ]
     active_filters = [(name, values) for name, values in active_filters if values]
     if active_filters:
@@ -166,6 +174,7 @@ def prepare_iteration_pack(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
     prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     worklist = build_worklist(
@@ -177,6 +186,7 @@ def prepare_iteration_pack(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=prefer_prepared_queue,
     )
     versions_dir = output_dir / "versions"
@@ -201,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter open items by environment reason; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -217,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
+            environment_reason_filters=args.environment_reason,
         )
     except ValueError as exc:
         print("version-iteration: failed")

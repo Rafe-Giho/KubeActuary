@@ -145,6 +145,11 @@ def work_item_blockers(
         for item in open_items
         if item.get("captureStatus") == "blocked-by-environment"
     )
+    environment_reasons = Counter(
+        item.get("environmentReason") or "unknown"
+        for item in open_items
+        if item.get("captureStatus") == "blocked-by-environment"
+    )
     environment_next_steps = Counter(
         item.get("nextStep")
         for item in open_items
@@ -179,6 +184,20 @@ def work_item_blockers(
             }
             for item in sorted_counts(environment_statuses)
         ],
+        "environmentReasons": [
+            {
+                "reason": item["value"],
+                "items": item["items"],
+                "worklistCommand": blocker_worklist_command(
+                    "blocked-by-environment",
+                    "--environment-reason",
+                    item["value"],
+                    evidence_dir=evidence_dir,
+                    version_filters=version_filters,
+                ),
+            }
+            for item in sorted_counts(environment_reasons)
+        ],
         "environmentNextSteps": [
             {"nextStep": item["value"], "items": item["items"]}
             for item in sorted_counts(environment_next_steps)
@@ -191,12 +210,15 @@ def item_matches_filters(
     capture_statuses: set[str],
     missing_tools: set[str],
     environment_statuses: set[str],
+    environment_reasons: set[str],
 ) -> bool:
     if capture_statuses and item.get("captureStatus") not in capture_statuses:
         return False
     if missing_tools and not missing_tools.intersection(item.get("missingTools", [])):
         return False
     if environment_statuses and item.get("environmentStatus") not in environment_statuses:
+        return False
+    if environment_reasons and item.get("environmentReason") not in environment_reasons:
         return False
     return True
 
@@ -224,6 +246,8 @@ def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[s
     }
     if queue_item.get("environmentStatus") is not None:
         record["environmentStatus"] = queue_item.get("environmentStatus")
+    if queue_item.get("environmentReason") is not None:
+        record["environmentReason"] = queue_item.get("environmentReason")
     if queue_item.get("evidenceDir") is not None:
         record["evidenceDir"] = queue_item.get("evidenceDir")
     if queue_item.get("resolvedCommands"):
@@ -276,6 +300,7 @@ def build_worklist(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
     prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     progress = build_progress()
@@ -284,6 +309,7 @@ def build_worklist(
     capture_statuses = set(capture_status_filters or [])
     missing_tools = set(missing_tool_filters or [])
     environment_statuses = set(environment_status_filters or [])
+    environment_reasons = set(environment_reason_filters or [])
     versions: list[dict[str, Any]] = []
     for group in progress.get("versions", []):
         version = str(group.get("version"))
@@ -294,7 +320,13 @@ def build_worklist(
         open_items = [
             item
             for item in open_items
-            if item_matches_filters(item, capture_statuses, missing_tools, environment_statuses)
+            if item_matches_filters(
+                item,
+                capture_statuses,
+                missing_tools,
+                environment_statuses,
+                environment_reasons,
+            )
         ]
         capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
         blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
@@ -350,6 +382,7 @@ def build_worklist(
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
             "environmentStatuses": list(environment_status_filters or []),
+            "environmentReasons": list(environment_reason_filters or []),
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
@@ -401,6 +434,7 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         ("capture-statuses", filters.get("captureStatuses") or []),
         ("missing-tools", filters.get("missingTools") or []),
         ("environment-statuses", filters.get("environmentStatuses") or []),
+        ("environment-reasons", filters.get("environmentReasons") or []),
     ]
     active_filters = [(name, values) for name, values in active_filters if values]
     if active_filters:
@@ -411,8 +445,9 @@ def render_markdown(worklist: dict[str, Any]) -> str:
     blockers = worklist.get("blockers", {})
     missing_tool_blockers = blockers.get("missingTools") or []
     environment_blockers = blockers.get("environment") or []
+    environment_reason_blockers = blockers.get("environmentReasons") or []
     environment_next_steps = blockers.get("environmentNextSteps") or []
-    if missing_tool_blockers or environment_blockers:
+    if missing_tool_blockers or environment_blockers or environment_reason_blockers:
         lines.extend(["## Blockers", ""])
         for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
@@ -420,6 +455,10 @@ def render_markdown(worklist: dict[str, Any]) -> str:
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item['worklistCommand']}`")
+        for item in environment_reason_blockers:
+            lines.append(f"- environment-reason-blocker: `{item['reason']}` ({item['items']} items)")
             if item.get("worklistCommand"):
                 lines.append(f"  - worklist: `{item['worklistCommand']}`")
         for item in environment_next_steps:
@@ -435,6 +474,7 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         version_blockers = version.get("blockers", {})
         version_missing = version_blockers.get("missingTools") or []
         version_environment = version_blockers.get("environment") or []
+        version_environment_reasons = version_blockers.get("environmentReasons") or []
         if version_missing:
             tools = ", ".join(f"{item['tool']}:{item['items']}" for item in version_missing)
             lines.append(f"  blockers: tools=`{tools}`")
@@ -447,11 +487,19 @@ def render_markdown(worklist: dict[str, Any]) -> str:
             for item in version_environment:
                 if item.get("worklistCommand"):
                     lines.append(f"  blocker-worklist: `{item['worklistCommand']}`")
+        if version_environment_reasons:
+            reasons = ", ".join(f"{item['reason']}:{item['items']}" for item in version_environment_reasons)
+            lines.append(f"  blockers: environment-reasons=`{reasons}`")
+            for item in version_environment_reasons:
+                if item.get("worklistCommand"):
+                    lines.append(f"  blocker-worklist: `{item['worklistCommand']}`")
         for item in version["openItems"]:
             lines.append(f"  - `{item['captureStatus']}` {item['item']}")
             first_command = (item.get("commands") or [None])[0]
             if item.get("environmentStatus"):
                 lines.append(f"    environment: `{item['environmentStatus']}`")
+            if item.get("environmentReason"):
+                lines.append(f"    environment reason: `{item['environmentReason']}`")
             if item.get("missingTools"):
                 lines.append(f"    missing tools: `{', '.join(item['missingTools'])}`")
             if item.get("nextStep"):
@@ -489,6 +537,7 @@ def render_text(worklist: dict[str, Any]) -> str:
         ("filter-capture-status", "captureStatuses"),
         ("filter-missing-tool", "missingTools"),
         ("filter-environment-status", "environmentStatuses"),
+        ("filter-environment-reason", "environmentReasons"),
     ):
         for value in filters.get(key) or []:
             lines.append(f"{label}: {value}")
@@ -499,6 +548,10 @@ def render_text(worklist: dict[str, Any]) -> str:
             lines.append(f"worklist: {item['worklistCommand']}")
     for item in blockers.get("environment") or []:
         lines.append(f"environment-blocker: {item['status']} ({item['items']} items)")
+        if item.get("worklistCommand"):
+            lines.append(f"worklist: {item['worklistCommand']}")
+    for item in blockers.get("environmentReasons") or []:
+        lines.append(f"environment-reason-blocker: {item['reason']} ({item['items']} items)")
         if item.get("worklistCommand"):
             lines.append(f"worklist: {item['worklistCommand']}")
     for item in blockers.get("environmentNextSteps") or []:
@@ -524,10 +577,19 @@ def render_text(worklist: dict[str, Any]) -> str:
             )
             if item.get("worklistCommand"):
                 lines.append(f"version-worklist: {item['worklistCommand']}")
+        for item in version_blockers.get("environmentReasons") or []:
+            lines.append(
+                f"version-environment-reason-blocker: {version['version']} "
+                f"{item['reason']} ({item['items']} items)"
+            )
+            if item.get("worklistCommand"):
+                lines.append(f"version-worklist: {item['worklistCommand']}")
         for item in version["openItems"]:
             lines.append(f"item: {version['version']} {item['captureStatus']} {item['item']}")
             if item.get("environmentStatus"):
                 lines.append(f"environment: {item['environmentStatus']}")
+            if item.get("environmentReason"):
+                lines.append(f"environment-reason: {item['environmentReason']}")
             if item.get("missingTools"):
                 lines.append(f"missing-tools: {', '.join(item['missingTools'])}")
             if item.get("nextStep"):
@@ -555,6 +617,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter open items by environment reason; repeatable")
     parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
@@ -570,6 +633,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
+            environment_reason_filters=args.environment_reason,
         )
     except ValueError as exc:
         print("version-worklist: failed", file=sys.stderr)

@@ -105,6 +105,7 @@ def build_selection(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    environment_reason_filters: list[str] | None = None,
     prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     if skip_complete_evidence and evidence_dir is None:
@@ -118,6 +119,7 @@ def build_selection(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=prefer_prepared_queue,
     )
     items = candidates(worklist)
@@ -148,6 +150,7 @@ def build_selection(
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
             "environmentStatuses": list(environment_status_filters or []),
+            "environmentReasons": list(environment_reason_filters or []),
         },
         "statusPriority": list(priority),
         "summary": {
@@ -191,6 +194,8 @@ def render_text(selection: dict[str, Any]) -> str:
     ]
     if selected.get("environmentStatus"):
         lines.append(f"environment-status: {selected['environmentStatus']}")
+    if selected.get("environmentReason"):
+        lines.append(f"environment-reason: {selected['environmentReason']}")
     if selected.get("missingTools"):
         lines.append(f"missing-tools: {', '.join(selected['missingTools'])}")
     if selected.get("nextStep"):
@@ -230,6 +235,8 @@ def render_markdown(selection: dict[str, Any]) -> str:
         lines.append(f"- `{selected.get('captureStatus')}` {selected.get('item')} ({selected.get('version')})")
         if selected.get("environmentStatus"):
             lines.append(f"  - environment: `{selected['environmentStatus']}`")
+        if selected.get("environmentReason"):
+            lines.append(f"  - environment reason: `{selected['environmentReason']}`")
         if selected.get("missingTools"):
             lines.append(f"  - missing tools: `{', '.join(selected['missingTools'])}`")
         if selected.get("nextStep"):
@@ -258,6 +265,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
+    parser.add_argument("--environment-reason", action="append", default=[], help="filter open items by environment reason; repeatable")
     parser.add_argument(
         "--skip-complete-evidence",
         action="store_true",
@@ -278,6 +286,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
+            environment_reason_filters=args.environment_reason,
         )
     except ValueError as exc:
         print("next-version-task: failed", file=sys.stderr)

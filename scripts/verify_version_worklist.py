@@ -209,6 +209,15 @@ def main() -> int:
             "--environment-status",
             "cluster-unavailable",
         )
+        prepared_environment_reason_filter_result = run_generator(
+            "--format",
+            "json",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+            "--environment-reason",
+            "command-failed",
+        )
         prepared_capture_filter_result = run_generator(
             "--format",
             "json",
@@ -606,6 +615,7 @@ def main() -> int:
         prepared_queue_worklist = {}
         prepared_queue_next = {}
         prepared_environment_filter = {}
+        prepared_environment_reason_filter = {}
         prepared_capture_filter = {}
     else:
         prepared_queue_worklist = parse_worklist("prepared queue worklist", prepared_queue_worklist_result, errors)
@@ -613,6 +623,11 @@ def main() -> int:
         prepared_environment_filter = parse_worklist(
             "prepared environment filtered worklist",
             prepared_environment_filter_result,
+            errors,
+        )
+        prepared_environment_reason_filter = parse_worklist(
+            "prepared environment-reason filtered worklist",
+            prepared_environment_reason_filter_result,
             errors,
         )
         prepared_capture_filter = parse_worklist(
@@ -1220,6 +1235,8 @@ def main() -> int:
     probe_statuses = {version.get("status") for version in probe_versions if isinstance(version, dict)}
     if probe_worklist.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
         errors.append("probe worklist must report unavailable cluster access")
+    if probe_worklist.get("environmentProbe", {}).get("reason") != "command-failed":
+        errors.append("probe worklist must preserve unavailable-cluster reason")
     if probe_summary.get("blockedByTools") != 0:
         errors.append("fake all-tools version probe should not be blocked by missing tools")
     if probe_summary.get("blockedByEnvironment") != 14:
@@ -1237,12 +1254,24 @@ def main() -> int:
     ]
     if probe_environment_summary != [{"status": "cluster-unavailable", "items": 14}]:
         errors.append("probe worklist must summarize cluster-unavailable blockers")
+    probe_environment_reason_summary = [
+        {"reason": item.get("reason"), "items": item.get("items")}
+        for item in probe_blockers.get("environmentReasons", [])
+    ]
+    if probe_environment_reason_summary != [{"reason": "command-failed", "items": 14}]:
+        errors.append("probe worklist must summarize environment reason blockers")
     probe_environment_blocker = next(
         (item for item in probe_blockers.get("environment", []) if item.get("status") == "cluster-unavailable"),
         {},
     )
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in probe_environment_blocker.get("worklistCommand", ""):
         errors.append("probe worklist must include environment drilldown commands")
+    probe_environment_reason_blocker = next(
+        (item for item in probe_blockers.get("environmentReasons", []) if item.get("reason") == "command-failed"),
+        {},
+    )
+    if "--capture-status blocked-by-environment --environment-reason command-failed" not in probe_environment_reason_blocker.get("worklistCommand", ""):
+        errors.append("probe worklist must include environment-reason drilldown commands")
 
     prepared_summary = prepared_queue_worklist.get("summary", {})
     prepared_selected = prepared_queue_next.get("selected") or {}
@@ -1252,6 +1281,8 @@ def main() -> int:
         errors.append("prepared evidence-dir selector must report the persisted live validation queue source")
     if prepared_queue_worklist.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
         errors.append("prepared evidence-dir worklist must preserve persisted unavailable cluster access")
+    if prepared_queue_worklist.get("environmentProbe", {}).get("reason") != "command-failed":
+        errors.append("prepared evidence-dir worklist must preserve persisted environment reason")
     if prepared_summary.get("blockedByEnvironment") != 14:
         errors.append("prepared evidence-dir worklist must preserve persisted environment blockers")
     if prepared_summary.get("captureReady") != 2:
@@ -1263,6 +1294,12 @@ def main() -> int:
     ]
     if prepared_environment_summary != [{"status": "cluster-unavailable", "items": 14}]:
         errors.append("prepared evidence-dir worklist must preserve environment blocker summary")
+    prepared_environment_reason_summary = [
+        {"reason": item.get("reason"), "items": item.get("items")}
+        for item in prepared_blockers.get("environmentReasons", [])
+    ]
+    if prepared_environment_reason_summary != [{"reason": "command-failed", "items": 14}]:
+        errors.append("prepared evidence-dir worklist must preserve environment reason blocker summary")
     prepared_environment_blocker = next(
         (item for item in prepared_blockers.get("environment", []) if item.get("status") == "cluster-unavailable"),
         {},
@@ -1274,6 +1311,14 @@ def main() -> int:
         errors.append("prepared environment-status filter should keep fourteen cluster-unavailable items")
     if prepared_environment_filter.get("filters", {}).get("environmentStatuses") != ["cluster-unavailable"]:
         errors.append("prepared environment-status filter should be recorded")
+    prepared_environment_reason_summary = prepared_environment_reason_filter.get("summary", {})
+    if (
+        prepared_environment_reason_summary.get("openItems") != 14
+        or prepared_environment_reason_summary.get("blockedByEnvironment") != 14
+    ):
+        errors.append("prepared environment-reason filter should keep fourteen environment-blocked items")
+    if prepared_environment_reason_filter.get("filters", {}).get("environmentReasons") != ["command-failed"]:
+        errors.append("prepared environment-reason filter should be recorded")
     prepared_capture_summary = prepared_capture_filter.get("summary", {})
     if prepared_capture_summary.get("openItems") != 2 or prepared_capture_summary.get("captureReady") != 2:
         errors.append("prepared capture-status filter should keep two tool-ready items")

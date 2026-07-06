@@ -95,11 +95,12 @@ missing tools and next steps per item, and worklist text output keeps the same
 local task summary available without Markdown rendering, so blocked local loops
 remain actionable.
 It also summarizes every repeated missing-tool and environment blocker across
-the whole worklist and per version, so repeated validation can focus on the
-shared blocker before re-running evidence commands. Blocker summaries include
-filtered worklist commands that preserve the evidence directory and version
-context when they are active. Use `--capture-status`,
-`--missing-tool`, and `--environment-status` on worklist, next-task,
+the whole worklist and per version, including environment reasons such as
+`connection-refused`, so repeated validation can focus on the shared blocker
+before re-running evidence commands. Blocker summaries include filtered
+worklist commands that preserve the evidence directory and version context when
+they are active. Use `--capture-status`, `--missing-tool`,
+`--environment-status`, and `--environment-reason` on worklist, next-task,
 iteration-pack, iteration-history, live-evidence scaffold, and
 version-iteration advance commands to keep a local loop focused on one blocker
 class.
@@ -365,7 +366,8 @@ python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --p
 ```
 
 `prepare_live_evidence_directory.py` and `advance_version_iteration.py` both
-accept `--capture-status`, `--missing-tool`, and `--environment-status`, so the
+accept `--capture-status`, `--missing-tool`, `--environment-status`, and
+`--environment-reason`, so the
 prepared next-task and before/after history records can stay focused on the
 same blocker class. They also accept `--probe-environment --kubectl <path>`.
 The probe runs only read-only

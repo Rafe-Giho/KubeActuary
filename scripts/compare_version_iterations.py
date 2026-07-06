@@ -31,6 +31,7 @@ def comparable_item(item: dict[str, Any]) -> dict[str, Any]:
         "captureStatus": item.get("captureStatus"),
         "missingTools": item.get("missingTools", []),
         "environmentStatus": item.get("environmentStatus"),
+        "environmentReason": item.get("environmentReason"),
         "evidenceSummary": item.get("evidenceSummary"),
         "commands": item.get("commands", []),
         "nextStep": item.get("nextStep"),

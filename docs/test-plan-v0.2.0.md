@@ -160,7 +160,7 @@ Expected:
   next steps;
 - worklist, next-task, iteration-pack, iteration-history, live scaffold, and
   advance commands preserve capture-status, missing-tool, and
-  environment-status filters;
+  environment-status and environment-reason filters;
 - prepared-queue version iteration packs preserve the queue source, blocker
   summaries, and blocker drilldown commands;
 - prepared-queue version iteration history records and status preserve the queue source;
@@ -337,7 +337,8 @@ Confirm from code and tests:
   next-task selection, evidence-directory command
   resolution, completed-evidence skipping, capture-ready items, tool-blocked
   items, version/open-only filters, blocker summaries, evidence-aware and
-  version-scoped blocker drilldown commands, blocker-focused filters, and
+  version-scoped blocker drilldown commands, environment-reason drilldowns,
+  blocker-focused filters, and
   optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;

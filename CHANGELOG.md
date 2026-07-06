@@ -40,13 +40,16 @@ Evidence collector release:
 - show version-scoped blocker drilldown commands in version worklist Markdown;
 - summarize repeated missing-tool and environment blockers in version worklist
   reports;
-- add capture-status, missing-tool, and environment-status filters to version
-  worklists, iteration packs, iteration history, and next-task selection;
+- add capture-status, missing-tool, environment-status, and environment-reason
+  filters to version worklists, iteration packs, iteration history, and
+  next-task selection;
 - pass blocker-focused filters through live evidence scaffolds and version
   iteration advance records;
 - preserve prepared queue source on probe-generated live evidence next-task
   artifacts;
 - record stable environment probe reason fields for repeated local validation;
+- propagate environment probe reasons into local worklist blockers and
+  drilldown filters;
 - preserve prepared queue source in version iteration packs;
 - preserve prepared queue source in version iteration history records and status;
 - show latest blocker summaries and drilldowns in version iteration history status;

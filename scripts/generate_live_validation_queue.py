@@ -71,6 +71,24 @@ def environment_status_for_gate(gate: dict[str, Any], readiness: dict[str, Any])
     return None
 
 
+def environment_reason_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> str | None:
+    if not readiness.get("environmentProbe"):
+        return None
+    readiness_by_gate = readiness_lookup(readiness)
+    readiness_gate_names = KIND_READINESS_GATES.get(str(gate.get("kind")), ())
+    reasons = [
+        readiness_by_gate.get(name, {}).get("environmentReason")
+        for name in readiness_gate_names
+        if readiness_by_gate.get(name, {}).get("environmentReason")
+    ]
+    for reason in reasons:
+        if reason != "not-required":
+            return str(reason)
+    if reasons:
+        return str(reasons[0])
+    return None
+
+
 def evidence_path(evidence_dir: Path, *parts: str) -> str:
     return evidence_dir.joinpath(*parts).as_posix()
 
@@ -120,6 +138,7 @@ def materialize_command(item: dict[str, Any], command: str, evidence_dir: Path, 
 def build_item(gate: dict[str, Any], readiness: dict[str, Any], evidence_dir: Path | None = None) -> dict[str, Any]:
     missing_tools = missing_tools_for_gate(gate, readiness)
     environment_status = environment_status_for_gate(gate, readiness)
+    environment_reason = environment_reason_for_gate(gate, readiness)
     commands = list(gate.get("recommendedCommands") or [])
     status = "tool-ready" if not missing_tools else "missing-tools"
     if status == "tool-ready" and environment_status == "cluster-unavailable":
@@ -142,6 +161,8 @@ def build_item(gate: dict[str, Any], readiness: dict[str, Any], evidence_dir: Pa
     }
     if environment_status is not None:
         item["environmentStatus"] = environment_status
+    if environment_reason is not None:
+        item["environmentReason"] = environment_reason
     if evidence_dir is not None:
         item["evidenceDir"] = evidence_dir.as_posix()
         item["resolvedCommands"] = [
@@ -235,6 +256,8 @@ def render_markdown(queue: dict[str, Any]) -> str:
                 lines.append(f"  Missing tools: `{', '.join(item['missingTools'])}`")
             if item.get("environmentStatus"):
                 lines.append(f"  Environment: `{item['environmentStatus']}`")
+            if item.get("environmentReason"):
+                lines.append(f"  Environment reason: `{item['environmentReason']}`")
             for command in item["commands"]:
                 lines.append(f"  Command: `{command}`")
             for command in item.get("resolvedCommands", []):

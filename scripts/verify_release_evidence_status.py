@@ -653,8 +653,12 @@ def main() -> int:
     expected_blocked_probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {blocked_dir} --probe-environment"
     if blocked_probe.get("clusterAccess") != "unavailable":
         errors.append("blocked evidence status must preserve unavailable cluster access")
+    if blocked_probe.get("reason") != "command-failed":
+        errors.append("blocked evidence status must preserve unavailable-cluster reason")
     if blocked_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
         errors.append("blocked evidence status must preserve selected blocker next step")
+    if blocked_selected.get("environmentReason") != "command-failed":
+        errors.append("blocked evidence status must preserve selected blocker reason")
     blocked_status_blockers = (blocked_payload.get("blockers") or {}).get("environment") or []
     if not any(
         item.get("status") == "cluster-unavailable"
@@ -662,6 +666,13 @@ def main() -> int:
         for item in blocked_status_blockers
     ):
         errors.append("blocked evidence status must include environment worklist drilldown commands")
+    blocked_reason_blockers = (blocked_payload.get("blockers") or {}).get("environmentReasons") or []
+    if not any(
+        item.get("reason") == "command-failed"
+        and "--environment-reason command-failed" in item.get("worklistCommand", "")
+        for item in blocked_reason_blockers
+    ):
+        errors.append("blocked evidence status must include environment reason drilldown commands")
     if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
         errors.append("blocked evidence status must recommend rerunning the environment probe first")
     if len(blocked_payload.get("nextCommands", [])) != 1:
