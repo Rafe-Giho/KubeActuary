@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.generate_external_gate_plan import TASKBOARD, build_plan, taskboard_rows  # noqa: E402
+from scripts.inspect_version_history import inspect_history  # noqa: E402
 from scripts.inspect_release_evidence_directory import DEFAULT_OUTPUT_DIR, inspect_directory  # noqa: E402
 from scripts.verify_live_validation_readiness import build_report as build_readiness_report  # noqa: E402
 from scripts.verify_release import COMMON_CHECKS  # noqa: E402
@@ -467,6 +468,7 @@ def unprepared_evidence_status(evidence_dir: Path, output_dir: Path, plan: dict[
 def build_progress(
     evidence_dir: Path | None = None,
     output_dir: Path | None = None,
+    history_dir: Path | None = None,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
     version_filters: list[str] | None = None,
@@ -483,6 +485,7 @@ def build_progress(
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+            "historyDir": history_dir.as_posix() if history_dir else None,
         },
         "releaseSuite": {
             "version": "0.2.0",
@@ -520,7 +523,84 @@ def build_progress(
             )
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
+    if history_dir is not None:
+        report["versionHistoryStatus"] = inspect_history(history_dir)
     return report
+
+
+def append_history_markdown(lines: list[str], history_status: dict[str, Any]) -> None:
+    summary = history_status.get("summary", {})
+    latest_advance = history_status.get("latestAdvance")
+    latest_next_task = history_status.get("latestNextTask")
+    lines.extend(
+        [
+            "",
+            "## Version History",
+            "",
+            f"- status: {'valid' if history_status.get('valid') else 'failed'}",
+            f"- history dir: `{history_status.get('historyDir')}`",
+            f"- runs: {summary.get('runs', 0)}",
+            f"- latest run: `{summary.get('latestRunId')}`",
+            f"- latest queue source: `{summary.get('latestQueueSource')}`",
+            f"- open items: {summary.get('openItems', 0)}",
+            f"- capture ready: {summary.get('captureReady', 0)}",
+            f"- evidence files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
+            f"- complete evidence items: {summary.get('completeEvidenceItems', 0)}/{summary.get('evidenceItems', 0)}",
+        ]
+    )
+    if isinstance(latest_next_task, dict):
+        lines.append(f"- latest next task: `{latest_next_task.get('id')}` ({latest_next_task.get('captureStatus')})")
+        if latest_next_task.get("environmentStatus"):
+            lines.append(f"- latest next task environment: `{latest_next_task.get('environmentStatus')}`")
+        if latest_next_task.get("environmentReason"):
+            lines.append(f"- latest next task environment reason: `{latest_next_task.get('environmentReason')}`")
+    if isinstance(latest_advance, dict):
+        lines.append(f"- latest advance: `{latest_advance.get('status')}`")
+        if latest_advance.get("runId"):
+            lines.append(f"- latest advance run id: `{latest_advance.get('runId')}`")
+        consistency = latest_advance.get("nextTaskConsistency")
+        if isinstance(consistency, dict):
+            lines.append(f"- latest advance next task consistency: `{consistency.get('status')}`")
+    for error in history_status.get("errors", []):
+        lines.append(f"- history error: `{error}`")
+    for command in history_status.get("nextCommands", []):
+        lines.append(f"- history next: `{command}`")
+
+
+def append_history_text(lines: list[str], history_status: dict[str, Any]) -> None:
+    summary = history_status.get("summary", {})
+    lines.extend(
+        [
+            f"history-status: {'valid' if history_status.get('valid') else 'failed'}",
+            f"history-dir: {history_status.get('historyDir')}",
+            f"history-runs: {summary.get('runs', 0)}",
+            f"history-latest-run-id: {summary.get('latestRunId')}",
+            f"history-latest-queue-source: {summary.get('latestQueueSource')}",
+            f"history-open-items: {summary.get('openItems', 0)}",
+            f"history-capture-ready: {summary.get('captureReady', 0)}",
+            f"history-evidence-files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
+            f"history-complete-evidence-items: {summary.get('completeEvidenceItems', 0)}/{summary.get('evidenceItems', 0)}",
+        ]
+    )
+    latest_next_task = history_status.get("latestNextTask")
+    if isinstance(latest_next_task, dict):
+        lines.append(f"history-latest-next-task: {latest_next_task.get('id')} {latest_next_task.get('captureStatus')}")
+        if latest_next_task.get("environmentStatus"):
+            lines.append(f"history-latest-next-task-environment: {latest_next_task.get('environmentStatus')}")
+        if latest_next_task.get("environmentReason"):
+            lines.append(f"history-latest-next-task-environment-reason: {latest_next_task.get('environmentReason')}")
+    latest_advance = history_status.get("latestAdvance")
+    if isinstance(latest_advance, dict):
+        lines.append(f"history-latest-advance-status: {latest_advance.get('status')}")
+        if latest_advance.get("runId"):
+            lines.append(f"history-latest-advance-run-id: {latest_advance.get('runId')}")
+        consistency = latest_advance.get("nextTaskConsistency")
+        if isinstance(consistency, dict):
+            lines.append(f"history-latest-advance-next-task-consistency: {consistency.get('status')}")
+    for error in history_status.get("errors", []):
+        lines.append(f"history-error: {error}")
+    for command in history_status.get("nextCommands", []):
+        lines.append(f"history-next: {command}")
 
 
 def render_markdown(progress: dict[str, Any]) -> str:
@@ -687,6 +767,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
         next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands:
             lines.append(f"- next: `{command}`")
+    if "versionHistoryStatus" in progress:
+        append_history_markdown(lines, progress["versionHistoryStatus"])
     lines.extend(["", "## Closure", ""])
     for command in progress["externalGatePlan"]["closureCommands"]:
         lines.append(f"- `{command}`")
@@ -821,6 +903,9 @@ def render_text(progress: dict[str, Any]) -> str:
         for command in evidence_status.get("nextCommands", []):
             lines.append(f"next: {command}")
 
+    if "versionHistoryStatus" in progress:
+        append_history_text(lines, progress["versionHistoryStatus"])
+
     for command in progress["externalGatePlan"]["closureCommands"]:
         lines.append(f"closure-command: {command}")
     return "\n".join(lines) + "\n"
@@ -832,6 +917,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--evidence-dir", help="optional local evidence directory to inspect")
     parser.add_argument("--output-dir", help="artifact output directory for evidence-dir status")
+    parser.add_argument("--history-dir", help="optional local version iteration history directory to inspect")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
@@ -840,9 +926,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         evidence_dir = Path(args.evidence_dir) if args.evidence_dir else None
         output_dir = Path(args.output_dir) if args.output_dir else None
+        history_dir = Path(args.history_dir) if args.history_dir else None
         progress = build_progress(
             evidence_dir,
             output_dir,
+            history_dir,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             version_filters=args.version,

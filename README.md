@@ -358,7 +358,7 @@ schemas/
 scripts/
   generate_release_notes.py    release notes dry-run generator
   verify_release_taskboard.py  local release taskboard audit
-  generate_release_progress.py versioned release progress report generator with blocker summary
+  generate_release_progress.py versioned release progress report generator with blocker/history summary
   verify_release_progress.py   release progress verifier
   kube-actuary.release-progress.v1 release progress schema
   generate_version_worklist.py version-grouped task worklist generator with filters, blockers, and evidence readiness
@@ -501,6 +501,7 @@ python3 -B scripts/generate_release_progress.py --format text --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/generate_release_progress.py --format markdown --history-dir evidence/version-history
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only

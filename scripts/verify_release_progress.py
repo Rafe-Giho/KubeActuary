@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_release_progress.py"
+RECORDER = ROOT / "scripts" / "record_version_iteration.py"
 README = ROOT / "README.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 sys.path.insert(0, str(ROOT))
@@ -37,6 +38,17 @@ def run_generator_with_env(*args: str, env: dict[str, str]) -> subprocess.Comple
         [sys.executable, "-B", str(GENERATOR), *args],
         cwd=ROOT,
         env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_recorder(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(RECORDER), *args],
+        cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -196,10 +208,48 @@ def main() -> int:
                 "runner": {"status": "failed"},
                 "nextTask": {
                     "selected": "01-controller-resource-budget",
+                    "captureStatus": "tool-ready",
                     "skippedCompleteEvidence": 0,
                 },
                 "history": {"runs": 1},
             },
+        )
+        history_evidence_dir = tmpdir / "history-evidence"
+        history_evidence_dir.mkdir()
+        write_payload(
+            history_evidence_dir / ".kubeactuary" / "live-validation-queue.json",
+            json.loads((evidence_dir / ".kubeactuary" / "live-validation-queue.json").read_text()),
+        )
+        write_payload(
+            history_evidence_dir / ".kubeactuary" / "version-iteration-advance.json",
+            {
+                "schemaVersion": "kube-actuary.version-iteration-advance.v1",
+                "mode": "run",
+                "status": "failed",
+                "clusterWrites": "disabled-or-server-side-dry-run-only",
+                "runId": "test-history-progress",
+                "createdAt": "2026-07-06T00:00:00+00:00",
+                "runner": {"status": "failed"},
+                "nextTask": {
+                    "selected": "01-controller-resource-budget",
+                    "captureStatus": "blocked-by-environment",
+                    "environmentStatus": "cluster-unavailable",
+                    "environmentReason": "connection-refused",
+                    "nextStep": "start or select a disposable cluster, then rerun the probe",
+                    "skippedCompleteEvidence": 0,
+                },
+                "history": {"runs": 1},
+            },
+        )
+        history_dir = tmpdir / "history"
+        history_recorded = run_recorder(
+            str(history_dir),
+            "--run-id",
+            "progress-history",
+            "--created-at",
+            "2026-07-06T00:00:00+00:00",
+            "--evidence-dir",
+            str(history_evidence_dir),
         )
 
         json_result = run_generator("--format", "json")
@@ -238,6 +288,9 @@ def main() -> int:
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
         with_evidence_text = run_generator("--format", "text", "--evidence-dir", str(evidence_dir))
         with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
+        with_history = run_generator("--format", "json", "--history-dir", str(history_dir))
+        with_history_text = run_generator("--format", "text", "--history-dir", str(history_dir))
+        with_history_markdown = run_generator("--format", "markdown", "--history-dir", str(history_dir))
         version_with_evidence_text = run_generator(
             "--format",
             "text",
@@ -484,6 +537,56 @@ def main() -> int:
         ):
             if snippet not in with_evidence_text.stdout:
                 errors.append(f"evidence progress text missing status detail: {snippet}")
+    if history_recorded.returncode != 0:
+        errors.append(f"history fixture failed: {history_recorded.stderr.strip() or history_recorded.stdout.strip()}")
+        history_progress = {}
+    elif with_history.returncode != 0:
+        errors.append(f"history progress failed: {with_history.stderr.strip() or with_history.stdout.strip()}")
+        history_progress = {}
+    else:
+        history_progress = json.loads(with_history.stdout)
+    history_status = history_progress.get("versionHistoryStatus", {})
+    if history_status:
+        if history_status.get("schemaVersion") != "kube-actuary.version-iteration-history-status.v1":
+            errors.append("history progress must include version history status schema")
+        if history_status.get("valid") is not True:
+            errors.append("history progress must report a valid history fixture")
+        if history_status.get("summary", {}).get("latestRunId") != "progress-history":
+            errors.append("history progress must preserve latest history run id")
+        if history_status.get("latestAdvance", {}).get("status") != "failed":
+            errors.append("history progress must include latest advance status")
+        if history_status.get("latestAdvance", {}).get("nextTaskConsistency", {}).get("status") != "matched":
+            errors.append("history progress must include latest advance consistency")
+    elif history_recorded.returncode == 0 and with_history.returncode == 0:
+        errors.append("history progress must include versionHistoryStatus")
+    if with_history_text.returncode != 0:
+        errors.append(f"history progress text failed: {with_history_text.stderr.strip() or with_history_text.stdout.strip()}")
+    else:
+        for snippet in (
+            "history-status: valid",
+            "history-runs: 1",
+            "history-latest-run-id: progress-history",
+            "history-latest-advance-status: failed",
+            "history-latest-advance-next-task-consistency: matched",
+            "history-next: python3 -B scripts/inspect_version_history.py",
+        ):
+            if snippet not in with_history_text.stdout:
+                errors.append(f"history progress text missing status detail: {snippet}")
+    if with_history_markdown.returncode != 0:
+        errors.append(
+            f"history progress markdown failed: {with_history_markdown.stderr.strip() or with_history_markdown.stdout.strip()}"
+        )
+    else:
+        for snippet in (
+            "## Version History",
+            "status: valid",
+            "latest run: `progress-history`",
+            "latest advance: `failed`",
+            "latest advance next task consistency: `matched`",
+            "history next: `python3 -B scripts/inspect_version_history.py",
+        ):
+            if snippet not in with_history_markdown.stdout:
+                errors.append(f"history progress markdown missing status detail: {snippet}")
     if version_with_evidence_text.returncode != 0:
         errors.append(
             "version evidence progress text failed: "

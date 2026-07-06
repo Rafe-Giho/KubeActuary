@@ -146,7 +146,7 @@ Expected:
   every action blocker plus filtered worklist commands, selected next-task
   file/command details, every runnable tool-ready action and evidence next
   command, persisted queue-source status, and version-iteration advance
-  run/history metadata, without recommending environment-blocked capture
+  run/history metadata plus `--history-dir` status/consistency, without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
   text output, blocker summaries, blocker drilldown commands with evidence-dir
@@ -332,7 +332,8 @@ Confirm from code and tests:
   readiness, tool-ready next actions, optional evidence directory status, and
   `not-prepared` guidance for missing evidence directories, plus selected
   next-task, runner failure, environment, advance status, and repeated blocker
-  summaries with filtered worklist commands in Markdown and text output; it
+  summaries with filtered worklist commands and optional version-history status
+  in Markdown and text output; it
   also checks tool-ready action and evidence next-command output is not truncated;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
