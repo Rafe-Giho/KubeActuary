@@ -194,6 +194,11 @@ COMMON_CHECKS = (
         contains=("live-validation-readiness: passed", "mode: inventory-only", "cluster-writes: disabled"),
     ),
     Check(
+        "project governance",
+        ("python3", "-B", "scripts/verify_project_governance.py"),
+        contains=("project-governance: passed", "license: MIT", "contributing: present"),
+    ),
+    Check(
         "airgap bundle",
         ("python3", "-B", "scripts/verify_airgap_bundle.py"),
         contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),

@@ -288,11 +288,13 @@ bin/
   kube-actuary                 CLI
   kube-actuary-controller      dry-run controller reconcile helper
   kubectl-actuary              kubectl plugin entrypoint
+CONTRIBUTING.md                contribution and safety boundary guide
 controller/
   reconcile.py                 pure OperationCapsule status reconcile model
 .github/workflows/
   ci.yml                       GitHub Actions verification workflow
 SECURITY.md                    security policy and disclosure process
+NOTICE                         project notice and attribution status
 charts/
   kubeactuary/                 Helm chart seed
 deploy/crds/
@@ -373,6 +375,7 @@ scripts/
   verify_api_freeze.py        additive API freeze verifier
   verify_docs_freeze.py       public docs and examples verifier
   verify_live_validation_readiness.py external validation readiness inventory
+  verify_project_governance.py contribution, notice, and license verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -430,6 +433,7 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -506,3 +510,6 @@ Not a production controller yet.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules and
+[NOTICE](NOTICE) for attribution status.

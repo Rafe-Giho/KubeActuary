@@ -290,11 +290,13 @@ bin/
   kube-actuary                 CLI
   kube-actuary-controller      dry-run controller reconcile helper
   kubectl-actuary              kubectl plugin entrypoint
+CONTRIBUTING.md                contribution and safety boundary guide
 controller/
   reconcile.py                 순수 OperationCapsule status reconcile 모델
 .github/workflows/
   ci.yml                       GitHub Actions 검증 workflow
 SECURITY.md                    security policy와 disclosure process
+NOTICE                         project notice and attribution status
 charts/
   kubeactuary/                 Helm chart seed
 deploy/crds/
@@ -375,6 +377,7 @@ scripts/
   verify_api_freeze.py        additive API freeze verifier
   verify_docs_freeze.py       public docs and examples verifier
   verify_live_validation_readiness.py external validation readiness inventory
+  verify_project_governance.py contribution, notice, and license verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -432,6 +435,7 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -506,3 +510,6 @@ v0.2.0 alpha. local-first evidence collector workflow와 specification seed로�
 ## 라이선스
 
 MIT. [LICENSE](LICENSE)를 참고하세요.
+
+기여 규칙은 [CONTRIBUTING.md](CONTRIBUTING.md), attribution 상태는
+[NOTICE](NOTICE)를 참고하세요.
