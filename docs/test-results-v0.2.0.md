@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (39 checks)
-Ran 68 tests
+verification: passed (40 checks)
+Ran 69 tests
 OK
 ```
 
@@ -63,6 +63,7 @@ Coverage included:
 - air-gapped artifact manifest and offline checklist verification;
 - agent help schema compatibility verification;
 - local CI and Codex agent runbook verification;
+- disabled execute surface verification;
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
@@ -115,6 +116,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_execute_disabled.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -152,6 +154,7 @@ Result:
 - Pluto adapter check prints `pluto-adapter: passed`;
 - adapter contract check prints `adapter-contract: passed`;
 - MCP contract check prints `mcp-contract: passed`;
+- disabled-execute check prints `execute-disabled: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

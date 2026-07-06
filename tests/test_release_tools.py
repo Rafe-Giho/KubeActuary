@@ -30,6 +30,7 @@ KUBE_SCORE_ADAPTER = ROOT / "scripts" / "verify_kube_score_adapter.py"
 PLUTO_ADAPTER = ROOT / "scripts" / "verify_pluto_adapter.py"
 ADAPTER_CONTRACT = ROOT / "scripts" / "verify_adapter_contract.py"
 MCP_CONTRACT = ROOT / "scripts" / "verify_mcp_contract.py"
+EXECUTE_DISABLED = ROOT / "scripts" / "verify_execute_disabled.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -390,6 +391,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("mcp-contract: passed", result.stdout)
         self.assertIn("execute-tool: disabled", result.stdout)
+
+    def test_verify_execute_disabled(self):
+        result = subprocess.run(
+            [sys.executable, str(EXECUTE_DISABLED)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("execute-disabled: passed", result.stdout)
+        self.assertIn("mcp-execute: disabled", result.stdout)
 
 
 if __name__ == "__main__":

@@ -42,6 +42,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -76,6 +77,7 @@ Expected:
 - Pluto adapter verifies pass and fail fixtures;
 - adapter contract verifies common evidence fields and normalized severity;
 - MCP contract verifies five safe tools and disabled execute tool;
+- disabled-execute verifier proves CLI and MCP surfaces do not expose execute;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -111,6 +113,7 @@ Expected:
 - [ ] Pluto adapter fixture check passes.
 - [ ] adapter contract check passes.
 - [ ] MCP safe-tool contract check passes.
+- [ ] disabled-execute surface check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

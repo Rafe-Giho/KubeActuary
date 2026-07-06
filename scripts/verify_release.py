@@ -209,6 +209,11 @@ COMMON_CHECKS = (
         contains=("mcp-contract: passed", "safe-tools: 5", "execute-tool: disabled"),
     ),
     Check(
+        "execute disabled",
+        ("python3", "-B", "scripts/verify_execute_disabled.py"),
+        contains=("execute-disabled: passed", "cli-execute: absent", "mcp-execute: disabled"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

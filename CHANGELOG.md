@@ -47,6 +47,7 @@ Evidence collector release:
 - add safe stdlib MCP/JSON-RPC wrapper for draft, inspect, attach, verify, and gate;
 - add dedicated agent help contract verifier for schema compatibility;
 - add local CI and Codex agent workflow runbooks with verifier;
+- add explicit disabled-execute verifier for CLI and MCP surfaces;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

@@ -376,6 +376,7 @@ scripts/
   verify_adapter_contract.py  common adapter contract verifier
   kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
   verify_mcp_contract.py      MCP safe-tool contract verifier
+  verify_execute_disabled.py  disabled execute surface verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -415,6 +416,7 @@ python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
+python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
