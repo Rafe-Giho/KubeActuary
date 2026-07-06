@@ -26,6 +26,8 @@ Evidence collector release:
 - add a pure low-overhead controller reconcile model and watch boundary checks;
 - add namespace-scoped and cluster-scoped controller RBAC manifests with
   status-only permission checks;
+- add controller health, readiness, metrics, and leader-election runtime
+  contracts;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

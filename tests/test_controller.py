@@ -111,6 +111,44 @@ class ControllerReconcileTests(unittest.TestCase):
             "kubectl get operationcapsules.ops.kubeactuary.dev -o json --watch -n platform",
         )
 
+    def test_health_payload_is_deterministic(self):
+        result = self.run_controller("health", "--started-at", "100", "--now", "145")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["status"], "ok")
+        self.assertEqual(payload["uptimeSeconds"], 45)
+        self.assertEqual(payload["watchResource"], "operationcapsules.ops.kubeactuary.dev")
+
+    def test_ready_payload_reports_runtime_boundaries(self):
+        result = self.run_controller("ready", "--rbac-mode", "cluster")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIs(payload["ready"], True)
+        self.assertEqual(payload["checks"]["rbacMode"], "cluster")
+        self.assertIs(payload["checks"]["statusPatchOnly"], True)
+        self.assertEqual(payload["checks"]["watchResource"], "operationcapsules.ops.kubeactuary.dev")
+
+    def test_metrics_payload_is_prometheus_text(self):
+        result = self.run_controller("metrics", "--reconcile-total", "3", "--reconcile-errors-total", "1")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("# TYPE kubeactuary_controller_reconcile_total counter", result.stdout)
+        self.assertIn("kubeactuary_controller_reconcile_total 3", result.stdout)
+        self.assertIn("kubeactuary_controller_reconcile_errors_total 1", result.stdout)
+        self.assertIn('watch_resource="operationcapsules.ops.kubeactuary.dev"', result.stdout)
+
+    def test_leader_election_payload_uses_kubernetes_lease(self):
+        result = self.run_controller("leader-election", "--identity", "unit-test")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["resource"], "leases.coordination.k8s.io")
+        self.assertEqual(payload["namespace"], "kubeactuary-system")
+        self.assertEqual(payload["leaseName"], "kubeactuary-controller")
+        self.assertEqual(payload["identity"], "unit-test")
+
 
 if __name__ == "__main__":
     unittest.main()

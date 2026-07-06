@@ -92,7 +92,9 @@ Current local progress:
   target offline;
 - namespace-scoped and cluster-scoped RBAC manifests grant only OperationCapsule
   read/watch and status patch permissions;
-- live controller process, leader election, deployment manifests, and status
+- health, readiness, metrics, and leader-election payload contracts are
+  deterministic and offline-verifiable;
+- live controller process, HTTP serving, deployment manifests, and status
   subresource writes remain future work.
 
 ## v0.5: Policy Adapters

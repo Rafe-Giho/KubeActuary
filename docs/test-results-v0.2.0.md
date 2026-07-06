@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (21 checks)
-Ran 44 tests
+verification: passed (22 checks)
+Ran 49 tests
 OK
 ```
 
@@ -51,6 +51,8 @@ Coverage included:
 - controller watch contract stays scoped to OperationCapsule resources;
 - controller RBAC grants OperationCapsule read/watch and status-only write
   permissions;
+- controller runtime contract emits health, readiness, Prometheus metrics, and
+  leader-election Lease configuration;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -78,6 +80,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
+python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -97,6 +100,7 @@ Result:
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
+- controller runtime check prints `controller-runtime: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

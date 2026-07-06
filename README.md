@@ -329,6 +329,7 @@ scripts/
   verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
   verify_controller_contract.py offline controller contract check
   verify_controller_rbac.py    offline controller RBAC check
+  verify_controller_runtime_contract.py offline controller runtime check
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -350,6 +351,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
+python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

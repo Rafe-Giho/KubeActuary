@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from controller.reconcile import reconcile_status, status_patch, watch_command
+from controller.runtime import health_payload, leader_election_config, metrics_text, readiness_payload
 
 
 def load_json(path: str) -> dict:
@@ -42,6 +43,39 @@ def print_watch_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def health(args: argparse.Namespace) -> int:
+    write_json(health_payload(started_at=args.started_at, now=args.now))
+    return 0
+
+
+def ready(args: argparse.Namespace) -> int:
+    write_json(readiness_payload(rbac_mode=args.rbac_mode, leader_election=args.leader_election))
+    return 0
+
+
+def metrics(args: argparse.Namespace) -> int:
+    print(
+        metrics_text(
+            reconcile_total=args.reconcile_total,
+            reconcile_errors_total=args.reconcile_errors_total,
+            gate_open_total=args.gate_open_total,
+        ),
+        end="",
+    )
+    return 0
+
+
+def leader_election(args: argparse.Namespace) -> int:
+    write_json(
+        leader_election_config(
+            namespace=args.namespace,
+            lease_name=args.lease_name,
+            identity=args.identity,
+        )
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Dry-run KubeActuary controller reconcile helpers.",
@@ -56,6 +90,28 @@ def build_parser() -> argparse.ArgumentParser:
     watch_parser = sub.add_parser("watch-command", help="print the only Kubernetes watch command this controller needs")
     watch_parser.add_argument("--namespace")
     watch_parser.set_defaults(func=print_watch_command)
+
+    health_parser = sub.add_parser("health", help="emit liveness payload for future /healthz wiring")
+    health_parser.add_argument("--started-at", type=int)
+    health_parser.add_argument("--now", type=int)
+    health_parser.set_defaults(func=health)
+
+    ready_parser = sub.add_parser("ready", help="emit readiness payload for future /readyz wiring")
+    ready_parser.add_argument("--rbac-mode", choices=["namespace", "cluster"], default="namespace")
+    ready_parser.add_argument("--no-leader-election", dest="leader_election", action="store_false")
+    ready_parser.set_defaults(func=ready, leader_election=True)
+
+    metrics_parser = sub.add_parser("metrics", help="emit Prometheus text metrics for future /metrics wiring")
+    metrics_parser.add_argument("--reconcile-total", type=int, default=0)
+    metrics_parser.add_argument("--reconcile-errors-total", type=int, default=0)
+    metrics_parser.add_argument("--gate-open-total", type=int, default=0)
+    metrics_parser.set_defaults(func=metrics)
+
+    election_parser = sub.add_parser("leader-election", help="emit Kubernetes Lease configuration")
+    election_parser.add_argument("--namespace", default="kubeactuary-system")
+    election_parser.add_argument("--lease-name", default="kubeactuary-controller")
+    election_parser.add_argument("--identity")
+    election_parser.set_defaults(func=leader_election)
     return parser
 
 

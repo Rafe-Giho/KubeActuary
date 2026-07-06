@@ -24,6 +24,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
+python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -39,6 +40,8 @@ Expected:
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
   permissions;
+- controller runtime contract emits health, readiness, metrics, and Lease
+  configuration without contacting the cluster;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -53,6 +56,7 @@ Expected:
 - [ ] CRD rollback fixture YAML parses.
 - [ ] controller dry-run contract check passes.
 - [ ] controller RBAC check passes.
+- [ ] controller runtime contract check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

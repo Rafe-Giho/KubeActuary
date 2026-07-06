@@ -16,7 +16,7 @@ Expected:
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
-  and full manifest gate behavior;
+  controller runtime contract, and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -40,6 +40,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
+python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -57,6 +58,7 @@ Expected:
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
+- controller runtime check prints `controller-runtime: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -111,6 +113,8 @@ Confirm from code and tests:
   `operationcapsules.ops.kubeactuary.dev`;
 - controller RBAC grants only OperationCapsule read/watch and status patch
   permissions;
+- controller runtime helper emits health, readiness, metrics, and
+  leader-election Lease configuration without contacting the cluster;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -126,5 +130,5 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
-  upgrade fixtures, controller contract, controller RBAC, digest, CRD render,
-  gate behavior, JSON/YAML parsing, and `git diff --check`.
+  upgrade fixtures, controller contract, controller RBAC, controller runtime,
+  digest, CRD render, gate behavior, JSON/YAML parsing, and `git diff --check`.

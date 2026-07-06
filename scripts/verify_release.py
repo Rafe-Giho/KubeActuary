@@ -95,6 +95,17 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "controller runtime",
+        ("python3", "-B", "scripts/verify_controller_runtime_contract.py"),
+        contains=(
+            "controller-runtime: passed",
+            "health: ok",
+            "ready: ok",
+            "metrics: prometheus-text",
+            "leader-election: leases.coordination.k8s.io",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

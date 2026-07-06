@@ -3,20 +3,20 @@
 The controller remains optional. The default KubeActuary path is still local CLI
 and evidence files.
 
-## v0.4.0 and v0.4.1 Scope
+## v0.4.0 to v0.4.2 Scope
 
 Implemented locally:
 
 - pure reconcile model for one `OperationCapsule` object;
 - status patch generation for fake-client tests and future controller wiring;
 - documented watch command that targets only `OperationCapsule` resources;
-- namespace-scoped and cluster-scoped RBAC manifests.
+- namespace-scoped and cluster-scoped RBAC manifests;
+- health, readiness, metrics, and leader-election payload contracts.
 
 Not implemented yet:
 
 - in-cluster Deployment;
-- leader election;
-- metrics;
+- live HTTP serving for probes and metrics;
 - live Kubernetes watch loop;
 - status patch write path.
 
@@ -60,6 +60,34 @@ Offline verifier:
 
 ```sh
 python3 -B scripts/verify_controller_rbac.py
+```
+
+## Runtime Boundary
+
+Dry-run helpers:
+
+```sh
+python3 bin/kube-actuary-controller health
+python3 bin/kube-actuary-controller ready
+python3 bin/kube-actuary-controller metrics
+python3 bin/kube-actuary-controller leader-election
+```
+
+Future live controller wiring should expose:
+
+- `/healthz` from the `health` payload;
+- `/readyz` from the `ready` payload;
+- `/metrics` using the Prometheus text emitted by `metrics`;
+- leader election with Kubernetes `Lease` objects from
+  `leases.coordination.k8s.io`.
+
+The runtime contract is local and deterministic today. It does not contact a
+cluster, start a server, or create a `Lease`.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_runtime_contract.py
 ```
 
 ## Dry-Run Reconcile

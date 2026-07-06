@@ -12,6 +12,7 @@ CRD_UPGRADE_FIXTURES = ROOT / "scripts" / "verify_crd_upgrade_fixtures.py"
 CRD_EXPLAIN_QUALITY = ROOT / "scripts" / "verify_crd_explain_quality.py"
 CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
+CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -115,6 +116,21 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("namespace-mode: Role/RoleBinding", result.stdout)
         self.assertIn("cluster-mode: ClusterRole/ClusterRoleBinding", result.stdout)
         self.assertIn("status-write-only: operationcapsules/status", result.stdout)
+
+    def test_verify_controller_runtime_contract(self):
+        result = subprocess.run(
+            [sys.executable, str(CONTROLLER_RUNTIME)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("controller-runtime: passed", result.stdout)
+        self.assertIn("metrics: prometheus-text", result.stdout)
+        self.assertIn("leader-election: leases.coordination.k8s.io", result.stdout)
 
 
 if __name__ == "__main__":
