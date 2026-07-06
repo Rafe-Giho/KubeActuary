@@ -409,6 +409,8 @@ def queue_resolved_commands(
         item = items.get(gate_id)
         if not item:
             continue
+        if item.get("status") != "tool-ready":
+            continue
         item_commands = item.get("resolvedCommands") or item.get("commands") or []
         for command in item_commands:
             if isinstance(command, str) and command not in commands:
@@ -440,21 +442,31 @@ def next_commands(
     commands: list[str] = []
     resolved = selected_resolved_commands(next_task)
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
-    skip_gate_ids = {str(selected.get("id"))} if resolved and selected.get("id") else set()
+    selected_id = str(selected.get("id")) if selected.get("id") else None
+    selected_status = selected.get("captureStatus")
+    blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
+    selected_blocked = blocker_summary.get("selectedBlocked") is True
+    selected_ready = selected_status == "tool-ready" and not selected_blocked
+    skip_gate_ids = {selected_id} if selected_id else set()
     queue_commands, queue_gate_ids = queue_resolved_commands(gates, live_queue, skip_gate_ids)
     closure_commands = queue_closure_commands(live_queue)
     fallback_commands = unique_commands(
         gates,
         skip_gate_ids | queue_gate_ids,
-        include_closure=not closure_commands,
+        include_closure=not closure_commands and live_queue is None,
     )
-    for command in [*resolved, *queue_commands, *fallback_commands, *closure_commands]:
+    selected_commands = resolved if selected_ready else []
+    queue_or_fallback_commands = queue_commands if live_queue is not None else fallback_commands
+    include_closure = bool(queue_or_fallback_commands or selected_commands)
+    for command in [
+        *selected_commands,
+        *queue_or_fallback_commands,
+        *(closure_commands if include_closure else []),
+    ]:
         if command not in commands:
             commands.append(command)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
-    blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
-    selected_blocked = blocker_summary.get("selectedBlocked") is True
     if selected_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
         probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --probe-environment"
         if probe_command not in commands:

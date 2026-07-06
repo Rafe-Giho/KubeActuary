@@ -322,8 +322,8 @@ def main() -> int:
         errors.append("partial evidence directory must count one live report")
     if not partial_payload.get("missing", {}).get("coverage"):
         errors.append("partial status must include coverage misses")
-    if not any("run_managed_kubernetes_smoke.py" in command for command in partial_payload.get("nextCommands", [])):
-        errors.append("partial status must include next provider commands")
+    if any("run_managed_kubernetes_smoke.py" in command for command in partial_payload.get("nextCommands", [])):
+        errors.append("partial status must not recommend missing-tool provider commands")
     expected_probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {partial_dir} --probe-environment"
     if not partial_payload.get("nextCommands") or partial_payload.get("nextCommands", [None])[0] != expected_probe_command:
         errors.append("partial status must recommend environment probing before more live capture after runner failure")
@@ -339,8 +339,8 @@ def main() -> int:
         f"python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run "
         f"--output {partial_dir / 'reports' / '02-lightweight-cluster-smoke-lightweight-kind.json'}"
     )
-    if expected_resolved_kind not in partial_payload.get("nextCommands", []):
-        errors.append("partial status must use prepared queue resolved commands for non-selected gates")
+    if expected_resolved_kind in partial_payload.get("nextCommands", []):
+        errors.append("partial status must not recommend missing-tool prepared queue commands")
     for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
         if any(placeholder in command for command in partial_payload.get("nextCommands", [])):
             errors.append(f"partial status must not keep prepared queue placeholder in next commands: {placeholder}")
@@ -489,20 +489,22 @@ def main() -> int:
         errors.append("blocked evidence status must preserve selected blocker next step")
     if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
         errors.append("blocked evidence status must recommend rerunning the environment probe first")
+    if len(blocked_payload.get("nextCommands", [])) != 1:
+        errors.append("blocked evidence status must recommend only the probe rerun")
     expected_blocked_capture = (
         f"python3 -B scripts/capture_controller_resource_budget.py "
         f"--output {blocked_dir / 'raw' / '01-controller-resource-budget-kubectl-top.txt'} --run"
     )
-    if len(blocked_payload.get("nextCommands", [])) < 2 or blocked_payload["nextCommands"][1] != expected_blocked_capture:
-        errors.append("blocked evidence status must prioritize resolved selected next-task command after the probe")
+    if expected_blocked_capture in blocked_payload.get("nextCommands", []):
+        errors.append("blocked evidence status must not recommend blocked selected capture commands")
     if any("<kubectl-top-output.txt>" in command for command in blocked_payload.get("nextCommands", [])[:3]):
         errors.append("blocked evidence status must not keep selected next-task placeholders before resolved commands")
     expected_blocked_kind = (
         f"python3 -B scripts/run_lightweight_cluster_smoke.py --provider kind --run "
         f"--output {blocked_dir / 'reports' / '02-lightweight-cluster-smoke-lightweight-kind.json'}"
     )
-    if expected_blocked_kind not in blocked_payload.get("nextCommands", []):
-        errors.append("blocked evidence status must use prepared queue resolved commands for non-selected gates")
+    if expected_blocked_kind in blocked_payload.get("nextCommands", []):
+        errors.append("blocked evidence status must not recommend missing-tool prepared queue commands")
     for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
         if any(placeholder in command for command in blocked_payload.get("nextCommands", [])):
             errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")

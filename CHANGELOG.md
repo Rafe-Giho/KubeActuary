@@ -69,6 +69,8 @@ Evidence collector release:
   version iteration advance;
 - prioritize resolved prepared-queue commands in release evidence status
   next-command output;
+- limit release evidence next-command output to tool-ready commands, keeping
+  missing-tool and environment-blocked actions in blocker summaries;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

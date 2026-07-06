@@ -271,6 +271,8 @@ def main() -> int:
         errors.append("progress report must include partial evidence-dir status")
     if not evidence_status.get("nextCommands"):
         errors.append("partial evidence progress must include next commands")
+    if any("capture_controller_resource_budget.py" in command for command in evidence_status.get("nextCommands", [])):
+        errors.append("environment-blocked evidence progress must not recommend capture commands")
     if (evidence_status.get("nextTask") or {}).get("queueSource") != "prepared-live-validation-queue":
         errors.append("evidence progress must preserve next-task queue source")
     if (evidence_status.get("nextTask") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":

@@ -266,7 +266,10 @@ kind, and resolved commands still match, making stale next-task artifacts
 visible before another capture attempt. The same status and progress reports
 compare persisted runner and advance records against the current next-task
 artifact, so stale local execution records are visible before repeated
-iteration.
+iteration. The status `nextCommands` list recommends only commands whose
+prepared queue item is `tool-ready`; `missing-tools` and
+`blocked-by-environment` actions stay in blocker summaries and next-step text
+instead of being suggested as runnable capture commands.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.
@@ -297,7 +300,7 @@ When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
 When the probe classifies the selected task as environment-blocked, status and
-progress output print the selected blocker next step before more capture
+progress output print the selected blocker next step instead of blocked capture
 commands. Direct selected-task runner invocations use the same zero-run
 behavior, so a prepared environment-blocked task does not reattempt live
 capture until the evidence directory is refreshed after cluster access changes.
