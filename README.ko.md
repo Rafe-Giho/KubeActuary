@@ -611,6 +611,8 @@ python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 
 선택된 next-task runner는 준비된 task가 `tool-ready`가 아니면
 `blocked-by-environment` 또는 `missing-tools`를 zero-run 상태로 기록하고,
+selector artifact도 해당 task를 `runnable: false`로 표시하며, 실행 가능한
+명령처럼 보이지 않도록 blocker drilldown을 함께 출력합니다.
 evidence 디렉터리를 갱신하기 전에는 live capture 명령을 재시도하지 않습니다.
 Release evidence status는 `tool-ready` next command만 추천하고,
 blocked 또는 missing-tool action은 로컬 worklist drilldown과 함께 blocker

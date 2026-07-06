@@ -1106,6 +1106,16 @@ def main() -> int:
     selected_history_context = history_context_selected.get("historyContext") or {}
     if history_context_next_task_payload.get("filters", {}).get("historyDir") != str(repeated_history_dir):
         errors.append("history-context next task should preserve history directory filter")
+    if history_context_selected.get("runnable") is not False:
+        errors.append("history-context blocked next task should be marked non-runnable")
+    history_context_blocker = history_context_selected.get("blocker") or {}
+    if history_context_blocker.get("message") != "environment reason: command-failed":
+        errors.append("history-context blocked next task should explain the environment blocker")
+    if not any(
+        "--capture-status blocked-by-environment --environment-reason command-failed" in command
+        for command in history_context_blocker.get("worklistCommands") or []
+    ):
+        errors.append("history-context blocked next task should include blocker worklist drilldown")
     if selected_history_context.get("latestBlockerStreak", {}).get("streak") != 2:
         errors.append("history-context next task should attach latest blocker streak")
     if selected_history_context.get("latestBlockerAction", {}).get("action") != "resolve-environment":
@@ -1117,6 +1127,10 @@ def main() -> int:
         "history-blocker-status: repeated",
         "history-blocker-action: resolve-environment",
         "history-blocker-retry-recommended: false",
+        "runnable: false",
+        "blocker: environment reason: command-failed",
+        "blocker-worklist: python3 -B scripts/generate_version_worklist.py",
+        "blocked-command: python3 -B scripts/capture_controller_resource_budget.py",
     ):
         if snippet not in history_context_next_task_text.stdout:
             errors.append(f"history-context next task text should show history detail: {snippet}")
@@ -1124,6 +1138,10 @@ def main() -> int:
         "history: `repeated` streak=2",
         "history action: `resolve-environment`",
         "history retry: `false`",
+        "runnable: `false`",
+        "blocker: environment reason: command-failed",
+        "blocker worklist: `python3 -B scripts/generate_version_worklist.py",
+        "blocked command: `python3 -B scripts/capture_controller_resource_budget.py",
     ):
         if snippet not in history_context_next_task_markdown.stdout:
             errors.append(f"history-context next task Markdown should show history detail: {snippet}")
@@ -1657,6 +1675,8 @@ def main() -> int:
         errors.append("next task should select the first baseline tool-ready item")
     if next_selected.get("captureStatus") != "tool-ready":
         errors.append("next task default selection should be tool-ready")
+    if next_selected.get("runnable") is not True:
+        errors.append("next task default selection should be marked runnable")
     if next_task_with_paths.get("evidenceDir") != "evidence/live":
         errors.append("path-resolved next task should record the evidence directory")
     resolved_commands = "\n".join(path_selected.get("resolvedCommands", []))

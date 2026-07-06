@@ -19,6 +19,7 @@ from scripts.generate_version_worklist import build_worklist  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.next-version-task.v1"
+RUNNABLE_CAPTURE_STATUS = "tool-ready"
 DEFAULT_STATUS_PRIORITY = ("tool-ready", "blocked-by-environment", "missing-tools", "not-external-gate")
 NEXT_TASK_FILE_FLAGS = {
     "--sample": "sample",
@@ -81,6 +82,97 @@ def evidence_summary(files: list[dict[str, Any]]) -> dict[str, int | bool]:
     }
 
 
+def command_string(args: list[str]) -> str:
+    return " ".join(shlex.quote(arg) for arg in args)
+
+
+def selected_worklist_command(
+    selected: dict[str, Any],
+    filter_flag: str | None = None,
+    filter_value: str | None = None,
+    evidence_dir: Path | None = None,
+    history_dir: Path | None = None,
+) -> str:
+    args = [
+        "python3",
+        "-B",
+        "scripts/generate_version_worklist.py",
+        "--format",
+        "markdown",
+        "--open-only",
+    ]
+    if evidence_dir is not None:
+        args.extend(["--evidence-dir", evidence_dir.as_posix()])
+    if history_dir is not None:
+        args.extend(["--history-dir", history_dir.as_posix()])
+    if selected.get("version"):
+        args.extend(["--version", str(selected["version"])])
+    if selected.get("captureStatus"):
+        args.extend(["--capture-status", str(selected["captureStatus"])])
+    if filter_flag is not None and filter_value is not None:
+        args.extend([filter_flag, filter_value])
+    return command_string(args)
+
+
+def blocker_worklist_commands(
+    selected: dict[str, Any],
+    evidence_dir: Path | None = None,
+    history_dir: Path | None = None,
+) -> list[str]:
+    commands: list[str] = []
+
+    def add(filter_flag: str | None = None, filter_value: str | None = None) -> None:
+        command = selected_worklist_command(selected, filter_flag, filter_value, evidence_dir, history_dir)
+        if command not in commands:
+            commands.append(command)
+
+    if selected.get("environmentStatus"):
+        add("--environment-status", str(selected["environmentStatus"]))
+    if selected.get("environmentReason"):
+        add("--environment-reason", str(selected["environmentReason"]))
+    for tool in selected.get("missingTools") or []:
+        add("--missing-tool", str(tool))
+    if not commands:
+        add()
+    return commands
+
+
+def blocker_message(selected: dict[str, Any]) -> str:
+    missing_tools = selected.get("missingTools") or []
+    if missing_tools:
+        return f"missing tools: {', '.join(str(tool) for tool in missing_tools)}"
+    if selected.get("environmentReason"):
+        return f"environment reason: {selected['environmentReason']}"
+    if selected.get("environmentStatus"):
+        return f"environment status: {selected['environmentStatus']}"
+    if selected.get("nextStep"):
+        return str(selected["nextStep"])
+    return f"capture status is {selected.get('captureStatus') or 'not-ready'}"
+
+
+def annotate_selected(
+    selected: dict[str, Any] | None,
+    evidence_dir: Path | None = None,
+    history_dir: Path | None = None,
+) -> dict[str, Any] | None:
+    if selected is None:
+        return None
+    annotated = {**selected}
+    runnable = annotated.get("captureStatus") == RUNNABLE_CAPTURE_STATUS
+    annotated["runnable"] = runnable
+    if not runnable:
+        annotated["blocker"] = {
+            "captureStatus": annotated.get("captureStatus") or "not-ready",
+            "message": blocker_message(annotated),
+            "nextStep": annotated.get("nextStep"),
+            "environmentStatus": annotated.get("environmentStatus"),
+            "environmentReason": annotated.get("environmentReason"),
+            "missingTools": annotated.get("missingTools") or [],
+            "worklistCommands": blocker_worklist_commands(annotated, evidence_dir, history_dir),
+        }
+    return annotated
+
+
 def materialize_item(item: dict[str, Any], evidence_dir: Path) -> dict[str, Any]:
     selected = {
         **item,
@@ -134,7 +226,7 @@ def build_selection(
         ]
     else:
         eligible_items = selectable_items
-    selected = select_candidate(eligible_items, priority)
+    selected = annotate_selected(select_candidate(eligible_items, priority), evidence_dir, history_dir)
     skipped_complete_evidence = len(selectable_items) - len(eligible_items)
     selection = {
         "schemaVersion": SCHEMA_VERSION,
@@ -163,6 +255,7 @@ def build_selection(
             "skippedCompleteEvidence": skipped_complete_evidence,
             "selected": selected is not None,
             "selectedCaptureStatus": selected.get("captureStatus") if selected else None,
+            "selectedRunnable": selected.get("runnable") if selected else None,
         },
         "selected": selected,
         "closureCommands": worklist.get("closureCommands", []),
@@ -195,6 +288,7 @@ def render_text(selection: dict[str, Any]) -> str:
         f"item-id: {selected.get('id')}",
         f"item: {selected.get('item')}",
         f"capture-status: {selected.get('captureStatus')}",
+        f"runnable: {str(selected.get('runnable')).lower()}",
         f"kind: {selected.get('kind')}",
     ]
     if selected.get("environmentStatus"):
@@ -221,10 +315,17 @@ def render_text(selection: dict[str, Any]) -> str:
             lines.append(f"history-blocker-retry-recommended: {str(action.get('retryRecommended')).lower()}")
             if action.get("nextStep"):
                 lines.append(f"history-blocker-next-step: {action.get('nextStep')}")
+    blocker = selected.get("blocker")
+    if isinstance(blocker, dict):
+        lines.append(f"blocker: {blocker.get('message')}")
+        for command in blocker.get("worklistCommands") or []:
+            lines.append(f"blocker-worklist: {command}")
+    command_label = "command" if selected.get("runnable") else "blocked-command"
+    resolved_label = "resolved-command" if selected.get("runnable") else "blocked-resolved-command"
     for command in selected.get("commands", []):
-        lines.append(f"command: {command}")
+        lines.append(f"{command_label}: {command}")
     for command in selected.get("resolvedCommands", []):
-        lines.append(f"resolved-command: {command}")
+        lines.append(f"{resolved_label}: {command}")
     return "\n".join(lines) + "\n"
 
 
@@ -251,6 +352,7 @@ def render_markdown(selection: dict[str, Any]) -> str:
         lines.append("- none")
     else:
         lines.append(f"- `{selected.get('captureStatus')}` {selected.get('item')} ({selected.get('version')})")
+        lines.append(f"  - runnable: `{str(selected.get('runnable')).lower()}`")
         if selected.get("environmentStatus"):
             lines.append(f"  - environment: `{selected['environmentStatus']}`")
         if selected.get("environmentReason"):
@@ -276,10 +378,17 @@ def render_markdown(selection: dict[str, Any]) -> str:
                 lines.append(f"  - history retry: `{str(action.get('retryRecommended')).lower()}`")
                 if action.get("nextStep"):
                     lines.append(f"  - history next: {action.get('nextStep')}")
+        blocker = selected.get("blocker")
+        if isinstance(blocker, dict):
+            lines.append(f"  - blocker: {blocker.get('message')}")
+            for command in blocker.get("worklistCommands") or []:
+                lines.append(f"  - blocker worklist: `{command}`")
+        command_label = "command" if selected.get("runnable") else "blocked command"
+        resolved_label = "resolved" if selected.get("runnable") else "blocked resolved"
         for command in selected.get("commands", []):
-            lines.append(f"  - `{command}`")
+            lines.append(f"  - {command_label}: `{command}`")
         for command in selected.get("resolvedCommands", []):
-            lines.append(f"  - resolved: `{command}`")
+            lines.append(f"  - {resolved_label}: `{command}`")
     if selection.get("resolvedClosureCommands"):
         lines.extend(["", "## Resolved Closure", ""])
         for command in selection["resolvedClosureCommands"]:

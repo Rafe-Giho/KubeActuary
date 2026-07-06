@@ -609,7 +609,9 @@ python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 
 The selected next-task runner records `blocked-by-environment` or
 `missing-tools` as a zero-run status when the prepared task is not `tool-ready`;
-it does not reattempt live capture commands until the evidence directory is
+the selector artifact also marks those selected tasks as `runnable: false` and
+prints blocker drilldowns instead of presenting their commands as runnable.
+It does not reattempt live capture commands until the evidence directory is
 refreshed. Release evidence status recommends only `tool-ready` next commands;
 blocked or missing-tool actions stay in blocker summaries with local worklist
 drilldowns. Release progress

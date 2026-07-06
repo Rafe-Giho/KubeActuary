@@ -274,7 +274,8 @@ Result:
   terminal text output,
   complete worklist blocker summaries, evidence-aware and version-scoped
   blocker drilldown commands, environment-reason drilldowns, blocker-focused
-  filters, history-dir worklist/selector context, plus missing-tool and next-step visibility,
+  filters, non-runnable blocked selector output, history-dir
+  worklist/selector context, plus missing-tool and next-step visibility,
   iteration pack queue-source and blocker drilldown preservation,
   iteration history queue-source, blocker drilldown, latest blocker streak/action,
   latest filters, latest
