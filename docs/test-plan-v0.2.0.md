@@ -21,7 +21,8 @@ Expected:
   Krew manifest generation, SBOM/provenance generation, air-gapped manifest
   generation, Kyverno adapter fixtures, OPA adapter fixtures, kube-linter
   adapter fixtures, kube-score adapter fixtures, Pluto adapter fixtures, and
-  adapter contract severity normalization, and full manifest gate behavior;
+  adapter contract severity normalization, MCP safe-tool contract verification,
+  and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -60,6 +61,7 @@ python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
+python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -92,6 +94,7 @@ Expected:
 - kube-score adapter check prints `kube-score-adapter: passed`;
 - Pluto adapter check prints `pluto-adapter: passed`;
 - adapter contract check prints `adapter-contract: passed`;
+- MCP contract check prints `mcp-contract: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -175,6 +178,8 @@ Confirm from code and tests:
   evidence and fails on deprecated or removed API findings;
 - adapter contract verification requires common evidence fields and normalized
   `severity` values across pass/fail fixtures;
+- MCP contract verification exposes only the five safe tools and keeps
+  `execute_approved_capsule` disabled;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -194,5 +199,5 @@ Expected:
   controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   air-gapped bundle, Kyverno adapter, OPA adapter, kube-linter adapter,
-  kube-score adapter, Pluto adapter, adapter contract, gate behavior, JSON/YAML
-  parsing, and `git diff --check`.
+  kube-score adapter, Pluto adapter, adapter contract, MCP contract, gate
+  behavior, JSON/YAML parsing, and `git diff --check`.

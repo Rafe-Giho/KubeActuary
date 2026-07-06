@@ -47,14 +47,14 @@ Status legend:
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Controller | TODO | No live controller deployment yet |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
-| MCP server | TODO | Contract docs only |
+| MCP server | DOING | safe stdlib JSON-RPC wrapper exists; examples/versioning remain |
 | Admission/audit | TODO | Contract docs only |
 
 Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (36 checks)
+verification: passed (37 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -135,7 +135,7 @@ execution by default.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.7.0 | Safe MCP tools: draft, inspect, attach, verify, gate | TODO | JSON-RPC/MCP contract tests |
+| 0.7.0 | Safe MCP tools: draft, inspect, attach, verify, gate | DONE | `scripts/verify_mcp_contract.py` validates JSON-RPC/MCP contract |
 | 0.7.1 | Agent help contract versioning | TODO | `help agents --format json` compatibility test |
 | 0.7.2 | Agent examples for local CI and Codex workflows | TODO | example runbooks |
 | 0.7.3 | Explicitly disabled experimental execute tool | TODO | tests prove disabled-by-default |

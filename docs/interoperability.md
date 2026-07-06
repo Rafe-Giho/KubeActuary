@@ -38,7 +38,8 @@ candidate command.
 
 ## MCP Tool Contract
 
-A future MCP server should expose these tools:
+The stdlib MCP/JSON-RPC wrapper in `scripts/kube_actuary_mcp_server.py`
+exposes these safe tools:
 
 | Tool | Purpose | Writes cluster |
 | --- | --- | --- |
@@ -47,10 +48,16 @@ A future MCP server should expose these tools:
 | `attach_operation_evidence` | Attach an evidence record to a capsule | No |
 | `verify_operation_capsule` | Check required evidence | No |
 | `gate_operation_capsule` | Return open/closed execution decision | No |
-| `execute_approved_capsule` | Execute only a verified capsule | Yes, future only |
+| `execute_approved_capsule` | Execute only a verified capsule | Disabled |
 
 The first five tools are safe for local development because they operate on
 capsule files rather than live cluster state.
+
+Verification:
+
+```sh
+python3 -B scripts/verify_mcp_contract.py
+```
 
 ## GitOps Contract
 

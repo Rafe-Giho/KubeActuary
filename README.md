@@ -368,6 +368,8 @@ scripts/
   adapt_pluto_evidence.py     Pluto output to evidence adapter
   verify_pluto_adapter.py     Pluto adapter fixture verifier
   verify_adapter_contract.py  common adapter contract verifier
+  kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
+  verify_mcp_contract.py      MCP safe-tool contract verifier
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -404,6 +406,7 @@ python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
+python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -449,10 +452,10 @@ Later:
 
 - minimal low-overhead controller;
 - CRD status condition mapping;
-- optional MCP server;
+- agent workflow examples;
 - real Krew install validation;
 - optional admission webhook for AI-originated writes;
-- optional MCP server.
+- agent help contract versioning.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

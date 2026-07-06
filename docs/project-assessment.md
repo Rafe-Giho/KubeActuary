@@ -30,9 +30,8 @@ What is not real yet:
 - no controller;
 - no admission webhook;
 - no direct Kubernetes write execution;
-- no policy adapters;
 - no live Helm/Krew install validation;
-- no MCP server.
+- no production MCP packaging or client install guide.
 
 ## Self-Evaluation
 
@@ -57,7 +56,7 @@ Priority order:
 1. Add live install validation for Helm, Krew, and lightweight clusters.
 2. Add a minimal read-only controller that watches only `OperationCapsule`.
 3. Add release signing on top of deterministic digests and provenance.
-4. Add MCP server wrapper for safe tools.
+4. Add MCP client install guidance and agent workflow examples.
 5. Add optional admission webhook for AI-originated write identities.
 6. Add richer adapter remediation hints and source excerpts.
 7. Add signature support on top of deterministic capsule digests.

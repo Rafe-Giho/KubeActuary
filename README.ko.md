@@ -370,6 +370,8 @@ scripts/
   adapt_pluto_evidence.py     Pluto output to evidence adapter
   verify_pluto_adapter.py     Pluto adapter fixture verifier
   verify_adapter_contract.py  common adapter contract verifier
+  kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
+  verify_mcp_contract.py      MCP safe-tool contract verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -406,6 +408,7 @@ python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/verify_adapter_contract.py
+python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -450,10 +453,10 @@ check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 
 
 - 저부하 controller
 - CRD status condition mapping
-- optional MCP server
+- agent workflow examples
 - real Krew install validation
 - AI-originated write용 optional admission webhook
-- optional MCP server
+- agent help contract versioning
 
 자세한 내용은 [docs/roadmap.md](docs/roadmap.md)를 참고하세요.
 

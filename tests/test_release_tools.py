@@ -27,6 +27,7 @@ KUBE_LINTER_ADAPTER = ROOT / "scripts" / "verify_kube_linter_adapter.py"
 KUBE_SCORE_ADAPTER = ROOT / "scripts" / "verify_kube_score_adapter.py"
 PLUTO_ADAPTER = ROOT / "scripts" / "verify_pluto_adapter.py"
 ADAPTER_CONTRACT = ROOT / "scripts" / "verify_adapter_contract.py"
+MCP_CONTRACT = ROOT / "scripts" / "verify_mcp_contract.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -345,6 +346,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("adapter-contract: passed", result.stdout)
         self.assertIn("severity: normalized", result.stdout)
+
+    def test_verify_mcp_contract(self):
+        result = subprocess.run(
+            [sys.executable, str(MCP_CONTRACT)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("mcp-contract: passed", result.stdout)
+        self.assertIn("execute-tool: disabled", result.stdout)
 
 
 if __name__ == "__main__":

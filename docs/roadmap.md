@@ -137,7 +137,7 @@ common evidence contract and normalized severity verified by
 
 ## v0.7: MCP Server
 
-Expose safe MCP tools:
+Expose safe MCP tools through `scripts/kube_actuary_mcp_server.py`:
 
 - `draft_operation_capsule`
 - `inspect_operation_capsule`
@@ -146,7 +146,8 @@ Expose safe MCP tools:
 - `gate_operation_capsule`
 
 Keep `execute_approved_capsule` disabled or experimental until the gate and
-audit story is mature.
+audit story is mature. `scripts/verify_mcp_contract.py` proves the safe tools
+are listed and the execute tool is disabled.
 
 ## v0.8: Admission and Audit
 
