@@ -91,6 +91,8 @@ def main() -> int:
             errors.append(f"runner plan failed: {plan.stderr.strip() or plan.stdout.strip()}")
         if "next-version-task-run: plan" not in plan.stdout:
             errors.append("runner plan must report plan status")
+        if "queue-source: prepared-live-validation-queue" not in plan.stdout:
+            errors.append("runner plan text must show prepared queue source")
         if raw.exists() or supplemental.exists():
             errors.append("runner plan must not write evidence files")
 
@@ -224,6 +226,10 @@ def main() -> int:
             errors.append("runner execution must report passed run mode")
         if payload.get("clusterWrites") != "disabled-or-server-side-dry-run-only":
             errors.append("runner must preserve low-impact cluster write contract")
+        if payload.get("queueSource") != "prepared-live-validation-queue":
+            errors.append("runner must preserve the prepared queue source")
+        if payload.get("nextTask", {}).get("queueSource") != "prepared-live-validation-queue":
+            errors.append("runner next-task summary must preserve the prepared queue source")
         summary = payload.get("summary", {})
         if summary.get("commands") != 2 or summary.get("ran") != 2 or summary.get("failed") != 0:
             errors.append("runner must execute the two selected resource-budget commands")
@@ -298,14 +304,20 @@ def main() -> int:
         if not recorded_json.is_file() or not recorded_md.is_file():
             errors.append("runner --record must write JSON and Markdown reports")
             recorded_payload = {}
+            recorded_md_text = ""
         else:
             recorded_payload = json.loads(recorded_json.read_text())
-            if "# KubeActuary Next Version Task Run" not in recorded_md.read_text():
+            recorded_md_text = recorded_md.read_text()
+            if "# KubeActuary Next Version Task Run" not in recorded_md_text:
                 errors.append("runner recorded Markdown must include the run report title")
         if recorded_payload.get("schemaVersion") != "kube-actuary.next-version-task-run.v1":
             errors.append("runner recorded JSON schemaVersion mismatch")
         if recorded_payload.get("status") != "passed" or recorded_payload.get("mode") != "run":
             errors.append("runner recorded JSON must preserve passed run status")
+        if recorded_payload.get("queueSource") != "prepared-live-validation-queue":
+            errors.append("runner recorded JSON must preserve prepared queue source")
+        if "Queue source: `prepared-live-validation-queue`" not in recorded_md_text:
+            errors.append("runner recorded Markdown must preserve prepared queue source")
         if recorded_stdout.get("schemaVersion") != recorded_payload.get("schemaVersion"):
             errors.append("runner recorded stdout and file JSON must use the same schema")
 

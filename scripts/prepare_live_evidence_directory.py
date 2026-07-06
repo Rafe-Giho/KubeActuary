@@ -219,6 +219,7 @@ def prepare_directory(
     probe_md = metadata_dir / ENVIRONMENT_PROBE_MD
     blockers_json = metadata_dir / ENVIRONMENT_BLOCKERS_JSON
     blockers_md = metadata_dir / ENVIRONMENT_BLOCKERS_MD
+    write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     next_task = build_selection(
         version_filters=[],
         include_complete=False,
@@ -232,7 +233,6 @@ def prepare_directory(
     readme = evidence_dir / "README.md"
     probe = environment_probe_report(evidence_dir, queue)
     blockers = environment_blocker_report(evidence_dir, queue, next_task)
-    write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     write_text(queue_md, render_markdown(queue))
     write_text(probe_json, json.dumps(probe, indent=2, sort_keys=True))
     write_text(probe_md, render_environment_probe(probe))

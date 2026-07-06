@@ -48,10 +48,12 @@ def planned_result(
         skip_complete_evidence=True,
     )
     selected = selection.get("selected") or {}
+    queue_source = str(selection.get("sourceWorklistQueueSource") or "generated")
     return {
         "schemaVersion": SCHEMA_VERSION,
         "mode": "plan",
         "status": "plan",
+        "queueSource": queue_source,
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "evidenceDir": evidence_dir.as_posix(),
         "historyDir": history_dir.as_posix(),
@@ -84,15 +86,18 @@ def blocked_runner_result(
     created_at: str,
 ) -> dict[str, Any]:
     commands = selected.get("resolvedCommands") or selected.get("commands") or []
+    queue_source = str(next_task.get("sourceWorklistQueueSource") or "generated")
     return {
         "schemaVersion": NEXT_TASK_RUN_SCHEMA,
         "mode": "run",
         "status": str(selected.get("captureStatus") or "blocked"),
+        "queueSource": queue_source,
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "ranAt": created_at,
         "evidenceDir": str(evidence_dir),
         "nextTask": {
             "schemaVersion": next_task.get("schemaVersion"),
+            "queueSource": queue_source,
             "path": str(evidence_dir / NEXT_TASK_PATH),
             "selected": {
                 "id": selected.get("id"),
@@ -129,6 +134,8 @@ def run_advance(
         probe_environment=probe_environment,
         kubectl=kubectl,
     )
+    prepared_next_task = prepared.get("nextTask") or {}
+    queue_source = str(prepared_next_task.get("sourceWorklistQueueSource") or "generated")
     before = record_iteration(
         history_dir,
         run_id=f"{run_id}-before",
@@ -139,9 +146,9 @@ def run_advance(
         kubectl=kubectl,
         evidence_dir=evidence_dir,
     )
-    selected = (prepared.get("nextTask") or {}).get("selected") or {}
+    selected = prepared_next_task.get("selected") or {}
     if probe_environment and selected.get("captureStatus") != "tool-ready":
-        runner = blocked_runner_result(evidence_dir, prepared.get("nextTask") or {}, selected, created_at)
+        runner = blocked_runner_result(evidence_dir, prepared_next_task, selected, created_at)
         runner_record = record_next_task_run(evidence_dir, runner)
         blocked = record_iteration(
             history_dir,
@@ -158,6 +165,7 @@ def run_advance(
             "schemaVersion": SCHEMA_VERSION,
             "mode": "run",
             "status": str(selected.get("captureStatus") or "blocked"),
+            "queueSource": queue_source,
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "evidenceDir": evidence_dir.as_posix(),
             "historyDir": history_dir.as_posix(),
@@ -178,11 +186,12 @@ def run_advance(
                 "diffSummary": blocked.get("diffSummary"),
             },
             "nextTask": {
-                "schemaVersion": (prepared.get("nextTask") or {}).get("schemaVersion"),
+                "schemaVersion": prepared_next_task.get("schemaVersion"),
+                "queueSource": queue_source,
                 "selected": selected.get("id"),
                 "captureStatus": selected.get("captureStatus"),
                 "environmentStatus": selected.get("environmentStatus"),
-                "skippedCompleteEvidence": (prepared.get("nextTask") or {}).get("summary", {}).get(
+                "skippedCompleteEvidence": prepared_next_task.get("summary", {}).get(
                     "skippedCompleteEvidence",
                     0,
                 ),
@@ -214,6 +223,7 @@ def run_advance(
         "schemaVersion": SCHEMA_VERSION,
         "mode": "run",
         "status": status,
+        "queueSource": queue_source,
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "evidenceDir": evidence_dir.as_posix(),
         "historyDir": history_dir.as_posix(),
@@ -235,6 +245,7 @@ def run_advance(
         },
         "nextTask": {
             "schemaVersion": next_task.get("schemaVersion"),
+            "queueSource": queue_source,
             "selected": (next_task.get("selected") or {}).get("id"),
             "skippedCompleteEvidence": next_task.get("summary", {}).get("skippedCompleteEvidence", 0),
         },
@@ -246,6 +257,7 @@ def render_text(result: dict[str, Any]) -> str:
     lines = [
         f"version-iteration-advance: {result['status']}",
         f"mode: {result['mode']}",
+        f"queue-source: {result.get('queueSource', 'generated')}",
         f"evidence-dir: {result['evidenceDir']}",
         f"history-dir: {result['historyDir']}",
         f"cluster-writes: {result['clusterWrites']}",
@@ -283,6 +295,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         f"Schema: `{result['schemaVersion']}`",
         f"Mode: `{result['mode']}`",
         f"Status: `{result['status']}`",
+        f"Queue source: `{result.get('queueSource', 'generated')}`",
         f"Evidence directory: `{result['evidenceDir']}`",
         f"History directory: `{result['historyDir']}`",
         f"Cluster writes: `{result['clusterWrites']}`",

@@ -97,22 +97,34 @@ def main() -> int:
             errors.append("advance schemaVersion mismatch")
         if payload.get("status") != "passed" or payload.get("mode") != "run":
             errors.append("advance run must pass in run mode")
+        if payload.get("queueSource") != "prepared-live-validation-queue":
+            errors.append("advance run must preserve the prepared queue source")
+        if payload.get("nextTask", {}).get("queueSource") != "prepared-live-validation-queue":
+            errors.append("advance next-task summary must preserve the prepared queue source")
         advance_record = payload.get("advanceRecord") or {}
         advance_record_json = Path(advance_record.get("json", ""))
         advance_record_md = Path(advance_record.get("markdown", ""))
         if not advance_record_json.is_file() or not advance_record_md.is_file():
             errors.append("advance must record its JSON and Markdown status reports")
             advance_record_payload = {}
+            advance_record_md_text = ""
         else:
             advance_record_payload = json.loads(advance_record_json.read_text())
-            if "# KubeActuary Version Iteration Advance" not in advance_record_md.read_text():
+            advance_record_md_text = advance_record_md.read_text()
+            if "# KubeActuary Version Iteration Advance" not in advance_record_md_text:
                 errors.append("advance Markdown record must include the report title")
         if advance_record_payload.get("schemaVersion") != "kube-actuary.version-iteration-advance.v1":
             errors.append("advance recorded JSON schemaVersion mismatch")
         if advance_record_payload.get("status") != "passed":
             errors.append("advance recorded JSON must preserve passing status")
+        if advance_record_payload.get("queueSource") != "prepared-live-validation-queue":
+            errors.append("advance recorded JSON must preserve prepared queue source")
+        if "Queue source: `prepared-live-validation-queue`" not in advance_record_md_text:
+            errors.append("advance recorded Markdown must preserve prepared queue source")
         if payload.get("runner", {}).get("status") != "passed":
             errors.append("advance must include a passing next-task runner result")
+        if payload.get("runner", {}).get("queueSource") != "prepared-live-validation-queue":
+            errors.append("advance runner result must preserve prepared queue source")
         runner_record = payload.get("runnerRecord") or {}
         runner_record_json = Path(runner_record.get("json", ""))
         runner_record_md = Path(runner_record.get("markdown", ""))
@@ -127,6 +139,8 @@ def main() -> int:
             errors.append("advance runner record schemaVersion mismatch")
         if runner_record_payload.get("status") != "passed":
             errors.append("advance runner record must preserve passing runner status")
+        if runner_record_payload.get("queueSource") != "prepared-live-validation-queue":
+            errors.append("advance runner record must preserve prepared queue source")
         if payload.get("before", {}).get("runId") != "test-advance-before":
             errors.append("advance must record before history run")
         if payload.get("after", {}).get("runId") != "test-advance-after":

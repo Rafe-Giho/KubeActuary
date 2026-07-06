@@ -264,6 +264,7 @@ Result:
   worklist missing-tool and next-step visibility,
   iteration pack queue-source preservation,
   iteration history queue-source preservation,
+  scaffold/runner/advance queue-source preservation,
   next-task selection,
   evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;
@@ -283,9 +284,11 @@ Result:
   `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
-  zero-run reporting for non-`tool-ready` selected tasks;
+  queue-source preservation and zero-run reporting for non-`tool-ready`
+  selected tasks;
 - version iteration advance check prints `version-iteration-advance: passed`
-  and verifies persisted runner and advance status reports;
+  and verifies queue-source-preserving persisted runner and advance status
+  reports;
 - clean artifact check prints `clean-artifacts: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;

@@ -172,9 +172,14 @@ def blocked_run_summary(selected: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def queue_source(task: dict[str, Any]) -> str:
+    return str(task.get("sourceWorklistQueueSource") or task.get("queueSource") or "generated")
+
+
 def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     task = load_next_task(evidence_dir)
     selected = task["selected"]
+    source = queue_source(task)
     commands = selected_commands(task)
     validations = validate_commands(commands)
     validation_errors = [error for record in validations for error in record["errors"]]
@@ -198,11 +203,13 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
         "schemaVersion": SCHEMA_VERSION,
         "mode": "run" if run else "plan",
         "status": status,
+        "queueSource": source,
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "ranAt": datetime.now(timezone.utc).isoformat() if run else None,
         "evidenceDir": str(evidence_dir),
         "nextTask": {
             "schemaVersion": task.get("schemaVersion"),
+            "queueSource": source,
             "path": str(evidence_dir / NEXT_TASK_PATH),
             "selected": {
                 "id": selected.get("id"),
@@ -235,6 +242,7 @@ def render_text(result: dict[str, Any]) -> str:
     lines = [
         f"next-version-task-run: {result['status']}",
         f"mode: {result['mode']}",
+        f"queue-source: {result.get('queueSource', 'generated')}",
         f"task: {selected.get('id')}",
         f"commands: {summary['commands']}",
         f"valid-commands: {summary['validCommands']}",
@@ -267,6 +275,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         f"Schema: `{result['schemaVersion']}`",
         f"Mode: `{result['mode']}`",
         f"Status: `{result['status']}`",
+        f"Queue source: `{result.get('queueSource', 'generated')}`",
         f"Evidence directory: `{result['evidenceDir']}`",
         f"Cluster writes: `{result['clusterWrites']}`",
         "",

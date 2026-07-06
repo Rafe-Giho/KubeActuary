@@ -152,6 +152,7 @@ Expected:
 - prepared-queue worklist Markdown shows missing tools and next steps;
 - prepared-queue version iteration packs preserve the queue source;
 - prepared-queue version iteration history records and status preserve the queue source;
+- prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
 - version iteration packs preserve resolved closure commands and evidence
   readiness when `--evidence-dir` is used;
 - version iteration history records and inspects evidence readiness deltas
@@ -174,9 +175,11 @@ Expected:
   recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus
-  zero-run reporting for non-`tool-ready` selected tasks;
+  queue-source preservation and zero-run reporting for non-`tool-ready`
+  selected tasks;
 - version iteration advance check prints `version-iteration-advance: passed`
-  and verifies persisted runner and advance status reports;
+  and verifies queue-source-preserving persisted runner and advance status
+  reports;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

@@ -175,6 +175,8 @@ def main() -> int:
             errors.append("scaffold next task schemaVersion mismatch")
         if next_task.get("evidenceDir") != str(evidence_dir):
             errors.append("scaffold next task must record evidence directory")
+        if next_task.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
+            errors.append("scaffold next task must use the prepared live validation queue")
         selected = next_task.get("selected") or {}
         resolved_next = "\n".join(selected.get("resolvedCommands", []))
         if selected.get("id") != "01-controller-resource-budget":
@@ -187,6 +189,8 @@ def main() -> int:
             errors.append("scaffold next task must not keep placeholders in resolved commands")
         if "Controller resource budget" not in initial_next_task_md:
             errors.append("scaffold next task markdown must summarize selected task")
+        if "Queue source: `prepared-live-validation-queue`" not in initial_next_task_md:
+            errors.append("scaffold next task markdown must show prepared queue source")
         advanced_selected = advanced_next_task.get("selected") or {}
         advanced_summary = advanced_next_task.get("summary", {})
         if advanced_summary.get("skippedCompleteEvidence") != 1:

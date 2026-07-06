@@ -78,7 +78,9 @@ reuse visible during repeated local verification. Worklist Markdown also prints
 missing tools and next steps per item so blocked local loops remain actionable.
 Version iteration packs preserve the same queue source in their index and
 per-version files. Version iteration history records and status output keep
-that source so run-to-run comparisons remain traceable.
+that source so run-to-run comparisons remain traceable. Persisted next-task
+runner and version-iteration advance reports keep it too, so recorded local
+execution state stays tied to the queue snapshot that selected the task.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It
@@ -251,7 +253,8 @@ it prints a plan only; with `--run` it executes the selected commands and
 reports schema `kube-actuary.next-version-task-run.v1`. If the selected task is
 not `tool-ready`, `--run` records a zero-run status such as
 `blocked-by-environment` or `missing-tools` instead of executing capture
-commands. Add `--record` to
+commands. Runner text, JSON, and recorded Markdown include the selected queue
+source. Add `--record` to
 persist the runner report as `.kubeactuary/next-version-task-run.json` and
 `.kubeactuary/next-version-task-run.md`:
 
@@ -281,7 +284,8 @@ history recording and reports schema
 selected runner status as `.kubeactuary/next-version-task-run.json` and
 `.kubeactuary/next-version-task-run.md`, plus the advance workflow status as
 `.kubeactuary/version-iteration-advance.json` and
-`.kubeactuary/version-iteration-advance.md`:
+`.kubeactuary/version-iteration-advance.md`. The advance report preserves the
+same queue source used by the selected next-task artifact:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
