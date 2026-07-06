@@ -392,6 +392,8 @@ scripts/
   verify_live_validation_readiness.py external validation readiness inventory
   validate_live_evidence.py   captured live evidence JSON validator
   verify_live_evidence_schema.py live evidence schema verifier
+  build_live_evidence_manifest.py captured evidence manifest builder
+  verify_live_evidence_manifest.py live evidence manifest verifier
   verify_project_governance.py contribution, notice, and license verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
@@ -463,6 +465,7 @@ python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_evidence_schema.py
+python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py

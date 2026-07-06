@@ -10,6 +10,7 @@ Run:
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_evidence_schema.py
+python3 -B scripts/verify_live_evidence_manifest.py
 ```
 
 Expected:
@@ -59,6 +60,17 @@ cluster-writes: disabled
 ```sh
 python3 -B scripts/validate_live_evidence.py <evidence.json> [...]
 ```
+
+- Build a release evidence manifest after validation:
+
+```sh
+python3 -B scripts/build_live_evidence_manifest.py <evidence.json> [...] --output /tmp/kubeactuary-live-evidence-manifest.json
+```
+
+The manifest uses schema `kube-actuary.live-evidence-manifest.v1`, records each
+report SHA-256, and maps captured reports to release gates such as
+`lightweight-cluster-smoke`, `helm-smoke`, `krew-smoke`,
+`admission-kind-smoke`, and `managed-kubernetes-smoke`.
 
 Supported evidence schemas:
 

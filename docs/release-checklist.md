@@ -46,6 +46,7 @@ python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_evidence_schema.py
+python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
@@ -111,6 +112,8 @@ Expected:
   running cluster or cloud checks;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
+- live evidence manifest maps captured reports to release gates and records
+  report SHA-256 digests;
 - project governance verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING;
 - air-gapped manifest verifies required release and repository artifacts;
 - agent help contract verifies schema version and compatibility fields;
@@ -171,6 +174,7 @@ Expected:
 - [ ] documentation freeze check passes.
 - [ ] live validation readiness check passes.
 - [ ] captured live evidence schema check passes.
+- [ ] captured live evidence manifest check passes.
 - [ ] project governance check passes.
 - [ ] air-gapped bundle manifest check passes.
 - [ ] agent help contract check passes.
