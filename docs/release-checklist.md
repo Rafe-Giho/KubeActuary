@@ -104,6 +104,7 @@ Expected:
   commands are not truncated;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
+  renders text output for terminal-first local task loops,
   summarizes every repeated missing-tool and environment blocker with filtered
   worklist drilldown commands, including version-scoped blocker commands,
   filters worklists, next-task selection, iteration packs, and history records

@@ -499,6 +499,7 @@ python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/verify_version_worklist.py
+python3 -B scripts/generate_version_worklist.py --format text --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind

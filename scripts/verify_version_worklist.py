@@ -162,6 +162,7 @@ def main() -> int:
     errors: list[str] = []
     json_result = run_generator("--format", "json")
     markdown_result = run_generator("--format", "markdown")
+    text_result = run_generator("--format", "text", "--open-only")
     single_version_result = run_generator("--format", "json", "--version", "0.4.3")
     multi_version_result = run_generator("--format", "json", "--version", "0.3.3", "--version", "0.4.3")
     open_only_result = run_generator("--format", "json", "--open-only")
@@ -585,6 +586,21 @@ def main() -> int:
         ):
             if snippet not in markdown_result.stdout:
                 errors.append(f"markdown worklist must include all blocker summaries: {snippet}")
+    if text_result.returncode != 0:
+        errors.append(f"text worklist failed: {text_result.stderr.strip() or text_result.stdout.strip()}")
+    else:
+        for snippet in (
+            f"schema: {SCHEMA}",
+            "open-items: 16",
+            "capture-ready: 4",
+            "missing-tool-blocker: kind (5 items)",
+            "worklist: python3 -B scripts/generate_version_worklist.py --format markdown --open-only --capture-status missing-tools --missing-tool kind",
+            "version: Current Baseline capture-ready",
+            "item: Current Baseline tool-ready Controller resource budget",
+            "closure-command: python3 -B scripts/validate_live_evidence.py <evidence.json> [...]",
+        ):
+            if snippet not in text_result.stdout:
+                errors.append(f"text worklist must include local task detail: {snippet}")
     if prepared_queue.returncode != 0:
         errors.append(f"prepared live queue failed: {prepared_queue.stderr.strip() or prepared_queue.stdout.strip()}")
         prepared_queue_worklist = {}

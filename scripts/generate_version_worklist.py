@@ -470,9 +470,85 @@ def render_markdown(worklist: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_text(worklist: dict[str, Any]) -> str:
+    summary = worklist["summary"]
+    lines = [
+        f"schema: {worklist['schemaVersion']}",
+        f"source: {worklist['source']}",
+        f"queue-source: {worklist.get('queueSource', 'generated')}",
+        f"versions: {summary['versions']}",
+        f"open-versions: {summary['openVersions']}",
+        f"open-items: {summary['openItems']}",
+        f"capture-ready: {summary['captureReady']}",
+        f"blocked-by-tools: {summary['blockedByTools']}",
+        f"blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
+    ]
+    filters = worklist.get("filters", {})
+    for label, key in (
+        ("filter-version", "versions"),
+        ("filter-capture-status", "captureStatuses"),
+        ("filter-missing-tool", "missingTools"),
+        ("filter-environment-status", "environmentStatuses"),
+    ):
+        for value in filters.get(key) or []:
+            lines.append(f"{label}: {value}")
+    blockers = worklist.get("blockers", {})
+    for item in blockers.get("missingTools") or []:
+        lines.append(f"missing-tool-blocker: {item['tool']} ({item['items']} items)")
+        if item.get("worklistCommand"):
+            lines.append(f"worklist: {item['worklistCommand']}")
+    for item in blockers.get("environment") or []:
+        lines.append(f"environment-blocker: {item['status']} ({item['items']} items)")
+        if item.get("worklistCommand"):
+            lines.append(f"worklist: {item['worklistCommand']}")
+    for item in blockers.get("environmentNextSteps") or []:
+        lines.append(f"blocker-next-step: {item['nextStep']} ({item['items']} items)")
+    for version in worklist["versions"]:
+        counts = version["summary"]
+        lines.append(
+            f"version: {version['version']} {version['status']} "
+            f"done={counts.get('done', 0)} verify={counts.get('verify', 0)} open={counts.get('open', 0)}"
+        )
+        version_blockers = version.get("blockers", {})
+        for item in version_blockers.get("missingTools") or []:
+            lines.append(
+                f"version-missing-tool-blocker: {version['version']} "
+                f"{item['tool']} ({item['items']} items)"
+            )
+            if item.get("worklistCommand"):
+                lines.append(f"version-worklist: {item['worklistCommand']}")
+        for item in version_blockers.get("environment") or []:
+            lines.append(
+                f"version-environment-blocker: {version['version']} "
+                f"{item['status']} ({item['items']} items)"
+            )
+            if item.get("worklistCommand"):
+                lines.append(f"version-worklist: {item['worklistCommand']}")
+        for item in version["openItems"]:
+            lines.append(f"item: {version['version']} {item['captureStatus']} {item['item']}")
+            if item.get("environmentStatus"):
+                lines.append(f"environment: {item['environmentStatus']}")
+            if item.get("missingTools"):
+                lines.append(f"missing-tools: {', '.join(item['missingTools'])}")
+            if item.get("nextStep"):
+                lines.append(f"next: {item['nextStep']}")
+            if item.get("evidenceSummary"):
+                evidence = item["evidenceSummary"]
+                lines.append(f"evidence: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
+            first_command = (item.get("commands") or [None])[0]
+            if first_command:
+                lines.append(f"command: {first_command}")
+            first_resolved = (item.get("resolvedCommands") or [None])[0]
+            if first_resolved:
+                lines.append(f"resolved: {first_resolved}")
+    for command in worklist.get("resolvedClosureCommands") or worklist["closureCommands"]:
+        lines.append(f"closure-command: {command}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary version worklist.")
-    parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    parser.add_argument("--format", choices=["json", "markdown", "text"], default="json")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
@@ -501,8 +577,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args.format == "json":
         rendered = json.dumps(worklist, indent=2, sort_keys=True) + "\n"
-    else:
+    elif args.format == "markdown":
         rendered = render_markdown(worklist)
+    else:
+        rendered = render_text(worklist)
 
     if args.output == "-":
         print(rendered, end="")

@@ -268,6 +268,7 @@ Result:
   evidence-aware iteration packs, evidence-aware iteration history,
   prepared live validation queue reuse,
   queue-source visibility,
+  terminal text output,
   complete worklist blocker summaries, evidence-aware and version-scoped
   blocker drilldown commands, blocker-focused filters, plus missing-tool and
   next-step visibility,

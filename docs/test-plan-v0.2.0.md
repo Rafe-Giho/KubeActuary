@@ -149,8 +149,8 @@ Expected:
   run/history metadata, without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
-  blocker summaries, blocker drilldown commands with evidence-dir and version
-  context, blocker-focused filters, and next-task selection;
+  text output, blocker summaries, blocker drilldown commands with evidence-dir
+  and version context, blocker-focused filters, and next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live

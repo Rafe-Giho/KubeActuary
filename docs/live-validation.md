@@ -88,7 +88,9 @@ prepared queue when `--evidence-dir` is passed, so local iteration commands
 show the last probed environment blockers until the directory is refreshed.
 Their Markdown/text output also prints the queue source, making prepared queue
 reuse visible during repeated local verification. Worklist Markdown also prints
-missing tools and next steps per item so blocked local loops remain actionable.
+missing tools and next steps per item, and worklist text output keeps the same
+local task summary available without Markdown rendering, so blocked local loops
+remain actionable.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, so repeated validation can focus on the
 shared blocker before re-running evidence commands. Blocker summaries include
