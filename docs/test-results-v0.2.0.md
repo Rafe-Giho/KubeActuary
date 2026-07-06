@@ -275,10 +275,10 @@ Result:
   iteration pack queue-source and blocker drilldown preservation,
   iteration history queue-source, blocker drilldown, latest filters, latest
   next-task details, latest next-task evidence file details, latest next-task
-  worklist drilldowns, latest artifact paths, latest aggregate/per-version
-  diff summaries, and next-command preservation across text, JSON, Markdown,
-  recorded status reports, and latest
-  probe failures,
+  worklist drilldowns, latest advance/runner status, latest artifact paths,
+  latest aggregate/per-version diff summaries, and next-command preservation
+  across text, JSON, Markdown, recorded status reports, and latest probe
+  failures,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,
   next-task selection,

@@ -317,10 +317,45 @@ def main() -> int:
         completed_evidence_dir = tmpdir / "completed-evidence"
         (completed_evidence_dir / "raw").mkdir(parents=True)
         (completed_evidence_dir / "supplemental").mkdir()
+        (completed_evidence_dir / ".kubeactuary").mkdir()
         (completed_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
         )
         (completed_evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json").write_text("{}\n")
+        (completed_evidence_dir / ".kubeactuary" / "version-iteration-advance.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.version-iteration-advance.v1",
+                    "mode": "run",
+                    "status": "passed",
+                    "queueSource": "prepared-live-validation-queue",
+                    "runId": "after-evidence-advance",
+                    "createdAt": "2026-07-06T00:03:00+00:00",
+                    "runner": {
+                        "mode": "run",
+                        "status": "passed",
+                        "summary": {
+                            "commands": 2,
+                            "validCommands": 2,
+                            "ran": 2,
+                            "failed": 0,
+                        },
+                    },
+                    "nextTask": {
+                        "selected": "06-controller",
+                        "captureStatus": "tool-ready",
+                        "nextStep": "capture evidence with the listed commands",
+                        "skippedCompleteEvidence": 1,
+                        "worklistCommands": [
+                            "python3 -B scripts/generate_version_worklist.py --format markdown --open-only --version 'Current Baseline' --capture-status tool-ready",
+                        ],
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
         evidence_worklist_result = run_generator(
             "--format",
             "json",
@@ -1069,6 +1104,15 @@ def main() -> int:
     evidence_status_filters = evidence_history_status_payload.get("latestFilters", {})
     if evidence_status_filters.get("evidenceDir") != str(completed_evidence_dir):
         errors.append("evidence-aware history status should preserve latest evidence directory filter")
+    evidence_latest_advance = evidence_history_status_payload.get("latestAdvance") or {}
+    if evidence_latest_advance.get("status") != "passed":
+        errors.append("evidence-aware history status should include the latest advance status")
+    if evidence_latest_advance.get("runnerStatus") != "passed":
+        errors.append("evidence-aware history status should include the latest advance runner status")
+    if evidence_latest_advance.get("runnerSummary", {}).get("ran") != 2:
+        errors.append("evidence-aware history status should include latest advance runner execution counts")
+    if evidence_latest_advance.get("nextTask", {}).get("selected") != "06-controller":
+        errors.append("evidence-aware history status should include latest advance next-task summary")
     evidence_status_next_task = evidence_history_status_payload.get("latestNextTask", {})
     if evidence_status_next_task.get("version") != "Current Baseline":
         errors.append("evidence-aware history status should preserve latest next-task version")
@@ -1076,8 +1120,25 @@ def main() -> int:
         errors.append("evidence-aware history status should preserve latest next-task files")
     if "latest-next-task-file:" not in evidence_history_status_text.stdout:
         errors.append("evidence-aware history text should show latest next-task files")
+    for snippet in (
+        "latest-advance-status: passed",
+        "latest-advance-runner-status: passed",
+        "latest-advance-runner-ran: 2/2",
+        "latest-advance-next-task: 06-controller",
+    ):
+        if snippet not in evidence_history_status_text.stdout:
+            errors.append(f"evidence-aware history text should show latest advance detail: {snippet}")
     if "file `" not in evidence_history_status_markdown.stdout:
         errors.append("evidence-aware history Markdown should show latest next-task files")
+    for snippet in (
+        "## Latest Advance",
+        "status: `passed`",
+        "runner: `passed`",
+        "runner ran: `2/2`",
+        "next task: `06-controller`",
+    ):
+        if snippet not in evidence_history_status_markdown.stdout:
+            errors.append(f"evidence-aware history Markdown should show latest advance detail: {snippet}")
     evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
     if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history status should preserve latest evidence diff summary")

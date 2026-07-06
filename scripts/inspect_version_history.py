@@ -15,6 +15,7 @@ SCHEMA_VERSION = "kube-actuary.version-iteration-history-status.v1"
 HISTORY_SCHEMA = "kube-actuary.version-iteration-history.v1"
 WORKLIST_SCHEMA = "kube-actuary.version-worklist.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
+ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
 STATUS_JSON = "status.json"
 STATUS_MD = "status.md"
 DIFF_SUMMARY_KEYS = (
@@ -289,6 +290,45 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
     }
 
 
+def summarize_latest_advance(latest: dict[str, Any] | None, errors: list[str]) -> dict[str, Any] | None:
+    if not isinstance(latest, dict):
+        return None
+    filters = latest.get("filters", {}) if isinstance(latest.get("filters"), dict) else {}
+    evidence_dir = filters.get("evidenceDir")
+    if not evidence_dir:
+        return None
+    path = Path(str(evidence_dir)) / ".kubeactuary" / "version-iteration-advance.json"
+    if not path.is_file():
+        return None
+    payload = load_json(path, errors)
+    if payload.get("schemaVersion") != ADVANCE_SCHEMA:
+        errors.append(f"{path}: advance schema mismatch")
+    runner = payload.get("runner", {}) if isinstance(payload.get("runner"), dict) else {}
+    next_task = payload.get("nextTask", {}) if isinstance(payload.get("nextTask"), dict) else {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": path.as_posix(),
+        "status": payload.get("status"),
+        "mode": payload.get("mode"),
+        "runId": payload.get("runId"),
+        "createdAt": payload.get("createdAt"),
+        "queueSource": payload.get("queueSource"),
+        "runnerStatus": runner.get("status"),
+        "runnerMode": runner.get("mode"),
+        "runnerSummary": runner.get("summary", {}) if isinstance(runner.get("summary"), dict) else {},
+        "nextTask": {
+            "selected": next_task.get("selected"),
+            "captureStatus": next_task.get("captureStatus"),
+            "environmentStatus": next_task.get("environmentStatus"),
+            "environmentReason": next_task.get("environmentReason"),
+            "missingTools": list_value(next_task.get("missingTools")),
+            "nextStep": next_task.get("nextStep"),
+            "skippedCompleteEvidence": next_task.get("skippedCompleteEvidence"),
+            "worklistCommands": list_value(next_task.get("worklistCommands")),
+        },
+    }
+
+
 def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
     commands = [
         shell_join(
@@ -399,6 +439,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     if not isinstance(latest_version_diffs, list):
         latest_version_diffs = []
     latest_artifacts = build_latest_artifacts(history_dir, latest)
+    latest_advance = summarize_latest_advance(latest, errors)
     next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -426,6 +467,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestDiffSummary": latest_diff_summary,
         "latestVersionDiffs": latest_version_diffs,
         "latestArtifacts": latest_artifacts,
+        "latestAdvance": latest_advance,
         "nextCommands": next_commands,
         "runs": inspected_runs,
     }
@@ -497,6 +539,40 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"latest-next-task-command: {command}")
         for command in list_value(latest_next_task.get("worklistCommands")):
             lines.append(f"latest-next-task-worklist: {command}")
+    latest_advance = status.get("latestAdvance")
+    if isinstance(latest_advance, dict):
+        lines.append(f"latest-advance-status: {latest_advance.get('status')}")
+        lines.append(f"latest-advance-mode: {latest_advance.get('mode')}")
+        if latest_advance.get("runId"):
+            lines.append(f"latest-advance-run-id: {latest_advance.get('runId')}")
+        if latest_advance.get("queueSource"):
+            lines.append(f"latest-advance-queue-source: {latest_advance.get('queueSource')}")
+        if latest_advance.get("path"):
+            lines.append(f"latest-advance-path: {latest_advance.get('path')}")
+        if latest_advance.get("runnerStatus"):
+            lines.append(f"latest-advance-runner-status: {latest_advance.get('runnerStatus')}")
+        runner_summary = latest_advance.get("runnerSummary", {})
+        if isinstance(runner_summary, dict) and runner_summary:
+            lines.append(
+                "latest-advance-runner-ran: "
+                f"{runner_summary.get('ran', 0)}/{runner_summary.get('commands', 0)}"
+            )
+        advance_next_task = latest_advance.get("nextTask", {})
+        if isinstance(advance_next_task, dict) and advance_next_task:
+            if advance_next_task.get("selected"):
+                lines.append(f"latest-advance-next-task: {advance_next_task.get('selected')}")
+            if advance_next_task.get("captureStatus"):
+                lines.append(f"latest-advance-next-task-status: {advance_next_task.get('captureStatus')}")
+            if advance_next_task.get("environmentStatus"):
+                lines.append(f"latest-advance-next-task-environment-status: {advance_next_task.get('environmentStatus')}")
+            if advance_next_task.get("environmentReason"):
+                lines.append(f"latest-advance-next-task-environment-reason: {advance_next_task.get('environmentReason')}")
+            if advance_next_task.get("nextStep"):
+                lines.append(f"latest-advance-next-task-next-step: {advance_next_task.get('nextStep')}")
+            if advance_next_task.get("skippedCompleteEvidence") is not None:
+                lines.append(f"latest-advance-skipped-complete-evidence: {advance_next_task.get('skippedCompleteEvidence')}")
+            for command in list_value(advance_next_task.get("worklistCommands")):
+                lines.append(f"latest-advance-next-task-worklist: {command}")
     for version in status.get("latestVersionDiffs", []) or []:
         if not isinstance(version, dict):
             continue
@@ -633,6 +709,46 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"  - `{command}`")
         for command in list_value(latest_next_task.get("worklistCommands")):
             lines.append(f"  - worklist: `{command}`")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Advance",
+            "",
+        ]
+    )
+    latest_advance = status.get("latestAdvance")
+    if isinstance(latest_advance, dict):
+        lines.append(f"- status: `{latest_advance.get('status')}`")
+        lines.append(f"- mode: `{latest_advance.get('mode')}`")
+        if latest_advance.get("runId"):
+            lines.append(f"- run id: `{latest_advance.get('runId')}`")
+        if latest_advance.get("queueSource"):
+            lines.append(f"- queue source: `{latest_advance.get('queueSource')}`")
+        if latest_advance.get("path"):
+            lines.append(f"- path: `{latest_advance.get('path')}`")
+        if latest_advance.get("runnerStatus"):
+            lines.append(f"- runner: `{latest_advance.get('runnerStatus')}`")
+        runner_summary = latest_advance.get("runnerSummary", {})
+        if isinstance(runner_summary, dict) and runner_summary:
+            lines.append(f"- runner ran: `{runner_summary.get('ran', 0)}/{runner_summary.get('commands', 0)}`")
+        advance_next_task = latest_advance.get("nextTask", {})
+        if isinstance(advance_next_task, dict) and advance_next_task:
+            if advance_next_task.get("selected"):
+                lines.append(f"- next task: `{advance_next_task.get('selected')}`")
+            if advance_next_task.get("captureStatus"):
+                lines.append(f"- next task status: `{advance_next_task.get('captureStatus')}`")
+            if advance_next_task.get("environmentStatus"):
+                lines.append(f"- next task environment: `{advance_next_task.get('environmentStatus')}`")
+            if advance_next_task.get("environmentReason"):
+                lines.append(f"- next task environment reason: `{advance_next_task.get('environmentReason')}`")
+            if advance_next_task.get("nextStep"):
+                lines.append(f"- next task next step: {advance_next_task.get('nextStep')}")
+            if advance_next_task.get("skippedCompleteEvidence") is not None:
+                lines.append(f"- skipped complete evidence: {advance_next_task.get('skippedCompleteEvidence')}")
+            for command in list_value(advance_next_task.get("worklistCommands")):
+                lines.append(f"- next task worklist: `{command}`")
     else:
         lines.append("- none")
     lines.extend(
