@@ -106,8 +106,8 @@ Current local progress:
 Make KubeActuary installable as a Kubernetes tool:
 
 - Helm chart seed packages the CRD and optional controller RBAC. Static
-  verification is available; live `helm template` and install smoke remain
-  follow-up work.
+  verification and dry-run smoke evidence output are available; live Helm runs
+  remain follow-up work.
 - Kustomize base and controller RBAC overlays render with `kubectl kustomize`.
 - Multi-target release archives generate SHA-256 sidecars and pass install
   smoke checks.

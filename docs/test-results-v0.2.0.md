@@ -63,7 +63,8 @@ Coverage included:
 - controller resource budget contract and `kubectl top` measurement parser;
 - lightweight cluster smoke plan and JSON evidence output for kind, minikube,
   MicroK8s, and k3s;
-- Helm chart seed for CRD packaging and optional controller RBAC;
+- Helm chart seed for CRD packaging, optional controller RBAC, and dry-run
+  smoke evidence output;
 - Kustomize base and controller RBAC overlays;
 - multi-target release archives with SHA-256 sidecars and install smoke;
 - Krew manifest generator with archive digest validation;
@@ -125,6 +126,7 @@ python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py

@@ -36,7 +36,7 @@ Status legend:
 | Controller read-only sync | DONE | `scripts/verify_controller_sync.py` verifies `kubectl get` plus disabled write execution |
 | Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
 | Lightweight cluster smoke | VERIFY | offline smoke plan and JSON evidence-output verifier added; live matrix evidence still needed |
-| Helm chart | VERIFY | chart seed and offline verifier added; live `helm template` not run because Helm is not installed |
+| Helm chart | VERIFY | chart seed, dry-run smoke harness, and offline verifier added; live Helm run not executed because Helm is not installed |
 | Kustomize | DONE | base and controller overlays render with `kubectl kustomize` |
 | Release archives | DONE | multi-target archive generator, SHA-256 sidecars, and install smoke verifier |
 | Krew manifest | VERIFY | manifest generator and offline verifier added; real Krew install validation not run because Krew is not installed |
@@ -116,7 +116,7 @@ Goal: make KubeActuary installable as a serious Kubernetes open-source tool.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.5.0 | Helm chart for CRD and optional controller | VERIFY | `scripts/verify_helm_chart.py`; live `helm template` and install smoke still required |
+| 0.5.0 | Helm chart for CRD and optional controller | VERIFY | `scripts/verify_helm_chart.py` and `scripts/run_helm_smoke.py`; live Helm run still required |
 | 0.5.0 | Kustomize base and overlays | DONE | `scripts/verify_kustomize.py` runs `kubectl kustomize` for base and overlays |
 | 0.5.1 | Multi-arch release archives for CLI/plugin | DONE | `scripts/verify_release_archives.py` generates archives, verifies SHA-256, and runs install smoke |
 | 0.5.2 | Krew manifest for `kubectl actuary` | VERIFY | `scripts/verify_krew_manifest.py`; real Krew install validation still required |

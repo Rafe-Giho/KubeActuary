@@ -325,6 +325,7 @@ docs/
   supply-chain.md              SBOM and provenance generation
   air-gapped-install.md        offline install artifact checklist
   krew.md                      Krew manifest generation and verification
+  helm-smoke.md                Helm template and dry-run install smoke runbook
   live-validation.md           external live validation evidence ledger
   mcp.md                       MCP client config and safe-tool guide
   policy-adapters.md           policy evidence adapter contracts
@@ -368,6 +369,7 @@ scripts/
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier
+  run_helm_smoke.py           Helm template and dry-run install smoke harness
   verify_helm_chart.py        offline Helm chart contract check
   verify_kustomize.py         Kustomize render check
   package_release_archives.py release archive generator
@@ -436,6 +438,7 @@ python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py

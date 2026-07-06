@@ -62,6 +62,7 @@ python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
@@ -212,8 +213,8 @@ Confirm from code and tests:
 - lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
   evidence output, and covers kind, minikube, MicroK8s, and k3s without default
   writes;
-- Helm chart packages the CRD under `crds/` and keeps optional controller RBAC
-  disabled by default;
+- Helm chart packages the CRD under `crds/`, keeps optional controller RBAC
+  disabled by default, and verifies dry-run smoke evidence output;
 - Kustomize base renders only the CRD, while controller overlays add only
   optional RBAC;
 - release archive generator emits multi-target archives, SHA-256 sidecars, and

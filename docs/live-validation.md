@@ -41,6 +41,9 @@ cluster-writes: disabled
 - For lightweight cluster smoke runs, use
   `scripts/run_lightweight_cluster_smoke.py --run --output <path>` and keep the
   `kube-actuary.lightweight-smoke.v1` report.
+- For Helm chart smoke runs, use
+  `scripts/run_helm_smoke.py --run --output <path>` and keep the
+  `kube-actuary.helm-smoke.v1` report.
 
 Provider run evidence means captured output from the target provider or tool,
 not a local assumption that the path should work.

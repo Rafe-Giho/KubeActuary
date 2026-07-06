@@ -31,6 +31,7 @@ python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
@@ -84,7 +85,7 @@ Expected:
   write execution;
 - controller resource budget contract and measurement parser verify offline;
 - lightweight cluster smoke plan and JSON evidence output verify offline;
-- Helm chart contract verifies offline;
+- Helm chart contract and dry-run smoke evidence format verify offline;
 - Kustomize base and overlays render with `kubectl kustomize`;
 - release archives verify SHA-256 sidecars and install smoke;
 - Krew manifest generation verifies platform entries and archive digests;
@@ -139,7 +140,7 @@ Expected:
 - [ ] upstream N/N-1/N-2 conformance suite passes.
 - [ ] live kind/minikube/MicroK8s/k3s evidence is attached before claiming
       matrix support.
-- [ ] Helm chart check passes; run `helm template` when Helm is available.
+- [ ] Helm chart check passes; run `scripts/run_helm_smoke.py --run --output <path>` when Helm is available.
 - [ ] Kustomize base and overlays render.
 - [ ] release archive checksum and install smoke pass.
 - [ ] Krew manifest check passes; run real Krew install validation when Krew is
