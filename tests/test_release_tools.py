@@ -34,6 +34,7 @@ EXECUTE_DISABLED = ROOT / "scripts" / "verify_execute_disabled.py"
 ADMISSION_WEBHOOK = ROOT / "scripts" / "verify_admission_webhook.py"
 ADMISSION_POLICY = ROOT / "scripts" / "verify_admission_policy.py"
 ADMISSION_DIGEST_GATE = ROOT / "scripts" / "verify_admission_digest_gate.py"
+ADMISSION_AUDIT = ROOT / "scripts" / "verify_admission_audit.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -450,6 +451,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("admission-digest-gate: passed", result.stdout)
         self.assertIn("tamper-fixtures: 2", result.stdout)
+
+    def test_verify_admission_audit(self):
+        result = subprocess.run(
+            [sys.executable, str(ADMISSION_AUDIT)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("admission-audit: passed", result.stdout)
+        self.assertIn("runbook: present", result.stdout)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+{
+  "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
+  "response": {
+    "allowed": true,
+    "auditAnnotations": {
+      "kubeactuary.dev/capsule": "opcap-example-read-pods",
+      "kubeactuary.dev/capsule-digest": "sha256:fd42d55581763d9cc6822d71e32e39783d5b32c37941a2005691417d89a4bdc3",
+      "kubeactuary.dev/decision": "allow",
+      "kubeactuary.dev/gate": "open",
+      "kubeactuary.dev/reason": "gate-open"
+    },
+    "uid": "audit-allow"
+  }
+}

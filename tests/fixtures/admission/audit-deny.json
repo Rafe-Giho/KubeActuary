@@ -1,0 +1,18 @@
+{
+  "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
+  "response": {
+    "allowed": false,
+    "auditAnnotations": {
+      "kubeactuary.dev/capsule": "opcap-example-scale-prod",
+      "kubeactuary.dev/capsule-digest": "sha256:f018be18ea0e48b8b846df5a2a8a1ca4ea7b171cbc3ce44b0d2fe0d61d77bb01",
+      "kubeactuary.dev/decision": "deny",
+      "kubeactuary.dev/gate": "closed",
+      "kubeactuary.dev/reason": "gate-closed"
+    },
+    "status": {
+      "message": "referenced KubeActuary gate is closed"
+    },
+    "uid": "audit-deny"
+  }
+}

@@ -51,6 +51,7 @@ Evidence collector release:
 - add optional admission webhook prototype manifest with offline verifier;
 - add AI identity selector and required admission annotation allow/deny fixtures;
 - add admission capsule digest and gate tamper fixtures;
+- add admission audit annotation fixtures and incident runbook;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

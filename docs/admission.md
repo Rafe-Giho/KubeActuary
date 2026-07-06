@@ -33,12 +33,17 @@ The v0.8.1 policy check verifies selector and annotation presence. The v0.8.2
 tamper fixtures verify that the annotation digest matches the referenced
 capsule and that the referenced capsule gate is open.
 
+Admission responses should include audit annotations for the referenced capsule,
+digest, gate, decision, and reason. Incident handling is documented in
+`docs/admission-incident-runbook.md`.
+
 Verification:
 
 ```sh
 python3 -B scripts/verify_admission_webhook.py
 python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/verify_admission_digest_gate.py
+python3 -B scripts/verify_admission_audit.py
 ```
 
 Live kind smoke remains a release-gate item when `kind` is available locally.
