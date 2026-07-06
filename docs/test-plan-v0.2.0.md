@@ -159,6 +159,7 @@ Expected:
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   and idempotent output-exists handling;
+- next version task runner check prints `next-version-task-runner: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -284,6 +285,9 @@ Confirm from code and tests:
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files and skips existing outputs without cluster, cloud, or
   workload writes;
+- next version task runner verifier validates selected commands, stays
+  plan-by-default, and with fake kubectl produces raw and supplemental evidence
+  for the selected task;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -403,7 +407,7 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, release taskboard audit, release progress, version worklist, external gate plan, external gate command safety, external gate evidence,
-  evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build,
+  evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build, next-version task run,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller

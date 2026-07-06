@@ -170,6 +170,8 @@ Expected:
 - live evidence directory scaffold verifies the local reports/raw/supplemental
   directory layout, generated queue snapshots, next-task artifacts, and
   `--skip-complete-evidence` artifact advancement;
+- next-version task runner verifies selected evidence commands in plan mode and
+  fake-run mode before live use;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records
@@ -222,6 +224,7 @@ Expected:
 - [ ] release evidence directory check passes.
 - [ ] release evidence status check passes.
 - [ ] next-task evidence builder check passes through release evidence status.
+- [ ] next-version task runner check passes.
 - [ ] clean artifact check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.

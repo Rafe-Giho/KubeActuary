@@ -207,6 +207,16 @@ The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.
 
+The selected next-task runner validates the persisted
+`kube-actuary.next-version-task.v1` commands before execution. Without `--run`
+it prints a plan only; with `--run` it executes the selected commands and
+reports schema `kube-actuary.next-version-task-run.v1`:
+
+```sh
+python3 -B scripts/run_next_version_task.py <evidence-dir>
+python3 -B scripts/run_next_version_task.py <evidence-dir> --run
+```
+
 Supported evidence schemas:
 
 - `kube-actuary.lightweight-smoke.v1`

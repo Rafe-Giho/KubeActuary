@@ -83,7 +83,7 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 77"),
+        contains=("release-progress: passed", "verify: 16", "checks: 78"),
     ),
     Check(
         "version worklist",
@@ -124,6 +124,11 @@ COMMON_CHECKS = (
         "release evidence status",
         ("python3", "-B", "scripts/verify_release_evidence_status.py"),
         contains=("release-evidence-status: passed", "complete: ok"),
+    ),
+    Check(
+        "next version task runner",
+        ("python3", "-B", "scripts/verify_next_version_task_runner.py"),
+        contains=("next-version-task-runner: passed", "mode: plan,run", "evidence: raw,supplemental"),
     ),
     Check(
         "clean artifacts",
