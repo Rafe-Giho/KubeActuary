@@ -169,6 +169,11 @@ COMMON_CHECKS = (
         contains=("kyverno-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
     ),
     Check(
+        "opa adapter",
+        ("python3", "-B", "scripts/verify_opa_adapter.py"),
+        contains=("opa-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

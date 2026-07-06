@@ -359,6 +359,8 @@ scripts/
   verify_airgap_bundle.py     offline bundle verifier
   adapt_kyverno_evidence.py   Kyverno output to evidence adapter
   verify_kyverno_adapter.py   Kyverno adapter fixture verifier
+  adapt_opa_evidence.py       OPA output to evidence adapter
+  verify_opa_adapter.py       OPA adapter fixture verifier
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -390,6 +392,7 @@ python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_kyverno_adapter.py
+python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -438,7 +441,7 @@ Later:
 - optional MCP server;
 - real Krew install validation;
 - optional admission webhook for AI-originated writes;
-- policy adapters for Kyverno, OPA, kube-linter, kube-score, and Pluto.
+- remaining policy adapters for kube-linter, kube-score, and Pluto.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

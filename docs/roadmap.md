@@ -123,7 +123,8 @@ Add optional adapters:
 
 - Kyverno CLI. Adapter available for captured JSON output with pass/fail
   fixtures.
-- OPA/Rego
+- OPA/Rego. Adapter available for captured `opa eval --format=json` output with
+  pass/fail fixtures.
 - kube-linter
 - kube-score
 - Pluto

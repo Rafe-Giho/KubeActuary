@@ -1,0 +1,15 @@
+{
+  "result": [
+    {
+      "expressions": [
+        {
+          "text": "data.kubeactuary.deny",
+          "value": [
+            "missing app label",
+            "privileged container is not allowed"
+          ]
+        }
+      ]
+    }
+  ]
+}

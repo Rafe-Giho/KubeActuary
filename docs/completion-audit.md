@@ -42,7 +42,7 @@ High-value next work:
 
 - live collectors for `kubectl auth can-i`, `kubectl diff`, and server-side
   dry-run;
-- policy adapters for Kyverno, OPA, kube-linter, and kube-score;
+- policy adapters for kube-linter and kube-score;
 - MCP server wrapper;
 - Krew packaging;
 - admission-controller prototype;
