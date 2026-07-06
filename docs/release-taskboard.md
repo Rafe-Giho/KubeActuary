@@ -29,6 +29,7 @@ Status legend:
 | CRD upgrade fixtures | DONE | rollback fixture, runbook, and offline fixture verifier |
 | CRD explain quality | DONE | OpenAPI descriptions, explain runbook, and offline verifier |
 | Controller reconcile model | DONE | pure status reconcile tests and dry-run controller contract |
+| Controller RBAC | DONE | namespace and cluster mode manifests plus offline RBAC verifier |
 | Controller | TODO | No live controller deployment yet |
 | Packaging | TODO | No Krew, Homebrew, Helm, or release archive automation yet |
 | MCP server | TODO | Contract docs only |
@@ -38,7 +39,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (20 checks)
+verification: passed (21 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -81,7 +82,7 @@ patches status. It must not scan the cluster or execute writes.
 | --- | --- | --- | --- |
 | 0.4.0 | Implement read-only controller reconciliation model | DONE | pure fake-client tests and `bin/kube-actuary-controller reconcile` |
 | 0.4.0 | Watch only `OperationCapsule` resources | DONE | `watch-command` contract and verifier |
-| 0.4.1 | Minimal RBAC, namespace-scoped and cluster-scoped modes | TODO | manifest review and smoke |
+| 0.4.1 | Minimal RBAC, namespace-scoped and cluster-scoped modes | DONE | `scripts/verify_controller_rbac.py`; live cluster smoke remains v0.4.4 |
 | 0.4.2 | Health, readiness, metrics, leader election | TODO | pod lifecycle smoke |
 | 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | TODO | kind/minikube/k3s measurement |
 | 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | TODO | matrix run evidence |

@@ -24,6 +24,8 @@ Evidence collector release:
 - add CRD upgrade and rollback fixtures with an offline verifier;
 - add CRD OpenAPI descriptions and kubectl explain quality checks;
 - add a pure low-overhead controller reconcile model and watch boundary checks;
+- add namespace-scoped and cluster-scoped controller RBAC manifests with
+  status-only permission checks;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

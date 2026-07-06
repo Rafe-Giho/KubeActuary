@@ -23,6 +23,7 @@ python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
+python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -36,6 +37,8 @@ Expected:
 - CRD explain descriptions and example commands verify offline;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
+- controller RBAC grants only OperationCapsule read/watch and status patch
+  permissions;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -49,6 +52,7 @@ Expected:
 - [ ] `kubectl explain` runbook is reviewed for the current CRD.
 - [ ] CRD rollback fixture YAML parses.
 - [ ] controller dry-run contract check passes.
+- [ ] controller RBAC check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

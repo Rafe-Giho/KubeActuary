@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (20 checks)
-Ran 43 tests
+verification: passed (21 checks)
+Ran 44 tests
 OK
 ```
 
@@ -49,6 +49,8 @@ Coverage included:
   explain command examples;
 - pure controller reconcile model computes status-only patches;
 - controller watch contract stays scoped to OperationCapsule resources;
+- controller RBAC grants OperationCapsule read/watch and status-only write
+  permissions;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -75,6 +77,7 @@ python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
+python3 -B scripts/verify_controller_rbac.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -93,6 +96,7 @@ Result:
 - CRD explain quality check prints `crd-explain-quality: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
+- controller RBAC check prints `controller-rbac: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;
@@ -132,15 +136,15 @@ python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool examples/apply-configmap.diff.capsule.json
 python3 -B -m json.tool examples/apply-configmap.rollback.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml /private/tmp/kubeactuary-render-v020.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml /private/tmp/kubeactuary-render-v020.yaml
 ```
 
 Result:
 
 - example capsule JSON files parse;
 - schema JSON parses;
-- GitHub Actions workflow, CRD YAML, rollback fixture YAML, CR example YAML,
-  manifest examples, and generated CRD object YAML parse.
+- GitHub Actions workflow, CRD YAML, rollback fixture YAML, controller RBAC
+  YAML, CR example YAML, manifest examples, and generated CRD object YAML parse.
 
 ### Cache Check
 

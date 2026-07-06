@@ -85,6 +85,16 @@ COMMON_CHECKS = (
         contains=("controller-contract: passed", "patch-scope: status"),
     ),
     Check(
+        "controller rbac",
+        ("python3", "-B", "scripts/verify_controller_rbac.py"),
+        contains=(
+            "controller-rbac: passed",
+            "namespace-mode: Role/RoleBinding",
+            "cluster-mode: ClusterRole/ClusterRoleBinding",
+            "status-write-only: operationcapsules/status",
+        ),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),
@@ -139,6 +149,8 @@ COMMON_CHECKS = (
             ".github/workflows/ci.yml",
             "deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml",
             "deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml",
+            "deploy/controller/namespace-scoped-rbac.yaml",
+            "deploy/controller/cluster-scoped-rbac.yaml",
             "examples/operationcapsule-scale.yaml",
             "examples/configmap-demo.yaml",
             "examples/configmap-demo.rollback.yaml",

@@ -90,8 +90,10 @@ Current local progress:
   OperationCapsule-only watch boundary;
 - `scripts/verify_controller_contract.py` checks the status patch and watch
   target offline;
-- live controller process, RBAC, leader election, deployment manifests, and
-  status subresource writes remain future work.
+- namespace-scoped and cluster-scoped RBAC manifests grant only OperationCapsule
+  read/watch and status patch permissions;
+- live controller process, leader election, deployment manifests, and status
+  subresource writes remain future work.
 
 ## v0.5: Policy Adapters
 

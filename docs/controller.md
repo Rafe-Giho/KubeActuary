@@ -3,18 +3,18 @@
 The controller remains optional. The default KubeActuary path is still local CLI
 and evidence files.
 
-## v0.4.0 Scope
+## v0.4.0 and v0.4.1 Scope
 
 Implemented locally:
 
 - pure reconcile model for one `OperationCapsule` object;
 - status patch generation for fake-client tests and future controller wiring;
-- documented watch command that targets only `OperationCapsule` resources.
+- documented watch command that targets only `OperationCapsule` resources;
+- namespace-scoped and cluster-scoped RBAC manifests.
 
 Not implemented yet:
 
 - in-cluster Deployment;
-- RBAC manifests;
 - leader election;
 - metrics;
 - live Kubernetes watch loop;
@@ -36,6 +36,31 @@ kubectl get operationcapsules.ops.kubeactuary.dev -o json --watch -n <namespace>
 
 It must not watch Pods, Deployments, Nodes, Events, Namespaces, or arbitrary
 cluster objects. It must not run LLMs or execute proposed Kubernetes writes.
+
+## RBAC Boundary
+
+Manifests:
+
+```sh
+deploy/controller/namespace-scoped-rbac.yaml
+deploy/controller/cluster-scoped-rbac.yaml
+```
+
+Both modes grant only:
+
+- `get`, `list`, `watch` on `operationcapsules.ops.kubeactuary.dev`;
+- `get`, `patch`, `update` on `operationcapsules/status` in API group
+  `ops.kubeactuary.dev`.
+
+The controller RBAC must not grant workload, node, event, secret, configmap,
+wildcard resource, wildcard API group, create, delete, or main-resource update
+permissions.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_rbac.py
+```
 
 ## Dry-Run Reconcile
 

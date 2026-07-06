@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeactuary-system
+  labels:
+    app.kubernetes.io/name: kubeactuary
+    app.kubernetes.io/component: controller
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeactuary-controller
+  namespace: kubeactuary-system
+  labels:
+    app.kubernetes.io/name: kubeactuary
+    app.kubernetes.io/component: controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubeactuary-controller
+  namespace: kubeactuary-system
+  labels:
+    app.kubernetes.io/name: kubeactuary
+    app.kubernetes.io/component: controller
+rules:
+  - apiGroups: ["ops.kubeactuary.dev"]
+    resources: ["operationcapsules"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["ops.kubeactuary.dev"]
+    resources: ["operationcapsules/status"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubeactuary-controller
+  namespace: kubeactuary-system
+  labels:
+    app.kubernetes.io/name: kubeactuary
+    app.kubernetes.io/component: controller
+subjects:
+  - kind: ServiceAccount
+    name: kubeactuary-controller
+    namespace: kubeactuary-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeactuary-controller

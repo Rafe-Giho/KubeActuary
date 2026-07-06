@@ -297,6 +297,8 @@ controller/
 deploy/crds/
   operationcapsules...yaml     CRD seed
   fixtures/                    CRD upgrade와 rollback fixture
+deploy/controller/
+  *-rbac.yaml                  optional controller RBAC manifest
 docs/
   collectors.md                evidence collector 계약
   landscape.md                 생태계 조사
@@ -328,6 +330,7 @@ scripts/
   verify_crd_explain_quality.py offline kubectl explain quality check
   verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
   verify_controller_contract.py offline controller contract check
+  verify_controller_rbac.py    offline controller RBAC check
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -348,6 +351,7 @@ python3 -B scripts/verify_crd_compatibility.py
 python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
+python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -358,7 +362,7 @@ python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.
 python3 -B -m json.tool examples/read-pods.verified.capsule.json
 python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
 ```
 
 ## 브랜드 후보
