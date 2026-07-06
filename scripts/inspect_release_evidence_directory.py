@@ -94,6 +94,38 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
+def failure_message(record: dict[str, Any]) -> str | None:
+    lines: list[str] = []
+    for key in ("stderr", "stdout"):
+        value = record.get(key)
+        if isinstance(value, str):
+            lines.extend(line.strip() for line in value.splitlines() if line.strip())
+    for line in lines:
+        if line.lower().startswith("error:"):
+            return line
+    return lines[-1] if lines else None
+
+
+def next_task_run_failure(payload: dict[str, Any]) -> dict[str, Any] | None:
+    for index, record in enumerate(payload.get("records", []), start=1):
+        if isinstance(record, dict) and record.get("ok") is False:
+            return {
+                "index": index,
+                "command": record.get("command"),
+                "exitCode": record.get("exitCode"),
+                "message": failure_message(record),
+            }
+    for record in payload.get("validations", []):
+        if isinstance(record, dict) and record.get("errors"):
+            return {
+                "index": record.get("index"),
+                "command": record.get("command"),
+                "exitCode": None,
+                "message": str(record.get("errors", ["validation failed"])[0]),
+            }
+    return None
+
+
 def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "next-version-task-run.json"
     if not path.is_file():
@@ -111,6 +143,7 @@ def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
         "clusterWrites": payload.get("clusterWrites"),
         "ranAt": payload.get("ranAt"),
         "summary": payload.get("summary", {}),
+        "failure": next_task_run_failure(payload),
         "selected": {
             "id": selected.get("id"),
             "version": selected.get("version"),
@@ -291,6 +324,9 @@ def render_text(status: dict[str, Any]) -> str:
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"next-task-run-ran: {run_summary.get('ran', 0)}")
+        failure = next_task_run.get("failure")
+        if isinstance(failure, dict) and failure.get("message"):
+            lines.append(f"next-task-run-error: {failure.get('message')}")
     environment_probe = status.get("environmentProbe")
     if isinstance(environment_probe, dict):
         lines.append(f"environment-probe: {environment_probe.get('clusterAccess')}")
@@ -343,6 +379,9 @@ def render_markdown(status: dict[str, Any]) -> str:
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"- ran: {run_summary.get('ran', 0)}")
+        failure = next_task_run.get("failure")
+        if isinstance(failure, dict) and failure.get("message"):
+            lines.append(f"- error: `{failure.get('message')}`")
     environment_probe = status.get("environmentProbe")
     environment_blockers = status.get("environmentBlockers")
     if isinstance(environment_probe, dict) or isinstance(environment_blockers, dict):

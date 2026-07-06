@@ -79,6 +79,15 @@ def main() -> int:
                     },
                 },
                 "summary": {"commands": 2, "validCommands": 2, "ran": 1, "failed": 1},
+                "records": [
+                    {
+                        "command": "python3 -B scripts/capture_controller_resource_budget.py --output /tmp/kubectl-top.txt --run",
+                        "exitCode": 1,
+                        "ok": False,
+                        "stderr": "",
+                        "stdout": "controller-resource-capture: failed\nerror: test cluster unavailable\n",
+                    }
+                ],
             },
         )
         write_payload(
@@ -153,6 +162,7 @@ def main() -> int:
         for snippet in (
             "next-task: `01-controller-resource-budget`",
             "next-task-run: `failed`",
+            "next-task-run-error: `error: test cluster unavailable`",
             "environment-probe: `not-run`",
             "version-iteration-advance: `failed`",
         ):

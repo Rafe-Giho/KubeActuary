@@ -289,6 +289,9 @@ def render_markdown(progress: dict[str, Any]) -> str:
         next_task_run = evidence_status.get("nextTaskRun")
         if isinstance(next_task_run, dict):
             lines.append(f"- next-task-run: `{next_task_run.get('status')}` ({next_task_run.get('mode')})")
+            failure = next_task_run.get("failure")
+            if isinstance(failure, dict) and failure.get("message"):
+                lines.append(f"- next-task-run-error: `{failure.get('message')}`")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")

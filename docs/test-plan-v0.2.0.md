@@ -273,7 +273,7 @@ Confirm from code and tests:
 - release progress verifier checks versioned task status, external gates, live
   readiness, tool-ready next actions, optional evidence directory status, and
   `not-prepared` guidance for missing evidence directories, plus selected
-  next-task, runner, environment, and advance status in Markdown output;
+  next-task, runner failure, environment, and advance status in Markdown output;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, evidence-aware worklist readiness,
@@ -294,7 +294,7 @@ Confirm from code and tests:
 - release evidence status verifier reports partial and complete evidence
   directory coverage plus persisted next-task output and file readiness without
   requiring cluster or cloud access, and checks unprepared evidence directory
-  guidance for local next-task evidence builds;
+  guidance for local next-task evidence builds plus runner failure summaries;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files and skips existing outputs without cluster, cloud, or
   workload writes;

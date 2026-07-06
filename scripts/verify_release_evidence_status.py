@@ -59,7 +59,7 @@ def write_next_task_run(evidence_dir: Path) -> None:
         {
             "schemaVersion": NEXT_TASK_RUN_SCHEMA,
             "mode": "run",
-            "status": "passed",
+            "status": "failed",
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "ranAt": "2026-07-06T00:00:00+00:00",
             "nextTask": {
@@ -76,9 +76,18 @@ def write_next_task_run(evidence_dir: Path) -> None:
                 "commands": 2,
                 "validCommands": 2,
                 "ran": 2,
-                "failed": 0,
+                "failed": 1,
                 "validationErrors": 0,
             },
+            "records": [
+                {
+                    "command": "python3 -B scripts/capture_controller_resource_budget.py --output raw.txt --run",
+                    "exitCode": 1,
+                    "ok": False,
+                    "stderr": "",
+                    "stdout": "controller-resource-capture: failed\nerror: test cluster unavailable\n",
+                }
+            ],
         },
     )
 
@@ -259,10 +268,13 @@ def main() -> int:
     next_task_run = partial_payload.get("nextTaskRun") or {}
     if next_task_run.get("schemaVersion") != NEXT_TASK_RUN_SCHEMA:
         errors.append("partial status must include next-task-run schema")
-    if next_task_run.get("status") != "passed" or next_task_run.get("mode") != "run":
+    if next_task_run.get("status") != "failed" or next_task_run.get("mode") != "run":
         errors.append("partial status must preserve next-task-run status")
     if next_task_run.get("summary", {}).get("ran") != 2:
         errors.append("partial status must summarize next-task-run command count")
+    failure = next_task_run.get("failure") or {}
+    if failure.get("message") != "error: test cluster unavailable":
+        errors.append("partial status must preserve next-task-run failure message")
     environment_probe = partial_payload.get("environmentProbe") or {}
     if environment_probe.get("schemaVersion") != ENVIRONMENT_PROBE_SCHEMA:
         errors.append("partial status must include environment-probe schema")
@@ -294,8 +306,10 @@ def main() -> int:
         errors.append("partial text status must print the selected next task")
     if "next-task-files: 2/3" not in partial_text.stdout:
         errors.append("partial text status must print next-task file readiness")
-    if "next-task-run: passed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
+    if "next-task-run: failed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
+    if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
+        errors.append("partial text status must print next-task-run failure message")
     if "environment-probe: not-run" not in partial_text.stdout:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:

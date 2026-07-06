@@ -31,6 +31,8 @@ Evidence collector release:
 - add tool-ready and missing-tool next actions to release progress reports;
 - surface selected next-task, runner, environment, and advance status in release
   progress Markdown for local evidence directories;
+- preserve selected next-task runner failure reasons in release evidence status
+  and progress output;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;
