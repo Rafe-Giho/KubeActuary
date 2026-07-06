@@ -169,6 +169,7 @@ Expected:
 - controller status apply check prints `controller-status-apply: passed`;
 - controller loop check prints `controller-loop: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
+- controller resource capture check prints `controller-resource-capture: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
@@ -305,6 +306,9 @@ Confirm from code and tests:
   keeping default patches server-side dry-run;
 - controller resource budget helper sets idle <50m CPU and <64Mi memory targets,
   parses `kubectl top` samples, and emits structured JSON measurement evidence;
+- controller resource capture helper stays plan-by-default, runs only read-only
+  `kubectl top` with `--run`, preserves raw output, and leaves supplemental
+  evidence buildable;
 - lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
   evidence output, and covers kind, minikube, MicroK8s, and k3s without default
   writes;
@@ -403,7 +407,7 @@ Expected:
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller
-  sync, controller status apply, controller loop, controller resource budget, lightweight cluster smoke, digest, CRD render,
+  sync, controller status apply, controller loop, controller resource budget, controller resource capture, lightweight cluster smoke, digest, CRD render,
   managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, live validation queue, live validation queue safety, live evidence directory scaffold, live
   evidence schema, live evidence manifest, live evidence coverage, project governance, air-gapped bundle, agent help contract, agent examples, Kyverno

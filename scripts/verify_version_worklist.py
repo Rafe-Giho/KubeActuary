@@ -350,7 +350,7 @@ def main() -> int:
         errors.append("evidence-aware worklist markdown must render file readiness")
     if written_next_task.returncode != 0 or not next_task_output_written:
         errors.append("next task selector must write requested output file")
-    if skipped_complete_text.returncode != 0 or "evidence-files: 0/4" not in skipped_complete_text.stdout:
+    if skipped_complete_text.returncode != 0 or "evidence-files: 0/5" not in skipped_complete_text.stdout:
         errors.append("skip-complete next task text must report selected evidence file readiness")
     if iteration_result.returncode != 0:
         errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
@@ -499,8 +499,8 @@ def main() -> int:
     baseline_items = versions.get("Current Baseline", {}).get("openItems", [])
     if not any(item.get("captureStatus") == "tool-ready" for item in baseline_items):
         errors.append("current baseline must include a tool-ready item")
-    if not any("measure_controller_resources.py" in " ".join(item.get("commands", [])) for item in baseline_items):
-        errors.append("current baseline must include controller resource command")
+    if not any("capture_controller_resource_budget.py" in " ".join(item.get("commands", [])) for item in baseline_items):
+        errors.append("current baseline must include controller resource capture command")
     if not worklist.get("closureCommands"):
         errors.append("version worklist must include closure commands")
 

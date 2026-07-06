@@ -27,6 +27,7 @@ LOCAL_ALLOWED_PREFIXES = (
     ("python3", "-B", "scripts/run_helm_smoke.py"),
     ("python3", "-B", "scripts/run_krew_smoke.py"),
     ("python3", "-B", "scripts/run_admission_kind_smoke.py"),
+    ("python3", "-B", "scripts/capture_controller_resource_budget.py"),
     ("python3", "-B", "scripts/measure_controller_resources.py"),
     ("python3", "-B", "scripts/build_external_evidence.py"),
     ("python3", "-B", "bin/kube-actuary-controller", "loop"),
@@ -39,6 +40,7 @@ CONTROLLER_LOOP_PREFIX = ("python3", "-B", "bin/kube-actuary-controller", "loop"
 BLOCKED_SHELL_TOKENS = {";", "&&", "||", "|", "<"}
 REQUIRED_SNIPPETS = (
     "--dry-run=server",
+    "capture_controller_resource_budget.py --output <kubectl-top-output.txt> --run",
     "build_external_evidence.py --kind kubectl-explain",
     "build_release_evidence_directory.py",
 )

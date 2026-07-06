@@ -66,6 +66,8 @@ Evidence collector release:
 - add controller status loop dry-run helper for repeated read/status-patch ticks;
 - add controller resource-budget contract and kubectl-top measurement harness
   with structured JSON evidence output;
+- add read-only controller resource-budget capture helper for live evidence
+  directories;
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
   k3s with JSON evidence output for live runs;
 - add Helm chart seed with CRD packaging, optional controller RBAC, and dry-run

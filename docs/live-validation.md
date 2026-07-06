@@ -159,13 +159,16 @@ The external gate evaluator maps that same manifest back to the taskboard
 `kubectl explain` rows uncovered until those separate raw outputs are captured.
 Supplemental evidence files use schema `kube-actuary.external-evidence.v1` with
 `kind` set to `kubectl-explain`, `controller-resource-budget`, or
-`controller-live-loop`. Controller resource budget evidence is derived from
-the structured `kube-actuary.controller-resource-measurement.v1` helper output
-and records observed CPU, memory, sample count, budget values, and source
-SHA-256:
+`controller-live-loop`. Controller resource budget capture prints
+`controller-resource-capture` in text mode. Its supplemental evidence is
+derived from the structured `kube-actuary.controller-resource-measurement.v1`
+helper output and records observed CPU, memory, sample count, budget values,
+and source SHA-256:
 
 ```sh
 python3 -B scripts/build_external_evidence.py --kind kubectl-explain --source <kubectl-explain-output.txt> --output <external-evidence.json>
+python3 -B scripts/capture_controller_resource_budget.py --output <kubectl-top-output.txt>
+python3 -B scripts/capture_controller_resource_budget.py --output <kubectl-top-output.txt> --run
 python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source <kubectl-top-output.txt> --output <external-evidence.json>
 python3 -B scripts/build_external_evidence.py --kind controller-live-loop --source <controller-loop-output.json> --output <external-evidence.json>
 python3 -B scripts/evaluate_external_gate_evidence.py /tmp/kubeactuary-live-evidence-manifest.json --evidence <external-evidence.json>

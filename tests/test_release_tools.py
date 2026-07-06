@@ -37,6 +37,7 @@ CONTROLLER_SYNC = ROOT / "scripts" / "verify_controller_sync.py"
 CONTROLLER_STATUS_APPLY = ROOT / "scripts" / "verify_controller_status_apply.py"
 CONTROLLER_LOOP = ROOT / "scripts" / "verify_controller_loop.py"
 CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budget.py"
+CONTROLLER_RESOURCE_CAPTURE = ROOT / "scripts" / "verify_controller_resource_capture.py"
 LIGHTWEIGHT_CLUSTER_SMOKE = ROOT / "scripts" / "verify_lightweight_cluster_smoke.py"
 HELM_CHART = ROOT / "scripts" / "verify_helm_chart.py"
 KUSTOMIZE = ROOT / "scripts" / "verify_kustomize.py"
@@ -128,7 +129,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 76", result.stdout)
+        self.assertIn("checks: 77", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(
@@ -487,6 +488,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("controller-resource-budget: passed", result.stdout)
         self.assertIn("idle-cpu-budget: <50m", result.stdout)
         self.assertIn("idle-memory-budget: <64Mi", result.stdout)
+
+    def test_verify_controller_resource_capture(self):
+        result = subprocess.run(
+            [sys.executable, str(CONTROLLER_RESOURCE_CAPTURE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("controller-resource-capture: passed", result.stdout)
+        self.assertIn("cluster-writes: disabled", result.stdout)
 
     def test_verify_lightweight_cluster_smoke(self):
         result = subprocess.run(

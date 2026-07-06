@@ -83,7 +83,7 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 76"),
+        contains=("release-progress: passed", "verify: 16", "checks: 77"),
     ),
     Check(
         "version worklist",
@@ -215,6 +215,11 @@ COMMON_CHECKS = (
             "idle-memory-budget: <64Mi",
             "measurement-harness: kubectl top",
         ),
+    ),
+    Check(
+        "controller resource capture",
+        ("python3", "-B", "scripts/verify_controller_resource_capture.py"),
+        contains=("controller-resource-capture: passed", "cluster-writes: disabled", "supplemental: buildable"),
     ),
     Check(
         "lightweight cluster smoke",

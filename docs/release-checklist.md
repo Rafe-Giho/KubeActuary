@@ -144,7 +144,8 @@ Expected:
   status-only `--execute` shape;
 - controller loop verifies repeated read/status-patch ticks stay server-side
   dry-run by default;
-- controller resource budget contract and measurement parser verify offline;
+- controller resource budget contract, measurement parser, and read-only capture
+  helper verify offline;
 - lightweight cluster smoke plan and JSON evidence output verify offline;
 - managed Kubernetes smoke plan verifies EKS/GKE/AKS current-context evidence
   output offline;
@@ -230,6 +231,7 @@ Expected:
 - [ ] controller status apply dry-run check passes.
 - [ ] controller loop dry-run check passes.
 - [ ] controller resource budget check passes.
+- [ ] controller resource capture check passes.
 - [ ] lightweight cluster smoke plan and evidence-output check passes.
 - [ ] managed Kubernetes smoke plan check passes; run per provider with
       `--run --output <path>` on approved contexts.

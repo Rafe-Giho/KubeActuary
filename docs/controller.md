@@ -162,6 +162,15 @@ with pass and fail samples:
 python3 -B scripts/verify_controller_resource_budget.py
 ```
 
+Live evidence capture uses a plan-by-default wrapper and runs only the read-only
+`kubectl top pod --containers` command when `--run` is set:
+
+```sh
+python3 -B scripts/capture_controller_resource_budget.py --output evidence/live/raw/01-controller-resource-budget-kubectl-top.txt
+python3 -B scripts/capture_controller_resource_budget.py --output evidence/live/raw/01-controller-resource-budget-kubectl-top.txt --run
+python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source evidence/live/raw/01-controller-resource-budget-kubectl-top.txt --output evidence/live/supplemental/01-controller-resource-budget-external-2.json
+```
+
 Live kind, minikube, MicroK8s, and k3s measurements are still required before
 claiming measured controller footprint.
 

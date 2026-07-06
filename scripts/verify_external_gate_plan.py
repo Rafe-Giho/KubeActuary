@@ -89,6 +89,7 @@ def main() -> int:
         "run_helm_smoke.py --run --output",
         "run_krew_smoke.py --run --output",
         "run_admission_kind_smoke.py --run --output",
+        "capture_controller_resource_budget.py --output <kubectl-top-output.txt> --run",
         "build_external_evidence.py --kind kubectl-explain",
         "build_external_evidence.py --kind controller-resource-budget",
         "build_external_evidence.py --kind controller-live-loop",

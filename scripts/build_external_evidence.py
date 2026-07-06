@@ -127,7 +127,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.output == "-":
         print(encoded, end="")
     else:
-        Path(args.output).write_text(encoded)
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(encoded)
         print(f"external-evidence: wrote {args.output}")
     return 0 if record["ok"] else 1
 

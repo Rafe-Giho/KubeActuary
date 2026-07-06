@@ -176,8 +176,12 @@ def main() -> int:
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
     files = selected.get("files", [])
-    if not any(item.get("role") == "sample" and item.get("exists") is True for item in files):
-        errors.append("partial status must mark the sample file present")
+    if not any(
+        "raw/01-controller-resource-budget-kubectl-top.txt" in str(item.get("path"))
+        and item.get("exists") is True
+        for item in files
+    ):
+        errors.append("partial status must mark the raw capture file present")
     if not any(item.get("role") == "output" and item.get("exists") is False for item in files):
         errors.append("partial status must mark the output file missing")
     if partial_text.returncode != 0 or "next-task: 01-controller-resource-budget" not in partial_text.stdout:

@@ -53,6 +53,7 @@ def main() -> int:
     joined = "\n".join(command for _, command in entries)
     for snippet in (
         "kubectl apply --dry-run=server",
+        "scripts/capture_controller_resource_budget.py",
         "scripts/build_external_evidence.py",
         "scripts/validate_live_evidence.py",
         "scripts/build_release_evidence_directory.py",

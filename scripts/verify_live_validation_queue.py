@@ -140,7 +140,7 @@ def main() -> int:
         for command in item.get("commands", [])
     )
     for snippet in (
-        "measure_controller_resources.py --sample",
+        "capture_controller_resource_budget.py --output",
         "kubectl apply --dry-run=server",
         "run_lightweight_cluster_smoke.py --provider kind",
         "run_managed_kubernetes_smoke.py --provider eks",

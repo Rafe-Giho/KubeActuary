@@ -18,7 +18,7 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (76 checks)
+verification: passed (77 checks)
 Ran 110 tests
 OK
 ```
@@ -62,7 +62,8 @@ Coverage included:
   OperationCapsules and emits disabled-write status patch plans;
 - controller status apply dry-run with explicit status-only execute mode;
 - controller status loop dry-run with repeated read/status-patch ticks;
-- controller resource budget contract and `kubectl top` measurement parser;
+- controller resource budget contract, `kubectl top` measurement parser, and
+  read-only capture helper;
 - lightweight cluster smoke plan and JSON evidence output for kind, minikube,
   MicroK8s, and k3s;
 - managed Kubernetes smoke plan and JSON evidence output for EKS, GKE, and AKS;
@@ -266,6 +267,7 @@ Result:
 - controller loop check prints `controller-loop: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`
   and verifies text plus JSON measurement output;
+- controller resource capture check prints `controller-resource-capture: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;

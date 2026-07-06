@@ -48,7 +48,7 @@ Status legend:
 | Controller read-only sync | DONE | `scripts/verify_controller_sync.py` verifies `kubectl get` plus disabled write execution |
 | Controller status apply dry-run | DONE | `scripts/verify_controller_status_apply.py` verifies default server dry-run and explicit status-only execute shape |
 | Controller status loop dry-run | DONE | `scripts/verify_controller_loop.py` verifies repeated read/status-patch ticks stay server-side dry-run by default |
-| Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
+| Controller resource budget | VERIFY | offline budget verifier and read-only capture helper added; live kind/minikube/k3s measurements still needed |
 | Lightweight cluster smoke | VERIFY | offline smoke plan and JSON evidence-output verifier added; live matrix evidence still needed |
 | Helm chart | VERIFY | chart seed, dry-run smoke harness, and offline verifier added; live Helm run not executed because Helm is not installed |
 | Kustomize | DONE | base and controller overlays render with `kubectl kustomize` |
@@ -80,7 +80,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (76 checks)
+verification: passed (77 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
