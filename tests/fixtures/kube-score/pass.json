@@ -1,0 +1,21 @@
+{
+  "objects": [
+    {
+      "checks": [
+        {
+          "checkID": "container-resources",
+          "grade": 10,
+          "skipped": false
+        },
+        {
+          "checkID": "pod-networkpolicy",
+          "grade": "OK",
+          "skipped": false
+        }
+      ],
+      "object_kind": "Deployment",
+      "object_name": "demo",
+      "object_namespace": "default"
+    }
+  ]
+}

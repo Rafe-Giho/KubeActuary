@@ -127,7 +127,8 @@ Add optional adapters:
   pass/fail fixtures.
 - kube-linter. Adapter available for captured JSON output with pass/fail
   fixtures.
-- kube-score
+- kube-score. Adapter available for captured JSON output with pass/fail
+  fixtures.
 - Pluto
 
 Adapters should attach evidence, not replace the core gate.

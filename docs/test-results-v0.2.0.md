@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (33 checks)
-Ran 62 tests
+verification: passed (34 checks)
+Ran 63 tests
 OK
 ```
 
@@ -64,6 +64,7 @@ Coverage included:
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
+- kube-score policy adapter pass/fail fixture verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -103,6 +104,7 @@ python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
+python3 -B scripts/verify_kube_score_adapter.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -134,6 +136,7 @@ Result:
 - Kyverno adapter check prints `kyverno-adapter: passed`;
 - OPA adapter check prints `opa-adapter: passed`;
 - kube-linter adapter check prints `kube-linter-adapter: passed`;
+- kube-score adapter check prints `kube-score-adapter: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

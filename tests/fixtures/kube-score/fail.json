@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "checks": [
+        {
+          "checkID": "container-resources",
+          "comments": [
+            {
+              "summary": "Container resources are not configured"
+            }
+          ],
+          "grade": 5,
+          "skipped": false
+        },
+        {
+          "Check": {
+            "ID": "container-security-context"
+          },
+          "Comments": [
+            {
+              "Summary": "Container is running as root"
+            }
+          ],
+          "Grade": 1,
+          "Skipped": false
+        }
+      ],
+      "object_kind": "Deployment",
+      "object_name": "demo",
+      "object_namespace": "default"
+    }
+  ]
+}

@@ -73,3 +73,29 @@ python3 -B scripts/verify_kube_linter_adapter.py
 ```
 
 The verifier uses pass/fail fixtures under `tests/fixtures/kube-linter`.
+
+## kube-score
+
+```sh
+python3 -B scripts/adapt_kube_score_evidence.py kube-score-output.json
+```
+
+The adapter reads captured `kube-score score -o json` output and emits
+`kube-score-policy` evidence. It does not run kube-score, contact a cluster,
+or mutate resources.
+
+Evidence rules:
+
+- `CRITICAL` or numeric grade `1` makes evidence `ok: false`;
+- `WARNING` or numeric grade `5` makes evidence `ok: false`;
+- `OK`, `ALMOST_OK`, numeric grades `7` and `10`, and skipped checks are
+  counted without failing evidence;
+- unknown grades fail closed as `policy-fail`.
+
+Verification:
+
+```sh
+python3 -B scripts/verify_kube_score_adapter.py
+```
+
+The verifier uses pass/fail fixtures under `tests/fixtures/kube-score`.

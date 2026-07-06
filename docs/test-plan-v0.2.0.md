@@ -20,7 +20,8 @@ Expected:
   smoke harness, Helm chart contract, Kustomize rendering, release archives, and
   Krew manifest generation, SBOM/provenance generation, air-gapped manifest
   generation, Kyverno adapter fixtures, OPA adapter fixtures, kube-linter
-  adapter fixtures, and full manifest gate behavior;
+  adapter fixtures, kube-score adapter fixtures, and full manifest gate
+  behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -56,6 +57,7 @@ python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
+python3 -B scripts/verify_kube_score_adapter.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -85,6 +87,7 @@ Expected:
 - Kyverno adapter check prints `kyverno-adapter: passed`;
 - OPA adapter check prints `opa-adapter: passed`;
 - kube-linter adapter check prints `kube-linter-adapter: passed`;
+- kube-score adapter check prints `kube-score-adapter: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -162,6 +165,8 @@ Confirm from code and tests:
   `opa-rego-policy` evidence and fails on policy violations;
 - kube-linter adapter converts captured JSON output to `kube-linter-policy`
   evidence and fails on linter reports;
+- kube-score adapter converts captured JSON output to `kube-score-policy`
+  evidence and fails on critical, warning, or unknown grades;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -180,5 +185,5 @@ Expected:
   upgrade fixtures, controller contract, controller RBAC, controller runtime,
   controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
-  air-gapped bundle, Kyverno adapter, OPA adapter, kube-linter adapter, gate
-  behavior, JSON/YAML parsing, and `git diff --check`.
+  air-gapped bundle, Kyverno adapter, OPA adapter, kube-linter adapter,
+  kube-score adapter, gate behavior, JSON/YAML parsing, and `git diff --check`.
