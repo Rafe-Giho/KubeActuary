@@ -200,13 +200,16 @@ def main() -> int:
         for snippet in (
             "next-task: `01-controller-resource-budget`",
             "next-task-queue-source: `prepared-live-validation-queue`",
+            "next-task-queue-source-origin: `inferred-live-validation-queue`",
             "next-task-run: `failed`",
             "next-task-run-queue-source: `prepared-live-validation-queue`",
+            "next-task-run-queue-source-origin: `inferred-live-validation-queue`",
             "next-task-run-error: `error: test cluster unavailable`",
             "environment-probe: `not-run`",
             "environment-next: start or select a disposable cluster, then rerun the probe",
             "version-iteration-advance: `failed`",
             "version-iteration-advance-queue-source: `prepared-live-validation-queue`",
+            "version-iteration-advance-queue-source-origin: `inferred-live-validation-queue`",
             "next-action-source: `prepared-live-validation-queue`",
             "environment-blocked-actions: 1",
             "prepare_live_evidence_directory.py",
@@ -261,10 +264,16 @@ def main() -> int:
         errors.append("partial evidence progress must include next commands")
     if (evidence_status.get("nextTask") or {}).get("queueSource") != "prepared-live-validation-queue":
         errors.append("evidence progress must preserve next-task queue source")
+    if (evidence_status.get("nextTask") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":
+        errors.append("evidence progress must preserve next-task queue source origin")
     if (evidence_status.get("nextTaskRun") or {}).get("queueSource") != "prepared-live-validation-queue":
         errors.append("evidence progress must preserve next-task-run queue source")
+    if (evidence_status.get("nextTaskRun") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":
+        errors.append("evidence progress must preserve next-task-run queue source origin")
     if (evidence_status.get("versionIterationAdvance") or {}).get("queueSource") != "prepared-live-validation-queue":
         errors.append("evidence progress must preserve advance queue source")
+    if (evidence_status.get("versionIterationAdvance") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":
+        errors.append("evidence progress must preserve advance queue source origin")
     evidence_queue = evidence_progress.get("liveValidationQueue", {})
     evidence_next_actions = evidence_progress.get("nextActions", {})
     if evidence_queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":

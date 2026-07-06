@@ -343,6 +343,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
             lines.append(f"- next-task: `{selected.get('id')}` ({selected.get('captureStatus')})")
             if next_task.get("queueSource"):
                 lines.append(f"- next-task-queue-source: `{next_task.get('queueSource')}`")
+            if next_task.get("queueSourceOrigin"):
+                lines.append(f"- next-task-queue-source-origin: `{next_task.get('queueSourceOrigin')}`")
             file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
             if file_summary:
                 lines.append(f"- next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
@@ -351,6 +353,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
             lines.append(f"- next-task-run: `{next_task_run.get('status')}` ({next_task_run.get('mode')})")
             if next_task_run.get("queueSource"):
                 lines.append(f"- next-task-run-queue-source: `{next_task_run.get('queueSource')}`")
+            if next_task_run.get("queueSourceOrigin"):
+                lines.append(f"- next-task-run-queue-source-origin: `{next_task_run.get('queueSourceOrigin')}`")
             failure = next_task_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- next-task-run-error: `{failure.get('message')}`")
@@ -369,6 +373,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
             lines.append(f"- version-iteration-advance: `{advance.get('status')}`")
             if advance.get("queueSource"):
                 lines.append(f"- version-iteration-advance-queue-source: `{advance.get('queueSource')}`")
+            if advance.get("queueSourceOrigin"):
+                lines.append(f"- version-iteration-advance-queue-source-origin: `{advance.get('queueSourceOrigin')}`")
         next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands[:3]:
             lines.append(f"- next: `{command}`")

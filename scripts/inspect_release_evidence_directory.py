@@ -63,21 +63,28 @@ def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
     return files
 
 
-def default_queue_source(live_queue: dict[str, Any] | None) -> str:
-    return "prepared-live-validation-queue" if isinstance(live_queue, dict) else "generated"
+def default_queue_source(live_queue: dict[str, Any] | None) -> tuple[str, str]:
+    if isinstance(live_queue, dict):
+        return "prepared-live-validation-queue", "inferred-live-validation-queue"
+    return "generated", "default-generated"
 
 
-def resolved_queue_source(payload: dict[str, Any], fallback: str) -> str:
+def resolved_queue_source(payload: dict[str, Any], fallback: str, fallback_origin: str) -> tuple[str, str]:
     next_task = payload.get("nextTask") if isinstance(payload.get("nextTask"), dict) else {}
-    return str(
-        payload.get("sourceWorklistQueueSource")
-        or payload.get("queueSource")
-        or next_task.get("queueSource")
-        or fallback
-    )
+    if payload.get("sourceWorklistQueueSource"):
+        return str(payload["sourceWorklistQueueSource"]), "explicit-source-worklist"
+    if payload.get("queueSource"):
+        return str(payload["queueSource"]), "explicit-record"
+    if next_task.get("queueSource"):
+        return str(next_task["queueSource"]), "explicit-next-task"
+    return fallback, fallback_origin
 
 
-def load_next_task(evidence_dir: Path, fallback_queue_source: str = "generated") -> dict[str, Any] | None:
+def load_next_task(
+    evidence_dir: Path,
+    fallback_queue_source: str = "generated",
+    fallback_queue_source_origin: str = "default-generated",
+) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "next-version-task.json"
     if not path.is_file():
         return None
@@ -86,11 +93,16 @@ def load_next_task(evidence_dir: Path, fallback_queue_source: str = "generated")
         raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")
     selected = payload.get("selected") or {}
     files = next_task_files(selected)
-    queue_source = resolved_queue_source(payload, fallback_queue_source)
+    queue_source, queue_source_origin = resolved_queue_source(
+        payload,
+        fallback_queue_source,
+        fallback_queue_source_origin,
+    )
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
         "queueSource": queue_source,
+        "queueSourceOrigin": queue_source_origin,
         "summary": {
             "files": len(files),
             "existingFiles": sum(1 for item in files if item["exists"]),
@@ -143,7 +155,11 @@ def next_task_run_failure(payload: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def load_next_task_run(evidence_dir: Path, fallback_queue_source: str = "generated") -> dict[str, Any] | None:
+def load_next_task_run(
+    evidence_dir: Path,
+    fallback_queue_source: str = "generated",
+    fallback_queue_source_origin: str = "default-generated",
+) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "next-version-task-run.json"
     if not path.is_file():
         return None
@@ -152,11 +168,16 @@ def load_next_task_run(evidence_dir: Path, fallback_queue_source: str = "generat
         raise ValueError(f"{path}: unsupported next-task-run schemaVersion: {payload.get('schemaVersion')!r}")
     next_task = payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
-    queue_source = resolved_queue_source(payload, fallback_queue_source)
+    queue_source, queue_source_origin = resolved_queue_source(
+        payload,
+        fallback_queue_source,
+        fallback_queue_source_origin,
+    )
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
         "queueSource": queue_source,
+        "queueSourceOrigin": queue_source_origin,
         "mode": payload.get("mode"),
         "status": payload.get("status"),
         "clusterWrites": payload.get("clusterWrites"),
@@ -210,6 +231,7 @@ def load_environment_blockers(evidence_dir: Path) -> dict[str, Any] | None:
 def load_version_iteration_advance(
     evidence_dir: Path,
     fallback_queue_source: str = "generated",
+    fallback_queue_source_origin: str = "default-generated",
 ) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "version-iteration-advance.json"
     if not path.is_file():
@@ -219,11 +241,16 @@ def load_version_iteration_advance(
         raise ValueError(f"{path}: unsupported version-iteration-advance schemaVersion: {payload.get('schemaVersion')!r}")
     runner = payload.get("runner") or {}
     next_task = payload.get("nextTask") or {}
-    queue_source = resolved_queue_source(payload, fallback_queue_source)
+    queue_source, queue_source_origin = resolved_queue_source(
+        payload,
+        fallback_queue_source,
+        fallback_queue_source_origin,
+    )
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
         "queueSource": queue_source,
+        "queueSourceOrigin": queue_source_origin,
         "mode": payload.get("mode"),
         "status": payload.get("status"),
         "clusterWrites": payload.get("clusterWrites"),
@@ -368,12 +395,16 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     live_queue = load_live_validation_queue(evidence_dir)
-    fallback_queue_source = default_queue_source(live_queue)
-    next_task = load_next_task(evidence_dir, fallback_queue_source)
-    next_task_run = load_next_task_run(evidence_dir, fallback_queue_source)
+    fallback_queue_source, fallback_queue_source_origin = default_queue_source(live_queue)
+    next_task = load_next_task(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
+    next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
-    version_iteration_advance = load_version_iteration_advance(evidence_dir, fallback_queue_source)
+    version_iteration_advance = load_version_iteration_advance(
+        evidence_dir,
+        fallback_queue_source,
+        fallback_queue_source_origin,
+    )
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -446,6 +477,8 @@ def render_text(status: dict[str, Any]) -> str:
         lines.append(f"next-task: {selected.get('id')}")
         if next_task.get("queueSource"):
             lines.append(f"next-task-queue-source: {next_task.get('queueSource')}")
+        if next_task.get("queueSourceOrigin"):
+            lines.append(f"next-task-queue-source-origin: {next_task.get('queueSourceOrigin')}")
         lines.append(f"next-task-status: {selected.get('captureStatus')}")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
@@ -462,6 +495,8 @@ def render_text(status: dict[str, Any]) -> str:
         lines.append(f"next-task-run: {next_task_run.get('status')}")
         if next_task_run.get("queueSource"):
             lines.append(f"next-task-run-queue-source: {next_task_run.get('queueSource')}")
+        if next_task_run.get("queueSourceOrigin"):
+            lines.append(f"next-task-run-queue-source-origin: {next_task_run.get('queueSourceOrigin')}")
         lines.append(f"next-task-run-mode: {next_task_run.get('mode')}")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
@@ -487,6 +522,8 @@ def render_text(status: dict[str, Any]) -> str:
         lines.append(f"version-iteration-advance: {advance.get('status')}")
         if advance.get("queueSource"):
             lines.append(f"version-iteration-advance-queue-source: {advance.get('queueSource')}")
+        if advance.get("queueSourceOrigin"):
+            lines.append(f"version-iteration-advance-queue-source-origin: {advance.get('queueSourceOrigin')}")
         if advance.get("runId"):
             lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
     return "\n".join(lines) + "\n"
@@ -517,6 +554,8 @@ def render_markdown(status: dict[str, Any]) -> str:
         lines.append(f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('captureStatus')})")
         if next_task.get("queueSource"):
             lines.append(f"- queue source: `{next_task.get('queueSource')}`")
+        if next_task.get("queueSourceOrigin"):
+            lines.append(f"- queue source origin: `{next_task.get('queueSourceOrigin')}`")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
             lines.append(f"- files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
@@ -527,6 +566,8 @@ def render_markdown(status: dict[str, Any]) -> str:
         lines.extend(["", "## Runner", "", f"- status: `{next_task_run.get('status')}`"])
         if next_task_run.get("queueSource"):
             lines.append(f"- queue source: `{next_task_run.get('queueSource')}`")
+        if next_task_run.get("queueSourceOrigin"):
+            lines.append(f"- queue source origin: `{next_task_run.get('queueSourceOrigin')}`")
         run_summary = next_task_run.get("summary", {})
         if run_summary:
             lines.append(f"- ran: {run_summary.get('ran', 0)}")
@@ -550,6 +591,8 @@ def render_markdown(status: dict[str, Any]) -> str:
         lines.extend(["", "## Advance", "", f"- status: `{advance.get('status')}`"])
         if advance.get("queueSource"):
             lines.append(f"- queue source: `{advance.get('queueSource')}`")
+        if advance.get("queueSourceOrigin"):
+            lines.append(f"- queue source origin: `{advance.get('queueSourceOrigin')}`")
         if advance.get("runId"):
             lines.append(f"- run id: `{advance.get('runId')}`")
     if status.get("nextCommands"):

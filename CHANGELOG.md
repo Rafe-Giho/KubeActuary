@@ -38,6 +38,8 @@ Evidence collector release:
 - surface runner and advance queue source in release evidence status/progress;
 - infer prepared queue source for older evidence status records when a live
   validation queue is present;
+- report queue-source origin so explicit and inferred release evidence status
+  metadata stays distinguishable;
 - add tool-ready and missing-tool next actions to release progress reports;
 - surface selected next-task, runner, environment, and advance status in release
   progress Markdown for local evidence directories;

@@ -333,6 +333,8 @@ def main() -> int:
         errors.append("partial status must include next-task schema")
     if next_task.get("queueSource") != "prepared-live-validation-queue":
         errors.append("partial status must preserve next-task queue source")
+    if next_task.get("queueSourceOrigin") != "explicit-source-worklist":
+        errors.append("partial status must report explicit next-task queue source origin")
     next_task_summary = next_task.get("summary", {})
     if next_task_summary.get("files") != 3:
         errors.append("partial status must summarize three selected next-task file references")
@@ -345,6 +347,8 @@ def main() -> int:
         errors.append("partial status must include next-task-run schema")
     if next_task_run.get("queueSource") != "prepared-live-validation-queue":
         errors.append("partial status must preserve next-task-run queue source")
+    if next_task_run.get("queueSourceOrigin") != "inferred-live-validation-queue":
+        errors.append("partial status must report inferred next-task-run queue source origin")
     if next_task_run.get("status") != "failed" or next_task_run.get("mode") != "run":
         errors.append("partial status must preserve next-task-run status")
     if next_task_run.get("summary", {}).get("ran") != 2:
@@ -367,6 +371,8 @@ def main() -> int:
         errors.append("partial status must include version-iteration-advance schema")
     if advance.get("queueSource") != "prepared-live-validation-queue":
         errors.append("partial status must preserve version-iteration-advance queue source")
+    if advance.get("queueSourceOrigin") != "inferred-live-validation-queue":
+        errors.append("partial status must report inferred version-iteration-advance queue source origin")
     if advance.get("status") != "passed" or advance.get("runId") != "test-advance":
         errors.append("partial status must preserve version-iteration-advance status")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
@@ -387,10 +393,14 @@ def main() -> int:
         errors.append("partial text status must print next-task file readiness")
     if "next-task-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
         errors.append("partial text status must print next-task queue source")
+    if "next-task-queue-source-origin: explicit-source-worklist" not in partial_text.stdout:
+        errors.append("partial text status must print next-task queue source origin")
     if "next-task-run: failed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
     if "next-task-run-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run queue source")
+    if "next-task-run-queue-source-origin: inferred-live-validation-queue" not in partial_text.stdout:
+        errors.append("partial text status must print next-task-run queue source origin")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
@@ -405,6 +415,8 @@ def main() -> int:
         errors.append("partial text status must print advance status")
     if "version-iteration-advance-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
         errors.append("partial text status must print advance queue source")
+    if "version-iteration-advance-queue-source-origin: inferred-live-validation-queue" not in partial_text.stdout:
+        errors.append("partial text status must print advance queue source origin")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
