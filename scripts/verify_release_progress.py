@@ -107,10 +107,14 @@ def main() -> int:
                 "clusterWrites": "disabled",
                 "summary": {
                     "clusterAccess": "not-run",
-                    "blockedByEnvironment": 0,
-                    "selectedBlocked": False,
+                    "blockedByEnvironment": 1,
+                    "selectedBlocked": True,
                 },
-                "selected": {"id": "01-controller-resource-budget", "captureStatus": "tool-ready"},
+                "selected": {
+                    "id": "01-controller-resource-budget",
+                    "captureStatus": "blocked-by-environment",
+                    "nextStep": "start or select a disposable cluster, then rerun the probe",
+                },
             },
         )
         write_payload(
@@ -164,6 +168,7 @@ def main() -> int:
             "next-task-run: `failed`",
             "next-task-run-error: `error: test cluster unavailable`",
             "environment-probe: `not-run`",
+            "environment-next: start or select a disposable cluster, then rerun the probe",
             "version-iteration-advance: `failed`",
             "prepare_live_evidence_directory.py",
         ):

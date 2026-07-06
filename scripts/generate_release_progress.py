@@ -299,6 +299,9 @@ def render_markdown(progress: dict[str, Any]) -> str:
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
             lines.append(f"- environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+            selected_blocker = environment_blockers.get("selected") or {}
+            if selected_blocker.get("nextStep"):
+                lines.append(f"- environment-next: {selected_blocker.get('nextStep')}")
         advance = evidence_status.get("versionIterationAdvance")
         if isinstance(advance, dict):
             lines.append(f"- version-iteration-advance: `{advance.get('status')}`")

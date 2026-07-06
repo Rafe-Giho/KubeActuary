@@ -232,12 +232,15 @@ def next_commands(
     gates: list[dict[str, Any]],
     evidence_dir: Path,
     environment_probe: dict[str, Any] | None,
+    environment_blockers: dict[str, Any] | None,
     next_task_run: dict[str, Any] | None,
 ) -> list[str]:
     commands = unique_commands(gates)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
-    if runner_status == "failed" and probe_status in {None, "not-run"}:
+    blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
+    selected_blocked = blocker_summary.get("selectedBlocked") is True
+    if selected_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
         probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --probe-environment"
         if probe_command not in commands:
             commands.insert(0, probe_command)
@@ -302,7 +305,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
                 for gate in uncovered
             ],
         },
-        "nextCommands": next_commands(uncovered, evidence_dir, environment_probe, next_task_run),
+        "nextCommands": next_commands(uncovered, evidence_dir, environment_probe, environment_blockers, next_task_run),
     }
 
 
@@ -353,6 +356,9 @@ def render_text(status: dict[str, Any]) -> str:
     if isinstance(environment_blockers, dict):
         blocker_summary = environment_blockers.get("summary", {})
         lines.append(f"environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+        selected_blocker = environment_blockers.get("selected") or {}
+        if selected_blocker.get("nextStep"):
+            lines.append(f"environment-next: {selected_blocker.get('nextStep')}")
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.append(f"version-iteration-advance: {advance.get('status')}")
@@ -407,6 +413,9 @@ def render_markdown(status: dict[str, Any]) -> str:
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
             lines.append(f"- blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+            selected_blocker = environment_blockers.get("selected") or {}
+            if selected_blocker.get("nextStep"):
+                lines.append(f"- next: {selected_blocker.get('nextStep')}")
     advance = status.get("versionIterationAdvance")
     if isinstance(advance, dict):
         lines.extend(["", "## Advance", "", f"- status: `{advance.get('status')}`"])

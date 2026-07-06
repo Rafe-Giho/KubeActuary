@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -47,6 +48,39 @@ def run_script(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.PIPE,
         check=False,
     )
+
+
+def run_script_with_env(script: Path, *args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(script), *args],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def fake_probe_env(path: Path) -> dict[str, str]:
+    path.mkdir(parents=True, exist_ok=True)
+    kubectl = path / "kubectl"
+    kubectl.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "args = sys.argv[1:]\n"
+        "if args[:1] == ['version']:\n"
+        "    print('Client Version: fake')\n"
+        "    raise SystemExit(0)\n"
+        "if args[:1] == ['cluster-info']:\n"
+        "    print('cluster unavailable', file=sys.stderr)\n"
+        "    raise SystemExit(1)\n"
+        "raise SystemExit(0)\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{path}{os.pathsep}{env.get('PATH', '')}"
+    return env
 
 
 def write_payload(path: Path, payload: dict[str, Any]) -> None:
@@ -176,6 +210,16 @@ def main() -> int:
         partial_after_build = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_after_build_text = run_script(INSPECTOR, str(partial_dir))
 
+        blocked_dir = tmpdir / "blocked"
+        blocked_prepared = run_script_with_env(
+            PREPARE,
+            str(blocked_dir),
+            "--probe-environment",
+            env=fake_probe_env(tmpdir / "probe-tools"),
+        )
+        blocked = run_script(INSPECTOR, str(blocked_dir), "--format", "json")
+        blocked_text = run_script(INSPECTOR, str(blocked_dir))
+
         full_dir = tmpdir / "full"
         full_dir.mkdir()
         write_full_matrix(full_dir)
@@ -216,6 +260,13 @@ def main() -> int:
         partial_after_build_payload = {}
     else:
         partial_after_build_payload = json.loads(partial_after_build.stdout)
+    if blocked_prepared.returncode != 0:
+        errors.append(f"blocked evidence prepare failed: {blocked_prepared.stderr.strip() or blocked_prepared.stdout.strip()}")
+    if blocked.returncode != 0:
+        errors.append(f"blocked evidence status failed: {blocked.stderr.strip() or blocked.stdout.strip()}")
+        blocked_payload = {}
+    else:
+        blocked_payload = json.loads(blocked.stdout)
     if complete.returncode != 0:
         errors.append(f"complete status failed: {complete.stderr.strip() or complete.stdout.strip()}")
         complete_payload = {}
@@ -349,6 +400,19 @@ def main() -> int:
         errors.append("post-build partial status must report complete next-task file readiness")
     if partial_after_build_text.returncode != 0 or "next-task-files: 3/3" not in partial_after_build_text.stdout:
         errors.append("post-build partial text status must print complete next-task file readiness")
+
+    blocked_probe = blocked_payload.get("environmentProbe") or {}
+    blocked_blockers = blocked_payload.get("environmentBlockers") or {}
+    blocked_selected = blocked_blockers.get("selected") or {}
+    expected_blocked_probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {blocked_dir} --probe-environment"
+    if blocked_probe.get("clusterAccess") != "unavailable":
+        errors.append("blocked evidence status must preserve unavailable cluster access")
+    if blocked_selected.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
+        errors.append("blocked evidence status must preserve selected blocker next step")
+    if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
+        errors.append("blocked evidence status must recommend rerunning the environment probe first")
+    if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
+        errors.append("blocked text status must print selected environment next step")
 
     if complete_payload.get("summary", {}).get("status") != "complete":
         errors.append("full evidence directory must report complete")

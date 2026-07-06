@@ -248,6 +248,9 @@ actionable command error in text, JSON, and recorded Markdown output.
 When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
+When the probe classifies the selected task as environment-blocked, status and
+progress output print the selected blocker next step before more capture
+commands.
 
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema

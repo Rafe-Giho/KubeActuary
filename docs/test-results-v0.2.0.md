@@ -140,7 +140,7 @@ Coverage included:
 - release evidence status inspection for partial and complete evidence
   directories plus persisted next-task output, file readiness, and
   unprepared-directory guidance, with runner failure summaries and probe-first
-  follow-up guidance;
+  follow-up guidance for failed runner and environment-blocker states;
 - next-task evidence build from prepared raw files plus idempotent
   output-exists handling;
 - next-version task runner success, failed-run summary, and recorded report
