@@ -228,6 +228,22 @@ def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
     return commands
 
 
+def next_commands(
+    gates: list[dict[str, Any]],
+    evidence_dir: Path,
+    environment_probe: dict[str, Any] | None,
+    next_task_run: dict[str, Any] | None,
+) -> list[str]:
+    commands = unique_commands(gates)
+    probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
+    runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
+    if runner_status == "failed" and probe_status in {None, "not-run"}:
+        probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --probe-environment"
+        if probe_command not in commands:
+            commands.insert(0, probe_command)
+    return commands
+
+
 def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     if not evidence_dir.is_dir():
         raise ValueError(f"{evidence_dir}: evidence directory not found")
@@ -286,7 +302,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
                 for gate in uncovered
             ],
         },
-        "nextCommands": unique_commands(uncovered),
+        "nextCommands": next_commands(uncovered, evidence_dir, environment_probe, next_task_run),
     }
 
 

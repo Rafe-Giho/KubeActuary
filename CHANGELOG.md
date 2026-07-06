@@ -33,6 +33,8 @@ Evidence collector release:
   progress Markdown for local evidence directories;
 - preserve selected next-task runner failure reasons in release evidence status
   and progress output;
+- recommend environment probing before further live capture when a runner fails
+  before any probe has run;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

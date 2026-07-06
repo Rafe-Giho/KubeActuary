@@ -139,7 +139,8 @@ Coverage included:
   closure checks;
 - release evidence status inspection for partial and complete evidence
   directories plus persisted next-task output, file readiness, and
-  unprepared-directory guidance, with runner failure summaries;
+  unprepared-directory guidance, with runner failure summaries and probe-first
+  follow-up guidance;
 - next-task evidence build from prepared raw files plus idempotent
   output-exists handling;
 - next-version task runner success, failed-run summary, and recorded report

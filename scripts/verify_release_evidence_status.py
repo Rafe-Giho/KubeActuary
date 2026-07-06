@@ -254,6 +254,9 @@ def main() -> int:
         errors.append("partial status must include coverage misses")
     if not any("run_managed_kubernetes_smoke.py" in command for command in partial_payload.get("nextCommands", [])):
         errors.append("partial status must include next provider commands")
+    expected_probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {partial_dir} --probe-environment"
+    if not partial_payload.get("nextCommands") or partial_payload.get("nextCommands", [None])[0] != expected_probe_command:
+        errors.append("partial status must recommend environment probing before more live capture after runner failure")
     next_task = partial_payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
@@ -310,6 +313,8 @@ def main() -> int:
         errors.append("partial text status must print next-task-run status")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
+    if f"next: {expected_probe_command}" not in partial_text.stdout:
+        errors.append("partial text status must print the environment probe next command")
     if "environment-probe: not-run" not in partial_text.stdout:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:

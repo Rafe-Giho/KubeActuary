@@ -245,6 +245,9 @@ If the selected next-task artifact is missing, both
 `prepare_live_evidence_directory.py` command needed to initialize the directory.
 Failed runner reports include a `failure` summary and preserve the first
 actionable command error in text, JSON, and recorded Markdown output.
+When a runner fails before the environment probe has run, release evidence
+status recommends `prepare_live_evidence_directory.py --probe-environment`
+before more live capture attempts.
 
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema

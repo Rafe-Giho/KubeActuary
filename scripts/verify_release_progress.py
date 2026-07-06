@@ -165,6 +165,7 @@ def main() -> int:
             "next-task-run-error: `error: test cluster unavailable`",
             "environment-probe: `not-run`",
             "version-iteration-advance: `failed`",
+            "prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_markdown.stdout:
                 errors.append(f"evidence progress markdown missing status detail: {snippet}")
