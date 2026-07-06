@@ -404,6 +404,50 @@ def latest_blocker_streak(inspected_runs: list[dict[str, Any]]) -> dict[str, Any
     }
 
 
+def latest_blocker_action(
+    blocker_streak: dict[str, Any] | None,
+    latest_next_task: dict[str, Any] | None,
+    next_commands: list[str],
+) -> dict[str, Any] | None:
+    if not isinstance(blocker_streak, dict):
+        return None
+    signature = blocker_streak.get("signature", {})
+    if not isinstance(signature, dict):
+        return None
+    capture_status = signature.get("captureStatus")
+    if capture_status == "blocked-by-environment":
+        action = "resolve-environment"
+        retry_after = "environment probe succeeds"
+        default_next_step = "start or select a disposable cluster, then rerun the probe"
+    elif capture_status == "missing-tools":
+        action = "install-missing-tools"
+        retry_after = "required local tools are installed"
+        default_next_step = "install missing tools or run on a host that has them"
+    else:
+        return None
+    worklist_commands = []
+    if isinstance(latest_next_task, dict):
+        worklist_commands = list_value(latest_next_task.get("worklistCommands"))
+    retry_command = next(
+        (command for command in next_commands if "scripts/advance_version_iteration.py" in command),
+        None,
+    )
+    if retry_command is None and len(next_commands) > 1:
+        retry_command = next_commands[-1]
+    return {
+        "action": action,
+        "captureStatus": capture_status,
+        "repeated": blocker_streak.get("status") == "repeated",
+        "streak": blocker_streak.get("streak"),
+        "retryRecommended": False,
+        "retryAfter": retry_after,
+        "nextStep": signature.get("nextStep") or default_next_step,
+        "reason": signature.get("environmentReason") or ", ".join(signature.get("missingTools", [])),
+        "worklistCommands": worklist_commands,
+        "retryCommand": retry_command,
+    }
+
+
 def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
     commands = [
         shell_join(
@@ -522,6 +566,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         )
     blocker_streak = latest_blocker_streak(inspected_runs)
     next_commands = build_next_commands(history_dir, latest)
+    blocker_action = latest_blocker_action(blocker_streak, latest_next_task, next_commands)
     return {
         "schemaVersion": SCHEMA_VERSION,
         "historyDir": history_dir.as_posix(),
@@ -550,6 +595,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestArtifacts": latest_artifacts,
         "latestAdvance": latest_advance,
         "latestBlockerStreak": blocker_streak,
+        "latestBlockerAction": blocker_action,
         "nextCommands": next_commands,
         "runs": inspected_runs,
     }
@@ -638,6 +684,19 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"latest-blocker-environment-reason: {signature.get('environmentReason')}")
         if signature.get("missingTools"):
             lines.append(f"latest-blocker-missing-tools: {', '.join(str(tool) for tool in signature.get('missingTools', []))}")
+    blocker_action = status.get("latestBlockerAction")
+    if isinstance(blocker_action, dict):
+        lines.append(f"latest-blocker-action: {blocker_action.get('action')}")
+        lines.append(f"latest-blocker-retry-recommended: {str(blocker_action.get('retryRecommended')).lower()}")
+        lines.append(f"latest-blocker-retry-after: {blocker_action.get('retryAfter')}")
+        if blocker_action.get("reason"):
+            lines.append(f"latest-blocker-action-reason: {blocker_action.get('reason')}")
+        if blocker_action.get("nextStep"):
+            lines.append(f"latest-blocker-action-next-step: {blocker_action.get('nextStep')}")
+        for command in list_value(blocker_action.get("worklistCommands")):
+            lines.append(f"latest-blocker-action-worklist: {command}")
+        if blocker_action.get("retryCommand"):
+            lines.append(f"latest-blocker-action-retry-command: {blocker_action.get('retryCommand')}")
     latest_advance = status.get("latestAdvance")
     if isinstance(latest_advance, dict):
         lines.append(f"latest-advance-status: {latest_advance.get('status')}")
@@ -840,6 +899,28 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- environment reason: `{signature.get('environmentReason')}`")
         if signature.get("missingTools"):
             lines.append(f"- missing tools: `{', '.join(str(tool) for tool in signature.get('missingTools', []))}`")
+    else:
+        lines.append("- none")
+    blocker_action = status.get("latestBlockerAction")
+    lines.extend(
+        [
+            "",
+            "## Latest Blocker Action",
+            "",
+        ]
+    )
+    if isinstance(blocker_action, dict):
+        lines.append(f"- action: `{blocker_action.get('action')}`")
+        lines.append(f"- retry recommended: `{str(blocker_action.get('retryRecommended')).lower()}`")
+        lines.append(f"- retry after: {blocker_action.get('retryAfter')}")
+        if blocker_action.get("reason"):
+            lines.append(f"- reason: `{blocker_action.get('reason')}`")
+        if blocker_action.get("nextStep"):
+            lines.append(f"- next step: {blocker_action.get('nextStep')}")
+        for command in list_value(blocker_action.get("worklistCommands")):
+            lines.append(f"- worklist: `{command}`")
+        if blocker_action.get("retryCommand"):
+            lines.append(f"- retry command: `{blocker_action.get('retryCommand')}`")
     else:
         lines.append("- none")
     lines.extend(

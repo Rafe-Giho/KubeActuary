@@ -533,6 +533,7 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
     latest_advance = history_status.get("latestAdvance")
     latest_next_task = history_status.get("latestNextTask")
     latest_blocker = history_status.get("latestBlockerStreak")
+    latest_blocker_action = history_status.get("latestBlockerAction")
     lines.extend(
         [
             "",
@@ -566,6 +567,14 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
         lines.append(f"- latest blocker task: `{signature.get('id')}`")
         if signature.get("environmentReason"):
             lines.append(f"- latest blocker reason: `{signature.get('environmentReason')}`")
+    if isinstance(latest_blocker_action, dict):
+        lines.append(f"- latest blocker action: `{latest_blocker_action.get('action')}`")
+        lines.append(
+            "- latest blocker retry recommended: "
+            f"`{str(latest_blocker_action.get('retryRecommended')).lower()}`"
+        )
+        if latest_blocker_action.get("nextStep"):
+            lines.append(f"- latest blocker next step: {latest_blocker_action.get('nextStep')}")
     if isinstance(latest_advance, dict):
         lines.append(f"- latest advance: `{latest_advance.get('status')}`")
         if latest_advance.get("runId"):
@@ -611,6 +620,15 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
         lines.append(f"history-latest-blocker-id: {signature.get('id')}")
         if signature.get("environmentReason"):
             lines.append(f"history-latest-blocker-reason: {signature.get('environmentReason')}")
+    latest_blocker_action = history_status.get("latestBlockerAction")
+    if isinstance(latest_blocker_action, dict):
+        lines.append(f"history-latest-blocker-action: {latest_blocker_action.get('action')}")
+        lines.append(
+            "history-latest-blocker-retry-recommended: "
+            f"{str(latest_blocker_action.get('retryRecommended')).lower()}"
+        )
+        if latest_blocker_action.get("nextStep"):
+            lines.append(f"history-latest-blocker-next-step: {latest_blocker_action.get('nextStep')}")
     latest_advance = history_status.get("latestAdvance")
     if isinstance(latest_advance, dict):
         lines.append(f"history-latest-advance-status: {latest_advance.get('status')}")

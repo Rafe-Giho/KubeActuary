@@ -979,18 +979,37 @@ def main() -> int:
         errors.append("version iteration history status should preserve repeated blocker task id")
     if repeated_signature.get("environmentReason") != "command-failed":
         errors.append("version iteration history status should preserve repeated blocker reason")
+    repeated_action = repeated_history_status_payload.get("latestBlockerAction") or {}
+    if repeated_action.get("action") != "resolve-environment":
+        errors.append("version iteration history status should summarize repeated blocker action")
+    if repeated_action.get("retryRecommended") is not False:
+        errors.append("version iteration history status should suppress retry before blocker resolution")
+    if repeated_action.get("retryAfter") != "environment probe succeeds":
+        errors.append("version iteration history status should explain when retry is useful")
+    if repeated_action.get("nextStep") != "start or select a disposable cluster, then rerun the probe":
+        errors.append("version iteration history status should preserve blocker next step")
+    if not any("--environment-status cluster-unavailable" in command for command in repeated_action.get("worklistCommands", [])):
+        errors.append("version iteration history status should include blocker action worklist commands")
+    if "record_version_iteration.py" not in str(repeated_action.get("retryCommand")):
+        errors.append("version iteration history status should preserve the latest-filter retry command")
     for snippet in (
         "latest-blocker-streak: 2",
         "latest-blocker-status: repeated",
         "latest-blocker-first-run-id: blocked-one",
         "latest-blocker-latest-run-id: blocked-two",
+        "latest-blocker-action: resolve-environment",
+        "latest-blocker-retry-recommended: false",
+        "latest-blocker-retry-after: environment probe succeeds",
     ):
         if snippet not in repeated_history_status_text.stdout:
             errors.append(f"version iteration history text should show repeated blocker detail: {snippet}")
     for snippet in (
         "## Latest Blocker Streak",
+        "## Latest Blocker Action",
         "`repeated` streak=2 latest=`blocked-two`",
         "environment reason: `command-failed`",
+        "action: `resolve-environment`",
+        "retry recommended: `false`",
     ):
         if snippet not in repeated_history_status_markdown.stdout:
             errors.append(f"version iteration history Markdown should show repeated blocker detail: {snippet}")

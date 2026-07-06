@@ -147,7 +147,7 @@ Expected:
   file/command details, every runnable tool-ready action and evidence next
   command, persisted queue-source status, and version-iteration advance
   run/history metadata plus `--history-dir` status/consistency and latest
-  blocker streaks, without recommending environment-blocked capture
+  blocker streak/action guidance, without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete
   text output, blocker summaries, blocker drilldown commands with evidence-dir
@@ -166,8 +166,8 @@ Expected:
   summaries, and blocker drilldown commands;
 - prepared-queue version iteration history records and status preserve the queue source;
 - version iteration history status preserves latest blocker summaries,
-  repeated latest blocker streaks, and drilldown commands in text, JSON, and
-  Markdown output;
+  repeated latest blocker streaks, blocker action guidance, retry guards, and
+  drilldown commands in text, JSON, and Markdown output;
 - version iteration history status preserves latest run filters in text, JSON,
   Markdown, and recorded status reports;
 - version iteration history status preserves selected latest next-task details
@@ -336,7 +336,7 @@ Confirm from code and tests:
   `not-prepared` guidance for missing evidence directories, plus selected
   next-task, runner failure, environment, advance status, and repeated blocker
   summaries with filtered worklist commands and optional version-history status
-  including latest blocker streaks in Markdown and text output; it
+  including latest blocker streak/action guidance in Markdown and text output; it
   also checks tool-ready action and evidence next-command output is not truncated;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
