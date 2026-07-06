@@ -17,7 +17,7 @@ README = ROOT / "README.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 sys.path.insert(0, str(ROOT))
 
-from scripts.generate_release_progress import render_markdown  # noqa: E402
+from scripts.generate_release_progress import render_markdown, render_text  # noqa: E402
 from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 
@@ -203,8 +203,10 @@ def main() -> int:
         )
 
         json_result = run_generator("--format", "json")
+        text_result = run_generator("--format", "text")
         markdown_result = run_generator("--format", "markdown")
         version_result = run_generator("--format", "json", "--version", "0.4.3")
+        version_text_result = run_generator("--format", "text", "--version", "0.4.3")
         version_markdown_result = run_generator("--format", "markdown", "--version", "0.4.3")
         probe_json_result = run_generator_with_env(
             "--format",
@@ -234,6 +236,7 @@ def main() -> int:
         )
         unknown_version = run_generator("--format", "json", "--version", "9.9.9")
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
+        with_evidence_text = run_generator("--format", "text", "--evidence-dir", str(evidence_dir))
         with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
         missing_evidence_dir = tmpdir / "missing-evidence"
         missing_evidence = run_generator("--format", "json", "--evidence-dir", str(missing_evidence_dir))
@@ -287,6 +290,7 @@ def main() -> int:
             ],
         }
         synthetic_markdown = render_markdown(synthetic_progress)
+        synthetic_text = render_text(synthetic_progress)
         for snippet in (
             "`tool-ready-6` Tool ready 6",
             "python3 -B scripts/tool_ready_6.py",
@@ -294,6 +298,26 @@ def main() -> int:
         ):
             if snippet not in synthetic_markdown:
                 errors.append(f"markdown progress must include all runnable entries: {snippet}")
+        for snippet in (
+            "action: tool-ready-6 tool-ready None Tool ready 6",
+            "first-command: python3 -B scripts/tool_ready_6.py",
+            "next: python3 -B scripts/next_command_4.py",
+        ):
+            if snippet not in synthetic_text:
+                errors.append(f"text progress must include all runnable entries: {snippet}")
+    if text_result.returncode != 0:
+        errors.append(f"text progress failed: {text_result.stderr.strip() or text_result.stdout.strip()}")
+    else:
+        for snippet in (
+            "schema: kube-actuary.release-progress.v1",
+            "verify: 16",
+            "release-checks: 79",
+            "version: 0.4.4 done=0 verify=1",
+            "missing-tool-blocker: minikube",
+            "blocker-worklist: python3 -B scripts/generate_version_worklist.py",
+        ):
+            if snippet not in text_result.stdout:
+                errors.append(f"text progress missing detail: {snippet}")
     if markdown_result.returncode != 0 or "# KubeActuary Release Progress" not in markdown_result.stdout:
         errors.append("markdown progress output must include heading")
     if version_result.returncode != 0:
@@ -315,6 +339,19 @@ def main() -> int:
                 errors.append(f"version progress markdown missing detail: {snippet}")
         if "Current Baseline" in version_markdown_result.stdout:
             errors.append("version progress markdown must omit unrelated versions")
+    if version_text_result.returncode != 0:
+        errors.append(f"version progress text failed: {version_text_result.stderr.strip() or version_text_result.stdout.strip()}")
+    else:
+        for snippet in (
+            "filter-version: 0.4.3",
+            "version: 0.4.3 done=2 verify=1",
+            "item: 0.4.3 VERIFY Resource budget target: idle <50m CPU and <64Mi memory",
+            "action: 11-resource-budget-target-idle-50m-cpu-and-64mi-memory tool-ready 0.4.3",
+        ):
+            if snippet not in version_text_result.stdout:
+                errors.append(f"version progress text missing detail: {snippet}")
+        if "Current Baseline" in version_text_result.stdout:
+            errors.append("version progress text must omit unrelated versions")
     if probe_json_result.returncode != 0:
         errors.append(f"probe progress failed: {probe_json_result.stderr.strip() or probe_json_result.stdout.strip()}")
         probe_progress = {}
@@ -410,6 +447,20 @@ def main() -> int:
         ):
             if snippet not in with_evidence_markdown.stdout:
                 errors.append(f"evidence progress markdown missing status detail: {snippet}")
+    if with_evidence_text.returncode != 0:
+        errors.append(f"evidence progress text failed: {with_evidence_text.stderr.strip() or with_evidence_text.stdout.strip()}")
+    else:
+        for snippet in (
+            "evidence-status: partial",
+            "next-action-source: prepared-live-validation-queue",
+            "environment-blocker: cluster-unavailable actions=1",
+            "next-task: 01-controller-resource-budget tool-ready",
+            "next-task-run: failed run",
+            "version-iteration-advance: failed",
+            "next: python3 -B scripts/prepare_live_evidence_directory.py",
+        ):
+            if snippet not in with_evidence_text.stdout:
+                errors.append(f"evidence progress text missing status detail: {snippet}")
     if missing_evidence.returncode != 0:
         errors.append(f"missing evidence progress failed: {missing_evidence.stderr.strip() or missing_evidence.stdout.strip()}")
         missing_evidence_progress = {}

@@ -499,6 +499,7 @@ python3 -B -m unittest discover -s tests
 python3 -B scripts/verify_release.py --version 0.2.0
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/generate_release_progress.py --format text --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live

@@ -142,7 +142,7 @@ Expected:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directories use the persisted live validation queue as the
-  next-action source, show every open item in version Markdown, and show
+  next-action source, show every open item in version Markdown/text, and show
   every action blocker plus filtered worklist commands, selected next-task
   file/command details, every runnable tool-ready action and evidence next
   command, persisted queue-source status, and version-iteration advance
@@ -328,8 +328,8 @@ Confirm from code and tests:
   readiness, tool-ready next actions, optional evidence directory status, and
   `not-prepared` guidance for missing evidence directories, plus selected
   next-task, runner failure, environment, advance status, and repeated blocker
-  summaries with filtered worklist commands in Markdown output; it also checks
-  tool-ready action and evidence next-command output is not truncated;
+  summaries with filtered worklist commands in Markdown and text output; it
+  also checks tool-ready action and evidence next-command output is not truncated;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, evidence-aware worklist readiness,

@@ -121,8 +121,8 @@ Coverage included:
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
 - release progress report generation for versioned task tracking,
-  tool-ready next actions, selected evidence-directory runtime status, runner
-  failure reason, and `not-prepared` evidence directory guidance;
+  text output, tool-ready next actions, selected evidence-directory runtime
+  status, runner failure reason, and `not-prepared` evidence directory guidance;
 - version worklist generation for version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording, history
   status inspection, evidence-aware worklist readiness,
@@ -256,7 +256,7 @@ Result:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed` and confirms
   prepared evidence directory progress uses the persisted live validation queue
-  as the next-action source, shows every open item in version Markdown, and
+  as the next-action source, shows every open item in version Markdown/text, and
   shows every action blocker plus filtered worklist commands, selected
   next-task file/command details, every runnable tool-ready action and evidence
   next command, persisted queue-source status, and version-iteration advance

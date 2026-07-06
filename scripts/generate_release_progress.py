@@ -683,9 +683,136 @@ def render_markdown(progress: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_text(progress: dict[str, Any]) -> str:
+    summary = progress["summary"]
+    lines = [
+        f"schema: {progress['schemaVersion']}",
+        f"source: {progress['source']}",
+        f"rows: {summary['rows']}",
+        f"done: {summary['done']}",
+        f"verify: {summary['verify']}",
+        f"doing: {summary['doing']}",
+        f"todo: {summary['todo']}",
+        f"release-checks: {progress['releaseSuite']['checks']}",
+    ]
+    filters = progress.get("filters", {})
+    for version in filters.get("versions", []):
+        lines.append(f"filter-version: {version}")
+    if filters.get("evidenceDir"):
+        lines.append(f"evidence-dir: {filters['evidenceDir']}")
+
+    for group in progress["versions"]:
+        counts = group["summary"]
+        lines.append(
+            f"version: {group['version']} done={counts['done']} verify={counts['verify']} "
+            f"doing={counts['doing']} todo={counts['todo']}"
+        )
+        for item in group["openItems"]:
+            lines.append(f"item: {group['version']} {item['status']} {item['item']}")
+
+    readiness = progress["liveValidationReadiness"]["summary"]
+    next_actions = progress["nextActions"]
+    next_action_summary = next_actions["summary"]
+    lines.extend(
+        [
+            f"readiness-mode: {progress['liveValidationReadiness'].get('mode')}",
+            f"tool-ready-gates: {readiness['toolReadyGates']}/{readiness['liveGates']}",
+            f"tools: {readiness['toolsAvailable']}/{readiness['toolsTotal']}",
+            f"next-action-source: {next_actions.get('source')}",
+            f"tool-ready-actions: {next_action_summary['toolReady']}/{next_action_summary['total']}",
+            f"tool-blocked-actions: {next_action_summary.get('blockedByTools', 0)}",
+            f"environment-blocked-actions: {next_action_summary.get('blockedByEnvironment', 0)}",
+        ]
+    )
+    readiness_probe = progress["liveValidationReadiness"].get("environmentProbe")
+    if isinstance(readiness_probe, dict):
+        lines.append(f"environment-probe: {readiness_probe.get('clusterAccess')}")
+        lines.append(f"environment-reason: {readiness_probe.get('reason')}")
+
+    blockers = next_actions.get("blockers", {})
+    for item in blockers.get("missingTools") or []:
+        lines.append(f"missing-tool-blocker: {item['tool']} actions={item['actions']}")
+        if item.get("worklistCommand"):
+            lines.append(f"blocker-worklist: {item['worklistCommand']}")
+    for item in blockers.get("environment") or []:
+        lines.append(f"environment-blocker: {item['status']} actions={item['actions']}")
+        if item.get("worklistCommand"):
+            lines.append(f"blocker-worklist: {item['worklistCommand']}")
+    for item in blockers.get("environmentReasons") or []:
+        lines.append(f"environment-reason-blocker: {item['reason']} actions={item['actions']}")
+        if item.get("worklistCommand"):
+            lines.append(f"blocker-worklist: {item['worklistCommand']}")
+    for item in blockers.get("environmentNextSteps") or []:
+        lines.append(f"blocker-next-step: {item['nextStep']} actions={item['actions']}")
+
+    for action in next_actions["actions"]:
+        lines.append(f"action: {action.get('id')} {action.get('status')} {action.get('version')} {action.get('item')}")
+        if action.get("environmentStatus"):
+            lines.append(f"action-environment: {action.get('environmentStatus')}")
+        if action.get("environmentReason"):
+            lines.append(f"action-environment-reason: {action.get('environmentReason')}")
+        if action.get("firstCommand"):
+            lines.append(f"first-command: {action['firstCommand']}")
+
+    if "evidenceStatus" in progress:
+        evidence_status = progress["evidenceStatus"]
+        status = evidence_status["summary"]
+        lines.extend(
+            [
+                f"evidence-status: {status['status']}",
+                f"evidence-covered: {status['coveredGates']}/{status['totalGates']}",
+                f"evidence-live-reports: {status['liveReports']}",
+                f"evidence-supplemental: {status['supplementalEvidence']}",
+            ]
+        )
+        next_task = evidence_status.get("nextTask")
+        selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+        if selected.get("id"):
+            lines.append(f"next-task: {selected.get('id')} {selected.get('captureStatus')}")
+            if next_task.get("queueSource"):
+                lines.append(f"next-task-queue-source: {next_task.get('queueSource')}")
+            if next_task.get("queueSourceOrigin"):
+                lines.append(f"next-task-queue-source-origin: {next_task.get('queueSourceOrigin')}")
+            consistency = next_task.get("queueConsistency") or {}
+            if consistency.get("status"):
+                lines.append(f"next-task-queue-consistency: {consistency.get('status')}")
+            for item in selected.get("files", []):
+                file_status = "present" if item.get("exists") else "missing"
+                lines.append(f"next-task-file: {file_status} {item.get('role')} {item.get('path')}")
+            for command in selected.get("resolvedCommands", []):
+                lines.append(f"next-task-command: {command}")
+        next_task_run = evidence_status.get("nextTaskRun")
+        if isinstance(next_task_run, dict):
+            lines.append(f"next-task-run: {next_task_run.get('status')} {next_task_run.get('mode')}")
+            failure = next_task_run.get("failure")
+            if isinstance(failure, dict) and failure.get("message"):
+                lines.append(f"next-task-run-error: {failure.get('message')}")
+        environment_probe = evidence_status.get("environmentProbe")
+        if isinstance(environment_probe, dict):
+            lines.append(f"evidence-environment-probe: {environment_probe.get('clusterAccess')}")
+        environment_blockers = evidence_status.get("environmentBlockers")
+        if isinstance(environment_blockers, dict):
+            blocker_summary = environment_blockers.get("summary", {})
+            lines.append(f"evidence-environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+            selected_blocker = environment_blockers.get("selected") or {}
+            if selected_blocker.get("nextStep"):
+                lines.append(f"evidence-environment-next: {selected_blocker.get('nextStep')}")
+        advance = evidence_status.get("versionIterationAdvance")
+        if isinstance(advance, dict):
+            lines.append(f"version-iteration-advance: {advance.get('status')}")
+            if advance.get("runId"):
+                lines.append(f"version-iteration-advance-run-id: {advance.get('runId')}")
+        for command in evidence_status.get("nextCommands", []):
+            lines.append(f"next: {command}")
+
+    for command in progress["externalGatePlan"]["closureCommands"]:
+        lines.append(f"closure-command: {command}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary release progress report.")
-    parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    parser.add_argument("--format", choices=["json", "markdown", "text"], default="json")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--evidence-dir", help="optional local evidence directory to inspect")
     parser.add_argument("--output-dir", help="artifact output directory for evidence-dir status")
@@ -711,8 +838,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.format == "json":
         rendered = json.dumps(progress, indent=2, sort_keys=True) + "\n"
-    else:
+    elif args.format == "markdown":
         rendered = render_markdown(progress)
+    else:
+        rendered = render_text(progress)
 
     if args.output == "-":
         print(rendered, end="")

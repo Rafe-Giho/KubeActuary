@@ -11,6 +11,7 @@ python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_validation_readiness.py --probe-environment
 python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
+python3 -B scripts/generate_release_progress.py --format text --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.3
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_live_validation_queue.py --format markdown
