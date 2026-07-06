@@ -473,6 +473,13 @@ def main() -> int:
             "--capture-status blocked-by-environment "
             "--environment-status cluster-unavailable`"
         )
+        history_status_record_command = (
+            f"python3 -B scripts/inspect_version_history.py {history_dir.as_posix()} --record"
+        )
+        history_status_iteration_command = (
+            f"python3 -B scripts/record_version_iteration.py {history_dir.as_posix()} "
+            "--version 0.4.3 --probe-environment"
+        )
         history_status_output = tmpdir / "history-status.json"
         written_history_status = run_inspect_history(
             str(history_dir),
@@ -759,6 +766,10 @@ def main() -> int:
         errors.append("version iteration history status should report latest run")
     if status_summary.get("blockedByEnvironment") != 1 or status_summary.get("diffs") != 1:
         errors.append("version iteration history status should summarize latest blockers and diffs")
+    history_next_commands = history_status_payload.get("nextCommands", [])
+    for command in (history_status_record_command, history_status_iteration_command):
+        if command not in history_next_commands:
+            errors.append(f"version iteration history status should show next command: {command}")
     latest_history_probe = history_status_payload.get("latestEnvironmentProbe", {})
     if latest_history_probe.get("clusterAccess") != "unavailable":
         errors.append("version iteration history status should preserve latest probe cluster access")
@@ -784,10 +795,19 @@ def main() -> int:
         errors.append("version iteration history text should show latest environment probe status")
     if "environment-probe-failure: cluster-info exit=1 message=cluster unavailable from fake kubectl" not in history_status.stdout:
         errors.append("version iteration history text should show latest environment probe failure")
+    if f"next-command: {history_status_record_command}" not in history_status.stdout:
+        errors.append("version iteration history text should show the record next command")
+    if f"next-command: {history_status_iteration_command}" not in history_status.stdout:
+        errors.append("version iteration history text should show the iteration next command")
     if history_status_markdown.returncode != 0:
         errors.append("version iteration history Markdown status must pass")
     if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown status should include a title")
+    if "## Next Commands" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include next commands")
+    for command in (history_status_record_command, history_status_iteration_command):
+        if f"- `{command}`" not in history_status_markdown.stdout:
+            errors.append(f"version iteration history Markdown should show next command: {command}")
     if "environment `cluster-unavailable`: 1 items" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest environment blocker summary")
     if history_status_markdown_worklist not in history_status_markdown.stdout:
@@ -802,8 +822,17 @@ def main() -> int:
         errors.append("version iteration history inspector must record status reports")
     if history_status_record_payload.get("record", {}).get("json") != str(history_status_record_json):
         errors.append("version iteration history recorded JSON should include record metadata")
+    recorded_next_commands = history_status_record_payload.get("nextCommands", [])
+    for command in (history_status_record_command, history_status_iteration_command):
+        if command not in recorded_next_commands:
+            errors.append(f"version iteration history recorded JSON should preserve next command: {command}")
     if "# KubeActuary Version Iteration History Status" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should include a title")
+    if "## Next Commands" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve next commands")
+    for command in (history_status_record_command, history_status_iteration_command):
+        if f"- `{command}`" not in history_status_record_md_text:
+            errors.append(f"version iteration history recorded Markdown should preserve next command: {command}")
     if "environment `cluster-unavailable`: 1 items" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest blockers")
     if "failed `cluster-info` exit=1: cluster unavailable from fake kubectl" not in history_status_record_md_text:

@@ -101,8 +101,10 @@ iteration history records and status output keep that source plus the latest
 blocker summaries and drilldown commands, so run-to-run comparisons remain
 traceable and actionable. History status can be emitted as text, JSON, or
 Markdown, and `--record` writes `status.json` and `status.md` into the history
-directory. When the latest run used `--probe-environment`, history status also
-shows the failed probe checks and messages. Persisted next-task runner and
+directory. It also includes next local loop commands for refreshing the recorded
+status and rerunning the latest iteration filters. When the latest run used
+`--probe-environment`, history status also shows the failed probe checks and
+messages. Persisted next-task runner and
 version-iteration advance reports keep it too, so recorded local execution
 state stays tied to the queue snapshot that selected the task.
 

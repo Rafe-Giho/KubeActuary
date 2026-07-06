@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,17 @@ WORKLIST_SCHEMA = "kube-actuary.version-worklist.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
 STATUS_JSON = "status.json"
 STATUS_MD = "status.md"
+
+
+def shell_join(args: list[str]) -> str:
+    return " ".join(shlex.quote(str(arg)) for arg in args)
+
+
+def add_repeated_filter_args(args: list[str], flag: str, values: Any) -> None:
+    if not isinstance(values, list):
+        return
+    for value in values:
+        args.extend([flag, str(value)])
 
 
 def probe_message(check: dict[str, Any]) -> str | None:
@@ -112,9 +124,65 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "summary": worklist.get("summary", {}),
         "blockers": blockers if isinstance(blockers, dict) else {},
         "environmentProbe": summarize_environment_probe(worklist.get("environmentProbe")),
+        "filters": run.get("filters", {}) if isinstance(run.get("filters"), dict) else {},
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
     }
+
+
+def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
+    commands = [
+        shell_join(
+            [
+                "python3",
+                "-B",
+                "scripts/inspect_version_history.py",
+                history_dir.as_posix(),
+                "--record",
+            ]
+        )
+    ]
+    if not latest:
+        return commands
+    filters = latest.get("filters", {}) if isinstance(latest.get("filters"), dict) else {}
+    evidence_dir = filters.get("evidenceDir")
+    probe_environment = filters.get("probeEnvironment") is True
+    kubectl = str(filters.get("kubectl") or "kubectl")
+    if evidence_dir:
+        args = [
+            "python3",
+            "-B",
+            "scripts/advance_version_iteration.py",
+            str(evidence_dir),
+            history_dir.as_posix(),
+        ]
+        if probe_environment:
+            args.append("--probe-environment")
+        if kubectl != "kubectl":
+            args.extend(["--kubectl", kubectl])
+        add_repeated_filter_args(args, "--capture-status", filters.get("captureStatuses"))
+        add_repeated_filter_args(args, "--missing-tool", filters.get("missingTools"))
+        add_repeated_filter_args(args, "--environment-status", filters.get("environmentStatuses"))
+        args.append("--run")
+    else:
+        args = [
+            "python3",
+            "-B",
+            "scripts/record_version_iteration.py",
+            history_dir.as_posix(),
+        ]
+        add_repeated_filter_args(args, "--version", filters.get("versions"))
+        if filters.get("openOnly") is True:
+            args.append("--open-only")
+        add_repeated_filter_args(args, "--capture-status", filters.get("captureStatuses"))
+        add_repeated_filter_args(args, "--missing-tool", filters.get("missingTools"))
+        add_repeated_filter_args(args, "--environment-status", filters.get("environmentStatuses"))
+        if probe_environment:
+            args.append("--probe-environment")
+        if kubectl != "kubectl":
+            args.extend(["--kubectl", kubectl])
+    commands.append(shell_join(args))
+    return commands
 
 
 def inspect_history(history_dir: Path) -> dict[str, Any]:
@@ -139,6 +207,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_summary = latest.get("summary", {}) if latest else {}
     latest_blockers = latest.get("blockers", {}) if latest else {}
     latest_environment_probe = latest.get("environmentProbe", {}) if latest else {}
+    next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
         "historyDir": history_dir.as_posix(),
@@ -160,6 +229,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         },
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
+        "nextCommands": next_commands,
         "runs": inspected_runs,
     }
 
@@ -180,6 +250,8 @@ def render_text(status: dict[str, Any]) -> str:
         f"complete-evidence-items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"diffs: {summary['diffs']}",
     ]
+    for command in status.get("nextCommands", []):
+        lines.append(f"next-command: {command}")
     blockers = status.get("latestBlockers", {})
     if isinstance(blockers, dict):
         for item in blockers.get("missingTools", []) or []:
@@ -232,9 +304,22 @@ def render_markdown(status: dict[str, Any]) -> str:
         f"- complete evidence items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
         f"- diffs: {summary['diffs']}",
         "",
-        "## Latest Blockers",
+        "## Next Commands",
         "",
     ]
+    next_commands = status.get("nextCommands", [])
+    if next_commands:
+        for command in next_commands:
+            lines.append(f"- `{command}`")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Blockers",
+            "",
+        ]
+    )
     blockers = status.get("latestBlockers", {})
     if not isinstance(blockers, dict) or not any(blockers.values()):
         lines.append("- none")

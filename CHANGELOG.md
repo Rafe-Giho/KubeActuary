@@ -50,6 +50,7 @@ Evidence collector release:
 - add Markdown output for version iteration history status;
 - add recorded version iteration history status reports;
 - show latest environment probe failures in version iteration history status;
+- show next local loop commands in version iteration history status;
 - preserve prepared queue source in next-task runner and advance reports;
 - preserve environment blocker status and next steps in advance reports;
 - surface runner and advance queue source in release evidence status/progress;
