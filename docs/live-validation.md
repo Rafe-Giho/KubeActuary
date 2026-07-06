@@ -154,7 +154,9 @@ contains a prepared live validation queue, `select_next_version_task.py
 --evidence-dir <dir>` uses that queue instead of rebuilding an inventory-only
 view. Add `--runnable-only` when you only want `tool-ready` work; if every
 remaining item is blocked by tools or environment, the selector reports no
-selected task and summarizes the skipped non-runnable candidates.
+selected task and summarizes the skipped non-runnable candidates. Use
+`--blocked-only` for the inverse loop when you want the next blocker to resolve
+instead of the next runnable capture task.
 The default `evidence/live/` path is ignored by git because it can contain
 machine-local paths, timestamps, raw command output, and failed-run diagnostics.
 After a selected task's raw file is captured, `build_next_task_evidence.py`

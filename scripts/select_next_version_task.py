@@ -195,6 +195,7 @@ def build_selection(
     history_dir: Path | None = None,
     skip_complete_evidence: bool = False,
     runnable_only: bool = False,
+    blocked_only: bool = False,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
@@ -204,6 +205,8 @@ def build_selection(
 ) -> dict[str, Any]:
     if skip_complete_evidence and evidence_dir is None:
         raise ValueError("--skip-complete-evidence requires --evidence-dir")
+    if runnable_only and blocked_only:
+        raise ValueError("--runnable-only and --blocked-only are mutually exclusive")
     worklist = build_worklist(
         version_filters=version_filters,
         open_only=not include_complete,
@@ -235,8 +238,15 @@ def build_selection(
             for item in eligible_items
             if item.get("captureStatus") == RUNNABLE_CAPTURE_STATUS
         ]
+    if blocked_only:
+        eligible_items = [
+            item
+            for item in eligible_items
+            if item.get("captureStatus") != RUNNABLE_CAPTURE_STATUS
+        ]
     selected = annotate_selected(select_candidate(eligible_items, priority), evidence_dir, history_dir)
-    skipped_non_runnable = len(eligible_before_runnable) - len(eligible_items)
+    skipped_non_runnable = len(eligible_before_runnable) - len(eligible_items) if runnable_only else 0
+    skipped_runnable = len(eligible_before_runnable) - len(eligible_items) if blocked_only else 0
     selection = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
@@ -252,6 +262,7 @@ def build_selection(
             "historyDir": history_dir.as_posix() if history_dir else None,
             "skipCompleteEvidence": skip_complete_evidence,
             "runnableOnly": runnable_only,
+            "blockedOnly": blocked_only,
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
             "environmentStatuses": list(environment_status_filters or []),
@@ -264,6 +275,7 @@ def build_selection(
             "eligibleItems": len(eligible_items),
             "skippedCompleteEvidence": skipped_complete_evidence,
             "skippedNonRunnable": skipped_non_runnable,
+            "skippedRunnable": skipped_runnable,
             "selected": selected is not None,
             "selectedCaptureStatus": selected.get("captureStatus") if selected else None,
             "selectedRunnable": selected.get("runnable") if selected else None,
@@ -292,7 +304,9 @@ def render_text(selection: dict[str, Any]) -> str:
                 f"candidate-items: {summary.get('candidateItems', 0)}",
                 f"eligible-items: {summary.get('eligibleItems', 0)}",
                 f"skipped-non-runnable: {summary.get('skippedNonRunnable', 0)}",
+                f"skipped-runnable: {summary.get('skippedRunnable', 0)}",
                 f"runnable-only: {str(selection.get('filters', {}).get('runnableOnly')).lower()}",
+                f"blocked-only: {str(selection.get('filters', {}).get('blockedOnly')).lower()}",
             ]
         ) + "\n"
     lines = [
@@ -305,6 +319,14 @@ def render_text(selection: dict[str, Any]) -> str:
         f"runnable: {str(selected.get('runnable')).lower()}",
         f"kind: {selected.get('kind')}",
     ]
+    filters = selection.get("filters", {})
+    if filters.get("runnableOnly") or filters.get("blockedOnly"):
+        lines.append(f"runnable-only: {str(filters.get('runnableOnly')).lower()}")
+        lines.append(f"blocked-only: {str(filters.get('blockedOnly')).lower()}")
+    if summary.get("skippedNonRunnable", 0):
+        lines.append(f"skipped-non-runnable: {summary.get('skippedNonRunnable', 0)}")
+    if summary.get("skippedRunnable", 0):
+        lines.append(f"skipped-runnable: {summary.get('skippedRunnable', 0)}")
     if selected.get("environmentStatus"):
         lines.append(f"environment-status: {selected['environmentStatus']}")
     if selected.get("environmentReason"):
@@ -359,6 +381,7 @@ def render_markdown(selection: dict[str, Any]) -> str:
         f"- candidate items: {summary.get('candidateItems', 0)}",
         f"- eligible items: {summary.get('eligibleItems', 0)}",
         f"- skipped non-runnable: {summary.get('skippedNonRunnable', 0)}",
+        f"- skipped runnable: {summary.get('skippedRunnable', 0)}",
         f"- selected capture status: {summary.get('selectedCaptureStatus') or 'none'}",
         "",
         "## Selected",
@@ -421,6 +444,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
     parser.add_argument("--history-dir", help="optional version iteration history directory for repeated blocker context")
     parser.add_argument("--runnable-only", action="store_true", help="select only tool-ready tasks and report none if all candidates are blocked")
+    parser.add_argument("--blocked-only", action="store_true", help="select only non-tool-ready tasks and report none if all candidates are runnable")
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
@@ -444,6 +468,7 @@ def main(argv: list[str] | None = None) -> int:
             history_dir=Path(args.history_dir) if args.history_dir else None,
             skip_complete_evidence=args.skip_complete_evidence,
             runnable_only=args.runnable_only,
+            blocked_only=args.blocked_only,
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,

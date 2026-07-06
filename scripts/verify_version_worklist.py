@@ -177,6 +177,9 @@ def main() -> int:
     next_task_kind = run_select("--format", "json", "--missing-tool", "kind")
     next_task_paths = run_select("--format", "json", "--evidence-dir", "evidence/live")
     next_task_runnable_only = run_select("--format", "json", "--runnable-only")
+    next_task_blocked_only = run_select("--format", "json", "--blocked-only")
+    next_task_blocked_only_text = run_select("--format", "text", "--blocked-only")
+    next_task_filter_conflict = run_select("--runnable-only", "--blocked-only")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         output = tmpdir / "worklist.json"
@@ -845,6 +848,7 @@ def main() -> int:
     next_task_kind_payload = parse_worklist("missing-tool filtered next task", next_task_kind, errors)
     next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
     next_task_runnable_only_payload = parse_worklist("runnable-only next task", next_task_runnable_only, errors)
+    next_task_blocked_only_payload = parse_worklist("blocked-only next task", next_task_blocked_only, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
     evidence_worklist = parse_worklist("evidence-aware worklist", evidence_worklist_result, errors)
     skipped_complete_payload = parse_worklist("skip-complete next task", skipped_complete_task, errors)
@@ -1713,6 +1717,7 @@ def main() -> int:
 
     next_selected = next_task.get("selected") or {}
     runnable_only_selected = next_task_runnable_only_payload.get("selected") or {}
+    blocked_only_selected = next_task_blocked_only_payload.get("selected") or {}
     path_selected = next_task_with_paths.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
         errors.append("next task schemaVersion mismatch")
@@ -1736,6 +1741,27 @@ def main() -> int:
         errors.append("runnable-only next task should select runnable work")
     if next_task_runnable_only_payload.get("summary", {}).get("skippedNonRunnable") != 12:
         errors.append("runnable-only next task should report skipped non-runnable items")
+    if next_task_blocked_only_payload.get("filters", {}).get("blockedOnly") is not True:
+        errors.append("blocked-only next task should preserve blocked-only filter")
+    if blocked_only_selected.get("id") != "02-lightweight-cluster-smoke":
+        errors.append("blocked-only next task should select the first blocked item")
+    if blocked_only_selected.get("captureStatus") != "missing-tools":
+        errors.append("blocked-only next task should select non-runnable work")
+    if blocked_only_selected.get("runnable") is not False:
+        errors.append("blocked-only next task selected item should be non-runnable")
+    if next_task_blocked_only_payload.get("summary", {}).get("skippedRunnable") != 4:
+        errors.append("blocked-only next task should report skipped runnable items")
+    for snippet in (
+        "blocked-only: true",
+        "skipped-runnable: 4",
+        "blocked-command: python3 -B scripts/run_lightweight_cluster_smoke.py",
+    ):
+        if snippet not in next_task_blocked_only_text.stdout:
+            errors.append(f"blocked-only next task text should show blocked selection detail: {snippet}")
+    if next_task_filter_conflict.returncode == 0:
+        errors.append("runnable-only and blocked-only filters should be mutually exclusive")
+    if "--runnable-only and --blocked-only are mutually exclusive" not in next_task_filter_conflict.stderr:
+        errors.append("conflicting selector filters should report a clear error")
     if next_task_with_paths.get("evidenceDir") != "evidence/live":
         errors.append("path-resolved next task should record the evidence directory")
     resolved_commands = "\n".join(path_selected.get("resolvedCommands", []))
