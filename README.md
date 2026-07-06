@@ -524,6 +524,7 @@ python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history -
 python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
+python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --runnable-only
 python3 -B scripts/select_next_version_task.py --history-dir /tmp/kubeactuary-version-history --version 0.4.3
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --version 0.4.3

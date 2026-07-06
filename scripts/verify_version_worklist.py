@@ -176,6 +176,7 @@ def main() -> int:
     next_task_missing = run_select("--format", "json", "--version", "0.4.4")
     next_task_kind = run_select("--format", "json", "--missing-tool", "kind")
     next_task_paths = run_select("--format", "json", "--evidence-dir", "evidence/live")
+    next_task_runnable_only = run_select("--format", "json", "--runnable-only")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         output = tmpdir / "worklist.json"
@@ -653,6 +654,33 @@ def main() -> int:
             str(repeated_history_dir),
             env=probe_env,
         )
+        history_context_runnable_only_next_task = run_select(
+            "--format",
+            "json",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--history-dir",
+            str(repeated_history_dir),
+            "--runnable-only",
+            env=probe_env,
+        )
+        history_context_runnable_only_text = run_select(
+            "--format",
+            "text",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            "--history-dir",
+            str(repeated_history_dir),
+            "--runnable-only",
+            env=probe_env,
+        )
+        history_context_runnable_only_payload = (
+            json.loads(history_context_runnable_only_next_task.stdout)
+            if history_context_runnable_only_next_task.returncode == 0
+            else {}
+        )
         evidence_history_index_path = evidence_history_dir / "index.json"
         evidence_history_index = (
             json.loads(evidence_history_index_path.read_text()) if evidence_history_index_path.is_file() else {}
@@ -816,6 +844,7 @@ def main() -> int:
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
     next_task_kind_payload = parse_worklist("missing-tool filtered next task", next_task_kind, errors)
     next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
+    next_task_runnable_only_payload = parse_worklist("runnable-only next task", next_task_runnable_only, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
     evidence_worklist = parse_worklist("evidence-aware worklist", evidence_worklist_result, errors)
     skipped_complete_payload = parse_worklist("skip-complete next task", skipped_complete_task, errors)
@@ -1116,6 +1145,27 @@ def main() -> int:
         for command in history_context_blocker.get("worklistCommands") or []
     ):
         errors.append("history-context blocked next task should include blocker worklist drilldown")
+    if history_context_runnable_only_next_task.returncode != 0:
+        errors.append(
+            "history-context runnable-only next task failed: "
+            f"{history_context_runnable_only_next_task.stderr.strip() or history_context_runnable_only_next_task.stdout.strip()}"
+        )
+    if history_context_runnable_only_payload.get("selected") is not None:
+        errors.append("history-context runnable-only next task should not select blocked work")
+    if history_context_runnable_only_payload.get("filters", {}).get("runnableOnly") is not True:
+        errors.append("history-context runnable-only next task should preserve runnable-only filter")
+    if history_context_runnable_only_payload.get("summary", {}).get("eligibleItems") != 0:
+        errors.append("history-context runnable-only next task should report zero eligible runnable items")
+    if history_context_runnable_only_payload.get("summary", {}).get("skippedNonRunnable") != 1:
+        errors.append("history-context runnable-only next task should report one skipped non-runnable item")
+    for snippet in (
+        "next-version-task: none",
+        "eligible-items: 0",
+        "skipped-non-runnable: 1",
+        "runnable-only: true",
+    ):
+        if snippet not in history_context_runnable_only_text.stdout:
+            errors.append(f"history-context runnable-only next task text should show no runnable work: {snippet}")
     if selected_history_context.get("latestBlockerStreak", {}).get("streak") != 2:
         errors.append("history-context next task should attach latest blocker streak")
     if selected_history_context.get("latestBlockerAction", {}).get("action") != "resolve-environment":
@@ -1662,6 +1712,7 @@ def main() -> int:
         errors.append("prepared evidence-dir selector should use persisted queue ordering and choose a Krew item")
 
     next_selected = next_task.get("selected") or {}
+    runnable_only_selected = next_task_runnable_only_payload.get("selected") or {}
     path_selected = next_task_with_paths.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
         errors.append("next task schemaVersion mismatch")
@@ -1677,6 +1728,14 @@ def main() -> int:
         errors.append("next task default selection should be tool-ready")
     if next_selected.get("runnable") is not True:
         errors.append("next task default selection should be marked runnable")
+    if next_task_runnable_only_payload.get("filters", {}).get("runnableOnly") is not True:
+        errors.append("runnable-only next task should preserve runnable-only filter")
+    if runnable_only_selected.get("id") != "01-controller-resource-budget":
+        errors.append("runnable-only next task should keep selecting the first tool-ready item")
+    if runnable_only_selected.get("runnable") is not True:
+        errors.append("runnable-only next task should select runnable work")
+    if next_task_runnable_only_payload.get("summary", {}).get("skippedNonRunnable") != 12:
+        errors.append("runnable-only next task should report skipped non-runnable items")
     if next_task_with_paths.get("evidenceDir") != "evidence/live":
         errors.append("path-resolved next task should record the evidence directory")
     resolved_commands = "\n".join(path_selected.get("resolvedCommands", []))

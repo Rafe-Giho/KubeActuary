@@ -194,6 +194,7 @@ def build_selection(
     evidence_dir: Path | None = None,
     history_dir: Path | None = None,
     skip_complete_evidence: bool = False,
+    runnable_only: bool = False,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
@@ -226,8 +227,16 @@ def build_selection(
         ]
     else:
         eligible_items = selectable_items
-    selected = annotate_selected(select_candidate(eligible_items, priority), evidence_dir, history_dir)
     skipped_complete_evidence = len(selectable_items) - len(eligible_items)
+    eligible_before_runnable = list(eligible_items)
+    if runnable_only:
+        eligible_items = [
+            item
+            for item in eligible_items
+            if item.get("captureStatus") == RUNNABLE_CAPTURE_STATUS
+        ]
+    selected = annotate_selected(select_candidate(eligible_items, priority), evidence_dir, history_dir)
+    skipped_non_runnable = len(eligible_before_runnable) - len(eligible_items)
     selection = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
@@ -242,6 +251,7 @@ def build_selection(
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
             "historyDir": history_dir.as_posix() if history_dir else None,
             "skipCompleteEvidence": skip_complete_evidence,
+            "runnableOnly": runnable_only,
             "captureStatuses": list(capture_status_filters or []),
             "missingTools": list(missing_tool_filters or []),
             "environmentStatuses": list(environment_status_filters or []),
@@ -253,6 +263,7 @@ def build_selection(
             "candidateItems": len(items),
             "eligibleItems": len(eligible_items),
             "skippedCompleteEvidence": skipped_complete_evidence,
+            "skippedNonRunnable": skipped_non_runnable,
             "selected": selected is not None,
             "selectedCaptureStatus": selected.get("captureStatus") if selected else None,
             "selectedRunnable": selected.get("runnable") if selected else None,
@@ -279,6 +290,9 @@ def render_text(selection: dict[str, Any]) -> str:
                 "next-version-task: none",
                 f"open-items: {summary.get('openItems', 0)}",
                 f"candidate-items: {summary.get('candidateItems', 0)}",
+                f"eligible-items: {summary.get('eligibleItems', 0)}",
+                f"skipped-non-runnable: {summary.get('skippedNonRunnable', 0)}",
+                f"runnable-only: {str(selection.get('filters', {}).get('runnableOnly')).lower()}",
             ]
         ) + "\n"
     lines = [
@@ -343,6 +357,8 @@ def render_markdown(selection: dict[str, Any]) -> str:
         "",
         f"- open items: {summary.get('openItems', 0)}",
         f"- candidate items: {summary.get('candidateItems', 0)}",
+        f"- eligible items: {summary.get('eligibleItems', 0)}",
+        f"- skipped non-runnable: {summary.get('skippedNonRunnable', 0)}",
         f"- selected capture status: {summary.get('selectedCaptureStatus') or 'none'}",
         "",
         "## Selected",
@@ -404,6 +420,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--include-complete", action="store_true", help="include complete versions in the search scope")
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
     parser.add_argument("--history-dir", help="optional version iteration history directory for repeated blocker context")
+    parser.add_argument("--runnable-only", action="store_true", help="select only tool-ready tasks and report none if all candidates are blocked")
     parser.add_argument("--capture-status", action="append", default=[], help="filter open items by capture status; repeatable")
     parser.add_argument("--missing-tool", action="append", default=[], help="filter open items by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter open items by environment status; repeatable")
@@ -426,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
             history_dir=Path(args.history_dir) if args.history_dir else None,
             skip_complete_evidence=args.skip_complete_evidence,
+            runnable_only=args.runnable_only,
             capture_status_filters=args.capture_status,
             missing_tool_filters=args.missing_tool,
             environment_status_filters=args.environment_status,
