@@ -17,7 +17,8 @@ Evidence collector release:
 - add local release taskboard and repeatable release verification script;
 - add release taskboard audit for status and verification-count drift;
 - add versioned release progress reports for local task tracking;
-- add version-grouped worklist generation for open task and capture status;
+- add version-grouped worklist generation with version/open-only filters for
+  open task and capture status;
 - add tool-ready and missing-tool next actions to release progress reports;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,

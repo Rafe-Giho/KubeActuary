@@ -246,7 +246,7 @@ Confirm from code and tests:
 - release progress verifier checks versioned task status, external gates, live
   readiness, tool-ready next actions, and optional evidence directory status;
 - version worklist verifier checks version-grouped open work, capture-ready
-  items, and tool-blocked items;
+  items, tool-blocked items, and version/open-only filters;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

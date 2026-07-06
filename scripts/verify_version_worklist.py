@@ -31,30 +31,45 @@ def run_generator(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def parse_worklist(label: str, result: subprocess.CompletedProcess[str], errors: list[str]) -> dict:
+    if result.returncode != 0:
+        errors.append(f"{label} failed: {result.stderr.strip() or result.stdout.strip()}")
+        return {}
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} must parse: {exc}")
+        return {}
+
+
 def main() -> int:
     errors: list[str] = []
     json_result = run_generator("--format", "json")
     markdown_result = run_generator("--format", "markdown")
+    single_version_result = run_generator("--format", "json", "--version", "0.4.3")
+    multi_version_result = run_generator("--format", "json", "--version", "0.3.3", "--version", "0.4.3")
+    open_only_result = run_generator("--format", "json", "--open-only")
+    invalid_version_result = run_generator("--version", "9.9.9")
     with tempfile.TemporaryDirectory() as tmp:
         output = Path(tmp) / "worklist.json"
         written = run_generator("--output", str(output))
         output_written = output.is_file()
 
-    if json_result.returncode != 0:
-        errors.append(f"json worklist failed: {json_result.stderr.strip() or json_result.stdout.strip()}")
-        worklist = {}
-    else:
-        try:
-            worklist = json.loads(json_result.stdout)
-        except json.JSONDecodeError as exc:
-            errors.append(f"json worklist must parse: {exc}")
-            worklist = {}
+    worklist = parse_worklist("json worklist", json_result, errors)
+    single_version = parse_worklist("single-version worklist", single_version_result, errors)
+    multi_version = parse_worklist("multi-version worklist", multi_version_result, errors)
+    open_only = parse_worklist("open-only worklist", open_only_result, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# KubeActuary Version Worklist" not in markdown_result.stdout:
         errors.append("markdown worklist missing heading")
     if written.returncode != 0 or not output_written:
         errors.append("worklist generator must write requested output file")
+    invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
+    if invalid_version_result.returncode == 0:
+        errors.append("unknown version filter must fail")
+    if "unknown version: 9.9.9" not in invalid_text:
+        errors.append("unknown version filter must explain the missing version")
 
     summary = worklist.get("summary", {})
     versions = {version.get("version"): version for version in worklist.get("versions", []) if isinstance(version, dict)}
@@ -82,6 +97,31 @@ def main() -> int:
         errors.append("current baseline must include controller resource command")
     if not worklist.get("closureCommands"):
         errors.append("version worklist must include closure commands")
+
+    single_summary = single_version.get("summary", {})
+    single_versions = single_version.get("versions", [])
+    if single_summary.get("versions") != 1 or single_summary.get("openItems") != 1:
+        errors.append("single-version filter should return one open version item")
+    if single_summary.get("captureReady") != 1:
+        errors.append("single-version filter should preserve capture-ready count")
+    if [version.get("version") for version in single_versions] != ["0.4.3"]:
+        errors.append("single-version filter should return only 0.4.3")
+    if single_versions and single_versions[0].get("status") != "capture-ready":
+        errors.append("0.4.3 filtered worklist should be capture-ready")
+
+    multi_summary = multi_version.get("summary", {})
+    multi_names = [version.get("version") for version in multi_version.get("versions", [])]
+    if multi_names != ["0.3.3", "0.4.3"]:
+        errors.append(f"multi-version filter order mismatch: {multi_names!r}")
+    if multi_summary.get("versions") != 2 or multi_summary.get("captureReady") != 2:
+        errors.append("multi-version filter should return two capture-ready versions")
+
+    open_summary = open_only.get("summary", {})
+    open_versions = open_only.get("versions", [])
+    if open_summary.get("versions") != 9 or open_summary.get("openItems") != 16:
+        errors.append("open-only filter should return nine open versions and sixteen open items")
+    if any(version.get("status") == "complete" for version in open_versions):
+        errors.append("open-only filter must not include complete versions")
 
     for path in (README, README_KO, TASKBOARD):
         text = path.read_text()

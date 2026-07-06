@@ -61,14 +61,21 @@ def version_status(open_items: list[dict[str, Any]]) -> str:
     return "missing-tools"
 
 
-def build_worklist() -> dict[str, Any]:
+def summarize_versions(versions: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        "versions": len(versions),
+        "openVersions": sum(1 for version in versions if version["status"] != "complete"),
+        "openItems": sum(len(version["openItems"]) for version in versions),
+        "captureReady": sum(version["summary"].get("captureReady", 0) for version in versions),
+        "blockedByTools": sum(version["summary"].get("blockedByTools", 0) for version in versions),
+    }
+
+
+def build_worklist(version_filters: list[str] | None = None, open_only: bool = False) -> dict[str, Any]:
     progress = build_progress()
     queue = build_queue()
     queue_by_key = queue_lookup(queue)
     versions: list[dict[str, Any]] = []
-    total_open = 0
-    total_capture_ready = 0
-    total_blocked_by_tools = 0
     for group in progress.get("versions", []):
         version = str(group.get("version"))
         open_items = [
@@ -77,9 +84,6 @@ def build_worklist() -> dict[str, Any]:
         ]
         capture_ready = sum(1 for item in open_items if item.get("captureStatus") == "tool-ready")
         blocked_by_tools = sum(1 for item in open_items if item.get("captureStatus") == "missing-tools")
-        total_open += len(open_items)
-        total_capture_ready += capture_ready
-        total_blocked_by_tools += blocked_by_tools
         versions.append(
             {
                 "version": version,
@@ -93,17 +97,20 @@ def build_worklist() -> dict[str, Any]:
                 "openItems": open_items,
             }
         )
+    requested = set(version_filters or [])
+    available = {version["version"] for version in versions}
+    missing = sorted(requested - available)
+    if missing:
+        raise ValueError(f"unknown version: {', '.join(missing)}")
+    if requested:
+        versions = [version for version in versions if version["version"] in requested]
+    if open_only:
+        versions = [version for version in versions if version["status"] != "complete"]
     return {
         "schemaVersion": SCHEMA_VERSION,
         "source": progress.get("source"),
         "releaseSuite": progress.get("releaseSuite"),
-        "summary": {
-            "versions": len(versions),
-            "openVersions": sum(1 for version in versions if version["status"] != "complete"),
-            "openItems": total_open,
-            "captureReady": total_capture_ready,
-            "blockedByTools": total_blocked_by_tools,
-        },
+        "summary": summarize_versions(versions),
         "versions": versions,
         "closureCommands": queue.get("closureCommands", []),
     }
@@ -149,9 +156,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary version worklist.")
     parser.add_argument("--format", choices=["json", "markdown"], default="json")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
+    parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
+    parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
     args = parser.parse_args(argv)
 
-    worklist = build_worklist()
+    try:
+        worklist = build_worklist(version_filters=args.version, open_only=args.open_only)
+    except ValueError as exc:
+        print("version-worklist: failed", file=sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     if args.format == "json":
         rendered = json.dumps(worklist, indent=2, sort_keys=True) + "\n"
     else:

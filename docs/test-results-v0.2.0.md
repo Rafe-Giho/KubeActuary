@@ -112,7 +112,8 @@ Coverage included:
 - release taskboard status and check-count audit;
 - release progress report generation for versioned task tracking and
   tool-ready next actions;
-- version worklist generation for version-grouped open work and capture status;
+- version worklist generation for version-grouped open work, capture status,
+  and version/open-only filters;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -224,7 +225,8 @@ Result:
 - conformance suite prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
-- version worklist check prints `version-worklist: passed`;
+- version worklist check prints `version-worklist: passed` and exercises
+  version/open-only filters;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
