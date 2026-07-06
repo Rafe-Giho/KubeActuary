@@ -84,11 +84,12 @@ Coverage included:
 - live validation queue command safety verification for placeholder and
   resolved evidence commands;
 - live evidence directory scaffold generation for repeated evidence capture,
-  including next-task artifacts and `--skip-complete-evidence` advancement;
+  including probe-aware next-task artifacts and `--skip-complete-evidence`
+  advancement;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
-- version iteration advance workflow with before/after evidence-aware history
-  recording;
+- version iteration advance workflow with probe-aware before/after
+  evidence-aware history recording;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;

@@ -43,6 +43,8 @@ Evidence collector release:
   execution;
 - add version iteration advance workflow for selected-task execution plus
   before/after history recording;
+- add probe-aware live evidence directory and iteration advance status for
+  unavailable cluster environments;
 - add clean-artifact verification for generated Python cache files;
 - add live validation queue generation with ordered external evidence commands,
   optional environment blockers, and deterministic evidence-directory paths;

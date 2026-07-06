@@ -432,7 +432,7 @@ scripts/
   verify_live_validation_queue.py live validation queue verifier
   verify_live_validation_queue_safety.py live validation queue command safety verifier
   kube-actuary.live-validation-queue.v1 live validation queue schema
-  prepare_live_evidence_directory.py live evidence directory scaffold generator with next-task advancement
+  prepare_live_evidence_directory.py live evidence directory scaffold generator with probe-aware next-task advancement
   run_next_version_task.py selected next-task plan/run helper
   verify_next_version_task_runner.py selected next-task runner verifier
   kube-actuary.next-version-task-run.v1 selected next-task runner schema
@@ -506,10 +506,12 @@ python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
 python3 -B scripts/run_next_version_task.py evidence/live
 python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py

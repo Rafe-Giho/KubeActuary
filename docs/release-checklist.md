@@ -169,11 +169,12 @@ Expected:
   remain dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifies the local reports/raw/supplemental
   directory layout, generated queue snapshots, next-task artifacts, and
-  `--skip-complete-evidence` artifact advancement;
+  `--skip-complete-evidence` artifact advancement, with optional environment
+  probe status;
 - next-version task runner verifies selected evidence commands in plan mode and
   fake-run mode before live use;
-- version iteration advance verifies selected-task execution with before/after
-  evidence-aware history recording;
+- version iteration advance verifies selected-task execution or environment
+  blocking with before/after evidence-aware history recording;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records

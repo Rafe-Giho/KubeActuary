@@ -28,12 +28,17 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def planned_result(evidence_dir: Path, history_dir: Path) -> dict[str, Any]:
+def planned_result(
+    evidence_dir: Path,
+    history_dir: Path,
+    probe_environment: bool = False,
+    kubectl: str = "kubectl",
+) -> dict[str, Any]:
     selection = build_selection(
         version_filters=[],
         include_complete=False,
-        probe_environment=False,
-        kubectl="kubectl",
+        probe_environment=probe_environment,
+        kubectl=kubectl,
         evidence_dir=evidence_dir,
         skip_complete_evidence=True,
     )
@@ -45,6 +50,9 @@ def planned_result(evidence_dir: Path, history_dir: Path) -> dict[str, Any]:
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "evidenceDir": evidence_dir.as_posix(),
         "historyDir": history_dir.as_posix(),
+        "probeEnvironment": probe_environment,
+        "kubectl": kubectl,
+        "environmentProbe": selection.get("environmentProbe"),
         "selected": {
             "id": selected.get("id"),
             "version": selected.get("version"),
@@ -64,28 +72,78 @@ def planned_result(evidence_dir: Path, history_dir: Path) -> dict[str, Any]:
     }
 
 
-def run_advance(evidence_dir: Path, history_dir: Path, run_id: str, created_at: str) -> dict[str, Any]:
-    prepare_directory(evidence_dir, skip_complete_evidence=True)
+def run_advance(
+    evidence_dir: Path,
+    history_dir: Path,
+    run_id: str,
+    created_at: str,
+    probe_environment: bool = False,
+    kubectl: str = "kubectl",
+) -> dict[str, Any]:
+    prepared = prepare_directory(
+        evidence_dir,
+        skip_complete_evidence=True,
+        probe_environment=probe_environment,
+        kubectl=kubectl,
+    )
     before = record_iteration(
         history_dir,
         run_id=f"{run_id}-before",
         created_at=created_at,
         version_filters=[],
         open_only=True,
-        probe_environment=False,
-        kubectl="kubectl",
+        probe_environment=probe_environment,
+        kubectl=kubectl,
         evidence_dir=evidence_dir,
     )
+    selected = (prepared.get("nextTask") or {}).get("selected") or {}
+    if probe_environment and selected.get("captureStatus") != "tool-ready":
+        history = inspect_history(history_dir)
+        return {
+            "schemaVersion": SCHEMA_VERSION,
+            "mode": "run",
+            "status": str(selected.get("captureStatus") or "blocked"),
+            "clusterWrites": "disabled-or-server-side-dry-run-only",
+            "evidenceDir": evidence_dir.as_posix(),
+            "historyDir": history_dir.as_posix(),
+            "probeEnvironment": probe_environment,
+            "kubectl": kubectl,
+            "environmentProbe": (prepared.get("queue") or {}).get("environmentProbe"),
+            "runId": run_id,
+            "createdAt": created_at,
+            "before": {
+                "runId": before.get("runId"),
+                "summary": before.get("summary"),
+            },
+            "runner": None,
+            "after": None,
+            "nextTask": {
+                "schemaVersion": (prepared.get("nextTask") or {}).get("schemaVersion"),
+                "selected": selected.get("id"),
+                "captureStatus": selected.get("captureStatus"),
+                "environmentStatus": selected.get("environmentStatus"),
+                "skippedCompleteEvidence": (prepared.get("nextTask") or {}).get("summary", {}).get(
+                    "skippedCompleteEvidence",
+                    0,
+                ),
+            },
+            "history": history.get("summary", {}),
+        }
     runner = run_next_task(evidence_dir, run=True)
-    prepare_directory(evidence_dir, skip_complete_evidence=True)
+    prepare_directory(
+        evidence_dir,
+        skip_complete_evidence=True,
+        probe_environment=probe_environment,
+        kubectl=kubectl,
+    )
     after = record_iteration(
         history_dir,
         run_id=f"{run_id}-after",
         created_at=created_at,
         version_filters=[],
         open_only=True,
-        probe_environment=False,
-        kubectl="kubectl",
+        probe_environment=probe_environment,
+        kubectl=kubectl,
         evidence_dir=evidence_dir,
     )
     history = inspect_history(history_dir)
@@ -98,6 +156,9 @@ def run_advance(evidence_dir: Path, history_dir: Path, run_id: str, created_at: 
         "clusterWrites": "disabled-or-server-side-dry-run-only",
         "evidenceDir": evidence_dir.as_posix(),
         "historyDir": history_dir.as_posix(),
+        "probeEnvironment": probe_environment,
+        "kubectl": kubectl,
+        "environmentProbe": (prepared.get("queue") or {}).get("environmentProbe"),
         "runId": run_id,
         "createdAt": created_at,
         "before": {
@@ -126,6 +187,7 @@ def render_text(result: dict[str, Any]) -> str:
         f"evidence-dir: {result['evidenceDir']}",
         f"history-dir: {result['historyDir']}",
         f"cluster-writes: {result['clusterWrites']}",
+        f"probe-environment: {str(result.get('probeEnvironment', False)).lower()}",
     ]
     if result["mode"] == "plan":
         selected = result.get("selected", {})
@@ -137,10 +199,13 @@ def render_text(result: dict[str, Any]) -> str:
     else:
         lines.append(f"run-id: {result['runId']}")
         lines.append(f"before-run-id: {result['before']['runId']}")
-        lines.append(f"after-run-id: {result['after']['runId']}")
-        lines.append(f"runner-status: {result['runner']['status']}")
+        if result.get("after"):
+            lines.append(f"after-run-id: {result['after']['runId']}")
+        lines.append(f"runner-status: {result['runner']['status'] if result.get('runner') else 'not-run'}")
         lines.append(f"history-runs: {result['history'].get('runs')}")
         lines.append(f"next-task: {result['nextTask'].get('selected')}")
+        if result["nextTask"].get("captureStatus"):
+            lines.append(f"next-task-status: {result['nextTask'].get('captureStatus')}")
         lines.append(f"skipped-complete-evidence: {result['nextTask'].get('skippedCompleteEvidence')}")
     return "\n".join(lines) + "\n"
 
@@ -152,6 +217,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run", action="store_true", help="execute the selected safe evidence commands")
     parser.add_argument("--run-id", help="stable run id prefix; defaults to UTC timestamp")
     parser.add_argument("--created-at", help="stable timestamp for tests")
+    parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
+    parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -160,9 +227,21 @@ def main(argv: list[str] | None = None) -> int:
     run_id = args.run_id or created_at.replace(":", "").replace("+", "z")
     try:
         if args.run:
-            result = run_advance(Path(args.evidence_dir), Path(args.history_dir), run_id=run_id, created_at=created_at)
+            result = run_advance(
+                Path(args.evidence_dir),
+                Path(args.history_dir),
+                run_id=run_id,
+                created_at=created_at,
+                probe_environment=args.probe_environment,
+                kubectl=args.kubectl,
+            )
         else:
-            result = planned_result(Path(args.evidence_dir), Path(args.history_dir))
+            result = planned_result(
+                Path(args.evidence_dir),
+                Path(args.history_dir),
+                probe_environment=args.probe_environment,
+                kubectl=args.kubectl,
+            )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("version-iteration-advance: failed")
         print(f"error: {exc}")
@@ -176,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(rendered)
         print(f"version-iteration-advance: wrote {args.output}")
-    return 0 if result["status"] in {"plan", "passed"} else 1
+    return 0 if result["status"] in {"plan", "passed", "blocked-by-environment"} else 1
 
 
 if __name__ == "__main__":

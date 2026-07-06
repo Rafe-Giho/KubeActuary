@@ -32,13 +32,19 @@ def run_script(script: Path, *args: str, env: dict[str, str] | None = None) -> s
     )
 
 
-def fake_tool_env(path: Path) -> dict[str, str]:
+def fake_tool_env(path: Path, cluster_ok: bool = True) -> dict[str, str]:
     path.mkdir(parents=True, exist_ok=True)
     kubectl = path / "kubectl"
+    cluster_exit = 0 if cluster_ok else 1
     kubectl.write_text(
         "#!/usr/bin/env python3\n"
         "import sys\n"
         "args = sys.argv[1:]\n"
+        "if args[:1] == ['version']:\n"
+        "    print('Client Version: fake')\n"
+        "    raise SystemExit(0)\n"
+        "if args[:1] == ['cluster-info']:\n"
+        f"    raise SystemExit({cluster_exit})\n"
         "if args[:2] == ['top', 'pod']:\n"
         "    print('POD NAME CPU(cores) MEMORY(bytes)')\n"
         "    print('controller-0 controller 12m 41Mi')\n"
@@ -57,6 +63,8 @@ def main() -> int:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
         history_dir = tmpdir / "history"
+        blocked_evidence_dir = tmpdir / "blocked-evidence"
+        blocked_history_dir = tmpdir / "blocked-history"
 
         plan = run_script(ADVANCE, str(evidence_dir), str(history_dir))
         if plan.returncode != 0:
@@ -123,6 +131,38 @@ def main() -> int:
             errors.append(f"history inspect failed after advance: {inspect.stderr.strip() or inspect.stdout.strip()}")
         if "version-iteration-history-status: valid" not in inspect.stdout:
             errors.append("history inspect must report valid status")
+
+        blocked_env = fake_tool_env(tmpdir / "blocked-tools", cluster_ok=False)
+        blocked_kubectl = str(tmpdir / "blocked-tools" / "kubectl")
+        blocked = run_script(
+            ADVANCE,
+            str(blocked_evidence_dir),
+            str(blocked_history_dir),
+            "--run",
+            "--probe-environment",
+            "--kubectl",
+            blocked_kubectl,
+            "--run-id",
+            "blocked-advance",
+            "--created-at",
+            "2026-07-06T00:00:00+00:00",
+            "--format",
+            "json",
+            env=blocked_env,
+        )
+        if blocked.returncode != 0:
+            errors.append(f"blocked advance should exit cleanly: {blocked.stderr.strip() or blocked.stdout.strip()}")
+            blocked_payload = {}
+        else:
+            blocked_payload = json.loads(blocked.stdout)
+        if blocked_payload.get("status") != "blocked-by-environment":
+            errors.append("probe advance must report blocked-by-environment without running evidence commands")
+        if blocked_payload.get("runner") is not None:
+            errors.append("probe-blocked advance must not run the next-task runner")
+        if blocked_payload.get("history", {}).get("runs") != 1:
+            errors.append("probe-blocked advance must record one history run")
+        if (blocked_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").exists():
+            errors.append("probe-blocked advance must not capture raw evidence")
 
         output = tmpdir / "advance.json"
         written = run_script(ADVANCE, str(evidence_dir), str(history_dir / "plan-only"), "--format", "json", "--output", str(output))

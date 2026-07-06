@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -22,10 +23,11 @@ NEXT_TASK_TOOL = "select_next_version_task.py"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 
 
-def run_prepare(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
+def run_prepare(path: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(PREPARE), str(path), *args],
         cwd=ROOT,
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -33,12 +35,39 @@ def run_prepare(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def fake_tool_env(path: Path, cluster_ok: bool) -> dict[str, str]:
+    path.mkdir(parents=True, exist_ok=True)
+    for tool in ("kind", "minikube", "microk8s", "k3s", "helm", "kubectl-krew", "aws", "gcloud", "az"):
+        executable = path / tool
+        executable.write_text("#!/bin/sh\nexit 0\n")
+        executable.chmod(0o755)
+    kubectl = path / "kubectl"
+    cluster_exit = 0 if cluster_ok else 1
+    kubectl.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "args = sys.argv[1:]\n"
+        "if args[:1] == ['version']:\n"
+        "    print('Client Version: fake')\n"
+        "    raise SystemExit(0)\n"
+        "if args[:1] == ['cluster-info']:\n"
+        f"    raise SystemExit({cluster_exit})\n"
+        "raise SystemExit(0)\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{path}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
 def main() -> int:
     errors: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
         evidence_dir = Path(tmp) / "evidence"
+        probe_dir = Path(tmp) / "probe-evidence"
         first = run_prepare(evidence_dir)
         second = run_prepare(evidence_dir)
+        probe = run_prepare(probe_dir, "--probe-environment", env=fake_tool_env(Path(tmp) / "tools", cluster_ok=False))
         queue_json = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
         next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
@@ -54,6 +83,10 @@ def main() -> int:
         (evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json").write_text("{}\n")
         advanced = run_prepare(evidence_dir, "--skip-complete-evidence")
         advanced_next_task = json.loads(next_task_json.read_text()) if next_task_json.is_file() else {}
+        probe_queue_path = probe_dir / ".kubeactuary" / "live-validation-queue.json"
+        probe_next_task_path = probe_dir / ".kubeactuary" / "next-version-task.json"
+        probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
+        probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -62,6 +95,10 @@ def main() -> int:
             errors.append("scaffold must report prepared status")
         if "cluster-writes: disabled" not in second.stdout:
             errors.append("scaffold must report disabled writes")
+        if probe.returncode != 0:
+            errors.append(f"probe scaffold failed: {probe.stderr.strip() or probe.stdout.strip()}")
+        if "probe-environment: true" not in probe.stdout or "cluster-access: unavailable" not in probe.stdout:
+            errors.append("probe scaffold must report unavailable cluster access")
         if advanced.returncode != 0:
             errors.append(f"advanced scaffold failed: {advanced.stderr.strip() or advanced.stdout.strip()}")
         if "skip-complete-evidence: true" not in advanced.stdout:
@@ -93,6 +130,11 @@ def main() -> int:
             errors.append("scaffold README must document disabled writes")
         if "next-version-task" not in readme.read_text():
             errors.append("scaffold README must point to next-task artifacts")
+        if probe_queue.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
+            errors.append("probe scaffold queue must persist unavailable cluster access")
+        probe_selected = probe_next_task.get("selected") or {}
+        if probe_selected.get("captureStatus") != "tool-ready" or probe_selected.get("kind") != "krew":
+            errors.append("probe scaffold should select a non-cluster Krew task when cluster is unavailable")
         if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
             errors.append("scaffold next task schemaVersion mismatch")
         if next_task.get("evidenceDir") != str(evidence_dir):

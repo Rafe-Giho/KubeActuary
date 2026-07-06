@@ -187,7 +187,8 @@ Expected:
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed` and verifies
-  `--skip-complete-evidence` next-task advancement;
+  `--skip-complete-evidence` next-task advancement plus optional environment
+  probe persistence;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;
@@ -290,8 +291,8 @@ Confirm from code and tests:
   plan-by-default, and with fake kubectl produces raw and supplemental evidence
   for the selected task;
 - version iteration advance verifier wraps the selected-task runner with
-  before/after evidence-aware history recording and validates the resulting
-  diff;
+  probe-aware before/after evidence-aware history recording and validates the
+  resulting diff or environment blocker;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and

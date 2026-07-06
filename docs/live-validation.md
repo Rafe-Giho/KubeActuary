@@ -224,7 +224,15 @@ history recording and reports schema
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --probe-environment
 ```
+
+`prepare_live_evidence_directory.py` and `advance_version_iteration.py` both
+accept `--probe-environment --kubectl <path>`. The probe runs only read-only
+`kubectl version --client=true` and `kubectl cluster-info` checks. When cluster
+access is unavailable, the prepared next-task artifacts record
+`blocked-by-environment` instead of pretending the live evidence can be
+captured.
 
 Supported evidence schemas:
 
