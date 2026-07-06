@@ -19,7 +19,8 @@ Evidence collector release:
 - add versioned release progress reports for local task tracking;
 - add version-grouped worklist generation with version/open-only filters for
   open task, capture status, and evidence file readiness;
-- add local version iteration packs for repeated per-version verification;
+- add local version iteration packs for repeated per-version verification with
+  evidence readiness;
 - add local version iteration diffs for comparing repeated verification runs;
 - add local version iteration history recording for run-to-run tracking;
 - add local version iteration history inspection for latest-run status checks;

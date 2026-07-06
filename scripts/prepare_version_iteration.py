@@ -37,6 +37,10 @@ def iteration_record(version: dict[str, Any], worklist: dict[str, Any]) -> dict[
         "openItems": version.get("openItems", []),
         "closureCommands": worklist.get("closureCommands", []),
     }
+    if worklist.get("evidenceDir"):
+        record["evidenceDir"] = worklist["evidenceDir"]
+    if worklist.get("resolvedClosureCommands"):
+        record["resolvedClosureCommands"] = worklist["resolvedClosureCommands"]
     if worklist.get("environmentProbe"):
         record["environmentProbe"] = worklist["environmentProbe"]
     return record
@@ -59,6 +63,7 @@ def render_iteration(record: dict[str, Any]) -> str:
         f"- capture-ready: {summary.get('captureReady', 0)}",
         f"- blocked-by-tools: {summary.get('blockedByTools', 0)}",
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
+        f"- evidence files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
         "",
         "## Open Items",
         "",
@@ -73,10 +78,15 @@ def render_iteration(record: dict[str, Any]) -> str:
             lines.append(f"  environment: `{item['environmentStatus']}`")
         if item.get("nextStep"):
             lines.append(f"  next: {item['nextStep']}")
+        if item.get("evidenceSummary"):
+            evidence = item["evidenceSummary"]
+            lines.append(f"  evidence: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
         for command in item.get("commands", []):
             lines.append(f"  command: `{command}`")
+        for command in item.get("resolvedCommands", []):
+            lines.append(f"  resolved: `{command}`")
     lines.extend(["", "## Closure", ""])
-    for command in record["closureCommands"]:
+    for command in record.get("resolvedClosureCommands") or record["closureCommands"]:
         lines.append(f"- `{command}`")
     return "\n".join(lines) + "\n"
 
@@ -98,6 +108,7 @@ def render_index(worklist: dict[str, Any]) -> str:
         f"- capture-ready: {summary['captureReady']}",
         f"- blocked-by-tools: {summary['blockedByTools']}",
         f"- blocked-by-environment: {summary.get('blockedByEnvironment', 0)}",
+        f"- evidence files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}",
         "",
         "## Versions",
         "",
@@ -118,12 +129,14 @@ def prepare_iteration_pack(
     open_only: bool,
     probe_environment: bool,
     kubectl: str,
+    evidence_dir: Path | None = None,
 ) -> dict[str, Any]:
     worklist = build_worklist(
         version_filters=version_filters,
         open_only=open_only,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        evidence_dir=evidence_dir,
     )
     versions_dir = output_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)
@@ -144,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output_dir", help="directory to write the iteration pack")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -155,6 +169,7 @@ def main(argv: list[str] | None = None) -> int:
             open_only=args.open_only,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
         )
     except ValueError as exc:
         print("version-iteration: failed")
@@ -168,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"capture-ready: {summary['captureReady']}")
     print(f"blocked-by-tools: {summary['blockedByTools']}")
     print(f"blocked-by-environment: {summary.get('blockedByEnvironment', 0)}")
+    print(f"evidence-files: {summary.get('existingEvidenceFiles', 0)}/{summary.get('evidenceFiles', 0)}")
     return 0
 
 

@@ -187,6 +187,22 @@ def main() -> int:
             "--evidence-dir",
             str(completed_evidence_dir),
         )
+        evidence_iteration_dir = tmpdir / "evidence-iteration"
+        evidence_iteration_result = run_prepare(
+            str(evidence_iteration_dir),
+            "--version",
+            "Current Baseline",
+            "--evidence-dir",
+            str(completed_evidence_dir),
+        )
+        evidence_iteration_path = evidence_iteration_dir / "versions" / "current-baseline.json"
+        evidence_iteration_payload = (
+            json.loads(evidence_iteration_path.read_text()) if evidence_iteration_path.is_file() else {}
+        )
+        evidence_iteration_markdown_path = evidence_iteration_dir / "versions" / "current-baseline.md"
+        evidence_iteration_markdown = (
+            evidence_iteration_markdown_path.read_text() if evidence_iteration_markdown_path.is_file() else ""
+        )
         skipped_complete_task = run_select(
             "--format",
             "json",
@@ -302,6 +318,11 @@ def main() -> int:
         errors.append("skip-complete next task text must report selected evidence file readiness")
     if iteration_result.returncode != 0:
         errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
+    if evidence_iteration_result.returncode != 0:
+        errors.append(
+            f"evidence-aware version iteration failed: "
+            f"{evidence_iteration_result.stderr.strip() or evidence_iteration_result.stdout.strip()}"
+        )
     for name, present in iteration_files_present.items():
         if not present:
             errors.append(f"version iteration pack missing file: {name}")
@@ -313,6 +334,22 @@ def main() -> int:
         errors.append("version iteration should preserve open item count")
     if iteration_markdown_text and "Resource budget target" not in iteration_markdown_text:
         errors.append("version iteration markdown must include the target open item")
+    if evidence_iteration_payload.get("evidenceDir") != str(completed_evidence_dir):
+        errors.append("evidence-aware iteration should record the evidence directory")
+    evidence_iteration_summary = evidence_iteration_payload.get("summary", {})
+    if evidence_iteration_summary.get("completeEvidenceItems") != 1:
+        errors.append("evidence-aware iteration should preserve completed evidence item count")
+    evidence_iteration_items = evidence_iteration_payload.get("openItems", [])
+    evidence_iteration_resource_item = next(
+        (item for item in evidence_iteration_items if item.get("id") == "01-controller-resource-budget"),
+        {},
+    )
+    if evidence_iteration_resource_item.get("evidenceSummary", {}).get("complete") is not True:
+        errors.append("evidence-aware iteration should preserve complete item evidence summary")
+    if not evidence_iteration_payload.get("resolvedClosureCommands"):
+        errors.append("evidence-aware iteration should preserve resolved closure commands")
+    if "evidence: `3/3`" not in evidence_iteration_markdown:
+        errors.append("evidence-aware iteration markdown must render evidence readiness")
     if probe_iteration_result.returncode != 0:
         errors.append(
             f"probe version iteration failed: {probe_iteration_result.stderr.strip() or probe_iteration_result.stdout.strip()}"

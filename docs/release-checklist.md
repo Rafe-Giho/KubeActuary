@@ -101,7 +101,8 @@ Expected:
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   resolves evidence paths and file readiness for the full local worklist,
-  writes local iteration packs with schema `kube-actuary.version-iteration.v1`,
+  writes local iteration packs with schema `kube-actuary.version-iteration.v1`
+  while preserving evidence readiness when `--evidence-dir` is used,
   compares packs with schema `kube-actuary.version-iteration-diff.v1`,
   records run history with schema `kube-actuary.version-iteration-history.v1`,
   inspects history status with schema `kube-actuary.version-iteration-history-status.v1`,

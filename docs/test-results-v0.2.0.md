@@ -116,7 +116,8 @@ Coverage included:
   tool-ready next actions;
 - version worklist generation for version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording, history
-  status inspection, evidence-aware worklist readiness, next-task selection, evidence-directory command
+  status inspection, evidence-aware worklist readiness,
+  evidence-aware iteration packs, next-task selection, evidence-directory command
   resolution, completed-evidence skipping, capture status, version/open-only
   filters, and optional environment blockers;
 - external gate plan generation for remaining VERIFY rows;
@@ -237,7 +238,8 @@ Result:
 - release progress check prints `release-progress: passed`;
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
-  recording, history status inspection, evidence-aware worklist readiness, next-task selection,
+  recording, history status inspection, evidence-aware worklist readiness,
+  evidence-aware iteration packs, next-task selection,
   evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;
 - external gate plan check prints `external-gate-plan: passed`;

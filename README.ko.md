@@ -364,7 +364,7 @@ scripts/
   verify_release_progress.py   release progress verifier
   kube-actuary.release-progress.v1 release progress schema
   generate_version_worklist.py version-grouped task worklist generator with filters and evidence readiness
-  prepare_version_iteration.py local version iteration pack generator
+  prepare_version_iteration.py local version iteration pack generator with evidence readiness
   compare_version_iterations.py local version iteration diff generator
   record_version_iteration.py local version iteration history recorder
   inspect_version_history.py local version iteration history inspector
@@ -491,6 +491,7 @@ python3 -B scripts/generate_version_worklist.py --format markdown --open-only --
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
 python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --version 0.4.3
+python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --open-only --evidence-dir evidence/live
 python3 -B scripts/compare_version_iterations.py /tmp/kubeactuary-before /tmp/kubeactuary-after --format markdown
 python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --probe-environment
 python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history
