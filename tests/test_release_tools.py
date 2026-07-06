@@ -12,6 +12,7 @@ EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
 EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
 EXTERNAL_EVIDENCE_BUILDER = ROOT / "scripts" / "verify_external_evidence_builder.py"
 EXTERNAL_EVIDENCE_BUNDLE = ROOT / "scripts" / "verify_external_evidence_bundle.py"
+RELEASE_EVIDENCE_DIRECTORY = ROOT / "scripts" / "verify_release_evidence_directory.py"
 AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
@@ -159,6 +160,20 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("external-evidence-bundle: passed", result.stdout)
+        self.assertIn("closure: complete", result.stdout)
+
+    def test_verify_release_evidence_directory(self):
+        result = subprocess.run(
+            [sys.executable, str(RELEASE_EVIDENCE_DIRECTORY)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("release-evidence-directory: passed", result.stdout)
         self.assertIn("closure: complete", result.stdout)
 
     def test_verify_agent_help_contract(self):

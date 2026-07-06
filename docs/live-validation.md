@@ -16,6 +16,7 @@ python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
+python3 -B scripts/verify_release_evidence_directory.py
 ```
 
 Expected:
@@ -113,6 +114,18 @@ python3 -B scripts/build_external_evidence_bundle.py /tmp/kubeactuary-live-evide
 
 Evidence bundles use schema `kube-actuary.external-evidence-bundle.v1` and
 record input file SHA-256 digests plus the external gate evaluation result.
+
+For repeated local release checks, keep captured live report JSON files and
+supplemental evidence JSON files in a single evidence directory:
+
+```sh
+python3 -B scripts/build_release_evidence_directory.py <evidence-dir>
+```
+
+The directory builder writes `<evidence-dir>/.kubeactuary/live-evidence-manifest.json`
+and `<evidence-dir>/.kubeactuary/external-evidence-bundle.json`, ignores those
+generated files on rerun, and prints `release-evidence-directory: passed` when
+the directory is valid. It does not contact clusters or cloud APIs.
 
 Supported evidence schemas:
 

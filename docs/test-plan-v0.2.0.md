@@ -17,6 +17,7 @@ Expected:
   validate, doctor, normalized collector failures, release taskboard audit,
   external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
+  release evidence directory artifact generation,
   human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller deployment seed, controller status
   patch plan, controller read-only sync, controller status apply dry-run,
@@ -62,6 +63,7 @@ python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
+python3 -B scripts/verify_release_evidence_directory.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -128,6 +130,7 @@ Expected:
 - external gate evidence check prints `external-gate-evidence: passed`;
 - external evidence builder check prints `external-evidence-builder: passed`;
 - external evidence bundle check prints `external-evidence-bundle: passed`;
+- release evidence directory check prints `release-evidence-directory: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -230,6 +233,8 @@ Confirm from code and tests:
   for kubectl explain, controller resource budget, and controller loop output;
 - external evidence bundle verifier records live manifest, supplemental
   evidence, input SHA-256 digests, and closure status in one JSON artifact;
+- release evidence directory verifier builds manifest and bundle artifacts from
+  one local evidence directory and ignores generated artifacts on rerun;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -334,7 +339,7 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, release taskboard audit, external gate plan, external gate evidence,
-  external evidence builder, external evidence bundle,
+  external evidence builder, external evidence bundle, release evidence directory,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller

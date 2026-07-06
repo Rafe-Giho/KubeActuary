@@ -27,6 +27,7 @@ python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
+python3 -B scripts/verify_release_evidence_directory.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -95,6 +96,8 @@ Expected:
   raw outputs and fails invalid resource-budget samples;
 - external evidence bundle records manifest, supplemental evidence, input
   digests, and closure status in one auditable JSON artifact;
+- release evidence directory builder validates captured evidence directories
+  and writes manifest and bundle artifacts without contacting clusters;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
@@ -172,6 +175,7 @@ Expected:
 - [ ] external gate evidence evaluation check passes.
 - [ ] external evidence builder check passes.
 - [ ] external evidence bundle check passes.
+- [ ] release evidence directory check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
 - [ ] controller deployment seed check passes.
