@@ -152,11 +152,52 @@ def render_text(result: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_markdown(result: dict[str, Any]) -> str:
+    summary = result["summary"]
+    selected = result["nextTask"]["selected"]
+    lines = [
+        "# KubeActuary Next Task Evidence Build",
+        "",
+        f"Schema: `{result['schemaVersion']}`",
+        f"Status: `{summary['status']}`",
+        f"Evidence directory: `{result['evidenceDir']}`",
+        "",
+        "## Selected",
+        "",
+        f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('version')})",
+        f"- capture status: `{selected.get('captureStatus')}`",
+        f"- kind: `{selected.get('kind')}`",
+        "",
+        "## Summary",
+        "",
+        f"- buildable commands: {summary['buildableCommands']}",
+        f"- built: {summary['built']}",
+        f"- skipped: {summary['skipped']}",
+        f"- errors: {summary['errors']}",
+        "",
+        "## Records",
+        "",
+    ]
+    if result["records"]:
+        for item in result["records"]:
+            lines.append(f"- `{item['status']}` `{item['kind']}`")
+            lines.append(f"  - source: `{item['source']}`")
+            lines.append(f"  - output: `{item['output']}`")
+            lines.append(f"  - command: `{item['command']}`")
+    else:
+        lines.append("- none")
+    if result["errors"]:
+        lines.extend(["", "## Errors", ""])
+        for error in result["errors"]:
+            lines.append(f"- {error}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build supplemental evidence for the selected next task.")
     parser.add_argument("evidence_dir", help="prepared evidence directory with .kubeactuary/next-version-task.json")
     parser.add_argument("--force", action="store_true", help="overwrite an existing supplemental evidence output")
-    parser.add_argument("--format", choices=["text", "json"], default="text")
+    parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
@@ -167,7 +208,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}")
         return 1
 
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n" if args.format == "json" else render_text(result)
+    if args.format == "json":
+        rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
+    elif args.format == "markdown":
+        rendered = render_markdown(result)
+    else:
+        rendered = render_text(result)
     if args.output == "-":
         print(rendered, end="")
     else:

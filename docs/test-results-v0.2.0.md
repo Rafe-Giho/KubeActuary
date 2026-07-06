@@ -295,8 +295,9 @@ Result:
   build, next-task-run status, environment metadata, advance status,
   queue-source visibility/origin, next-task queue consistency, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
-  output, runner/advance record consistency, legacy prepared-record queue-source
-  inference, and idempotent output-exists handling plus
+  output, next-task evidence build Markdown output, runner/advance record
+  consistency, legacy prepared-record queue-source inference, and idempotent
+  output-exists handling plus
   `.kubeactuary/release-evidence-status.{json,md}` recording;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording plus

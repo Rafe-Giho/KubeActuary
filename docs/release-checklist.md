@@ -147,7 +147,8 @@ Expected:
   commands, and it can also record
   `.kubeactuary/release-evidence-status.json`;
 - next-task evidence builder creates supplemental evidence from prepared raw
-  files without cluster, cloud, or workload writes;
+  files with text/json/Markdown status output and without cluster, cloud, or
+  workload writes;
 - clean-artifact verifier proves no generated Python cache directories or
   bytecode files remain in the workspace;
 - controller contract emits status-only patch examples and OperationCapsule-only

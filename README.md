@@ -388,7 +388,7 @@ scripts/
   build_release_evidence_directory.py release evidence directory builder
   verify_release_evidence_directory.py release evidence directory verifier
   inspect_release_evidence_directory.py text/json/Markdown release evidence, next-task, runner, environment, and advance status inspector/recorder
-  build_next_task_evidence.py local next-task supplemental evidence builder
+  build_next_task_evidence.py text/json/Markdown local next-task supplemental evidence builder
   verify_release_evidence_status.py release evidence status verifier
   kube-actuary.release-evidence-status.v1 release evidence status schema
   release-evidence-status.json persisted release evidence status report
@@ -519,6 +519,7 @@ python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --sk
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
+python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown
 python3 -B scripts/run_next_version_task.py evidence/live
 python3 -B scripts/run_next_version_task.py evidence/live --format markdown
 python3 -B scripts/run_next_version_task.py evidence/live --run

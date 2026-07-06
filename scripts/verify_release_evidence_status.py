@@ -256,6 +256,7 @@ def main() -> int:
         recorded_file_payload = json.loads(recorded_json.read_text()) if recorded_json.is_file() else {}
         recorded_markdown = recorded_md.read_text() if recorded_md.is_file() else ""
         next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
+        next_task_build_markdown = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "markdown", "--force")
         next_task_output = partial_dir / "supplemental" / "01-controller-resource-budget-external-2.json"
         next_task_output_written = next_task_output.is_file()
         next_task_build_again = run_script(NEXT_TASK_BUILDER, str(partial_dir))
@@ -301,6 +302,7 @@ def main() -> int:
         write_payload(invalid_dir / "bad.json", {"schemaVersion": "kube-actuary.external-evidence.v1", "kind": "kubectl-explain", "ok": False})
         invalid = run_script(INSPECTOR, str(invalid_dir))
         unprepared_next_task_build = run_script(NEXT_TASK_BUILDER, str(tmpdir / "unprepared"))
+        missing_source_markdown = run_script(NEXT_TASK_BUILDER, str(blocked_dir), "--format", "markdown")
 
     if partial.returncode != 0:
         errors.append(f"partial status failed: {partial.stderr.strip() or partial.stdout.strip()}")
@@ -317,6 +319,19 @@ def main() -> int:
         next_task_build_payload = {}
     else:
         next_task_build_payload = json.loads(next_task_build.stdout)
+    if next_task_build_markdown.returncode != 0:
+        errors.append(
+            "next-task evidence build Markdown failed: "
+            f"{next_task_build_markdown.stderr.strip() or next_task_build_markdown.stdout.strip()}"
+        )
+    for snippet in (
+        "# KubeActuary Next Task Evidence Build",
+        "Status: `passed`",
+        "`built` `controller-resource-budget`",
+        "build_external_evidence.py",
+    ):
+        if snippet not in next_task_build_markdown.stdout:
+            errors.append(f"next-task evidence build Markdown should include: {snippet}")
     if partial_after_build.returncode != 0:
         errors.append(f"post-build partial status failed: {partial_after_build.stderr.strip() or partial_after_build.stdout.strip()}")
         partial_after_build_payload = {}
@@ -351,6 +366,15 @@ def main() -> int:
         errors.append("next-task evidence build must fail for an unprepared evidence directory")
     if "prepare_live_evidence_directory.py" not in unprepared_next_task_build.stdout:
         errors.append("next-task evidence build unprepared error must include the prepare command")
+    if missing_source_markdown.returncode == 0:
+        errors.append("missing-source Markdown evidence build must fail")
+    for snippet in (
+        "Status: `failed`",
+        "`missing-source` `controller-resource-budget`",
+        "missing source:",
+    ):
+        if snippet not in missing_source_markdown.stdout:
+            errors.append(f"missing-source Markdown evidence build should include: {snippet}")
 
     if partial_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("status schemaVersion mismatch")

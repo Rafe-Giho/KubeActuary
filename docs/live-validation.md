@@ -145,6 +145,7 @@ does not run cluster, cloud, or workload write commands.
 
 ```sh
 python3 -B scripts/build_next_task_evidence.py evidence/live
+python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 ```
