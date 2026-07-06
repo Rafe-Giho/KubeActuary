@@ -278,7 +278,28 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 f"- supplemental: {status['supplementalEvidence']}",
             ]
         )
-        next_commands = progress["evidenceStatus"].get("nextCommands", [])
+        evidence_status = progress["evidenceStatus"]
+        next_task = evidence_status.get("nextTask")
+        selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+        if selected.get("id"):
+            lines.append(f"- next-task: `{selected.get('id')}` ({selected.get('captureStatus')})")
+            file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
+            if file_summary:
+                lines.append(f"- next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
+        next_task_run = evidence_status.get("nextTaskRun")
+        if isinstance(next_task_run, dict):
+            lines.append(f"- next-task-run: `{next_task_run.get('status')}` ({next_task_run.get('mode')})")
+        environment_probe = evidence_status.get("environmentProbe")
+        if isinstance(environment_probe, dict):
+            lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")
+        environment_blockers = evidence_status.get("environmentBlockers")
+        if isinstance(environment_blockers, dict):
+            blocker_summary = environment_blockers.get("summary", {})
+            lines.append(f"- environment-blockers: {blocker_summary.get('blockedByEnvironment', 0)}")
+        advance = evidence_status.get("versionIterationAdvance")
+        if isinstance(advance, dict):
+            lines.append(f"- version-iteration-advance: `{advance.get('status')}`")
+        next_commands = evidence_status.get("nextCommands", [])
         for command in next_commands[:3]:
             lines.append(f"- next: `{command}`")
     lines.extend(["", "## Closure", ""])

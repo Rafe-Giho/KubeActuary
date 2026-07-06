@@ -120,7 +120,8 @@ Coverage included:
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
 - release progress report generation for versioned task tracking,
-  tool-ready next actions, and `not-prepared` evidence directory guidance;
+  tool-ready next actions, selected evidence-directory runtime status, and
+  `not-prepared` evidence directory guidance;
 - version worklist generation for version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording, history
   status inspection, evidence-aware worklist readiness,

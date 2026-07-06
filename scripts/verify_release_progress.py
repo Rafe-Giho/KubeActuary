@@ -31,6 +31,7 @@ def run_generator(*args: str) -> subprocess.CompletedProcess[str]:
 
 
 def write_payload(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload))
 
 
@@ -43,10 +44,85 @@ def main() -> int:
         payload = sample("kube-actuary.lightweight-smoke.v1")
         payload["provider"] = "kind"
         write_payload(evidence_dir / "kind.json", payload)
+        write_payload(
+            evidence_dir / ".kubeactuary" / "next-version-task.json",
+            {
+                "schemaVersion": "kube-actuary.next-version-task.v1",
+                "selected": {
+                    "id": "01-controller-resource-budget",
+                    "version": "Current Baseline",
+                    "item": "Controller resource budget",
+                    "kind": "controller-resource-budget",
+                    "captureStatus": "tool-ready",
+                    "resolvedCommands": [
+                        "python3 -B scripts/capture_controller_resource_budget.py --output /tmp/kubectl-top.txt --run",
+                        "python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source /tmp/kubectl-top.txt --output /tmp/external-evidence.json",
+                    ],
+                },
+            },
+        )
+        write_payload(
+            evidence_dir / ".kubeactuary" / "next-version-task-run.json",
+            {
+                "schemaVersion": "kube-actuary.next-version-task-run.v1",
+                "mode": "run",
+                "status": "failed",
+                "clusterWrites": "disabled-or-server-side-dry-run-only",
+                "ranAt": "2026-07-06T00:00:00+00:00",
+                "nextTask": {
+                    "selected": {
+                        "id": "01-controller-resource-budget",
+                        "version": "Current Baseline",
+                        "item": "Controller resource budget",
+                        "kind": "controller-resource-budget",
+                        "captureStatus": "tool-ready",
+                    },
+                },
+                "summary": {"commands": 2, "validCommands": 2, "ran": 1, "failed": 1},
+            },
+        )
+        write_payload(
+            evidence_dir / ".kubeactuary" / "environment-probe.json",
+            {
+                "schemaVersion": "kube-actuary.environment-probe.v1",
+                "clusterWrites": "disabled",
+                "probeEnabled": False,
+                "clusterAccess": "not-run",
+                "summary": {"checks": 0, "passed": 0, "failed": 0},
+            },
+        )
+        write_payload(
+            evidence_dir / ".kubeactuary" / "environment-blockers.json",
+            {
+                "schemaVersion": "kube-actuary.environment-blockers.v1",
+                "clusterWrites": "disabled",
+                "summary": {
+                    "clusterAccess": "not-run",
+                    "blockedByEnvironment": 0,
+                    "selectedBlocked": False,
+                },
+                "selected": {"id": "01-controller-resource-budget", "captureStatus": "tool-ready"},
+            },
+        )
+        write_payload(
+            evidence_dir / ".kubeactuary" / "version-iteration-advance.json",
+            {
+                "schemaVersion": "kube-actuary.version-iteration-advance.v1",
+                "mode": "run",
+                "status": "failed",
+                "clusterWrites": "disabled-or-server-side-dry-run-only",
+                "runId": "test-progress",
+                "createdAt": "2026-07-06T00:00:00+00:00",
+                "runner": {"status": "failed"},
+                "nextTask": {"selected": "01-controller-resource-budget", "skippedCompleteEvidence": 0},
+                "history": {"runs": 1},
+            },
+        )
 
         json_result = run_generator("--format", "json")
         markdown_result = run_generator("--format", "markdown")
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
+        with_evidence_markdown = run_generator("--format", "markdown", "--evidence-dir", str(evidence_dir))
         missing_evidence_dir = tmpdir / "missing-evidence"
         missing_evidence = run_generator("--format", "json", "--evidence-dir", str(missing_evidence_dir))
         missing_evidence_markdown = run_generator(
@@ -71,6 +147,17 @@ def main() -> int:
         evidence_progress = {}
     else:
         evidence_progress = json.loads(with_evidence.stdout)
+    if with_evidence_markdown.returncode != 0:
+        errors.append(f"evidence progress markdown failed: {with_evidence_markdown.stderr.strip() or with_evidence_markdown.stdout.strip()}")
+    else:
+        for snippet in (
+            "next-task: `01-controller-resource-budget`",
+            "next-task-run: `failed`",
+            "environment-probe: `not-run`",
+            "version-iteration-advance: `failed`",
+        ):
+            if snippet not in with_evidence_markdown.stdout:
+                errors.append(f"evidence progress markdown missing status detail: {snippet}")
     if missing_evidence.returncode != 0:
         errors.append(f"missing evidence progress failed: {missing_evidence.stderr.strip() or missing_evidence.stdout.strip()}")
         missing_evidence_progress = {}

@@ -63,7 +63,9 @@ are reported as `blocked-by-environment` so local worklists can distinguish
 The release progress report can also inspect `--evidence-dir`. If that
 directory has not been prepared yet, it reports `not-prepared` instead of
 failing and prints the `prepare_live_evidence_directory.py` command needed to
-start the local evidence loop.
+start the local evidence loop. For prepared directories, the Markdown progress
+view also surfaces the selected next task, next-task runner status,
+environment probe/blocker status, and latest iteration advance status.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It

@@ -29,6 +29,8 @@ Evidence collector release:
 - add deterministic next-task selection from version worklists;
 - add evidence-aware next-task selection that skips completed local evidence files;
 - add tool-ready and missing-tool next actions to release progress reports;
+- surface selected next-task, runner, environment, and advance status in release
+  progress Markdown for local evidence directories;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

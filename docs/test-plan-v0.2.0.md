@@ -272,7 +272,8 @@ Confirm from code and tests:
   the release suite check count;
 - release progress verifier checks versioned task status, external gates, live
   readiness, tool-ready next actions, optional evidence directory status, and
-  `not-prepared` guidance for missing evidence directories;
+  `not-prepared` guidance for missing evidence directories, plus selected
+  next-task, runner, environment, and advance status in Markdown output;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, evidence-aware worklist readiness,
