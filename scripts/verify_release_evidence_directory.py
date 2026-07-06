@@ -98,8 +98,16 @@ def main() -> int:
 
         first = run_script(DIRECTORY_BUILDER, str(evidence_dir))
         second = run_script(DIRECTORY_BUILDER, str(evidence_dir))
+        write_payload(
+            evidence_dir / ".kubeactuary" / "release-evidence-status.json",
+            {"schemaVersion": "kube-actuary.release-evidence-status.v1"},
+        )
+        custom_output = tmpdir / "custom-output"
+        custom = run_script(DIRECTORY_BUILDER, str(evidence_dir), "--output-dir", str(custom_output))
         manifest_path = evidence_dir / ".kubeactuary" / "live-evidence-manifest.json"
         bundle_path = evidence_dir / ".kubeactuary" / "external-evidence-bundle.json"
+        custom_manifest_path = custom_output / "live-evidence-manifest.json"
+        custom_manifest_written = custom_manifest_path.is_file()
 
         bad_dir = tmpdir / "bad-evidence"
         bad_dir.mkdir()
@@ -120,6 +128,12 @@ def main() -> int:
             errors.append(f"{name} directory build failed: {result.stderr.strip() or result.stdout.strip()}")
     if "live-reports: 10" not in second.stdout:
         errors.append("directory builder must ignore generated output artifacts on rerun")
+    if custom.returncode != 0:
+        errors.append(f"custom output-dir build failed: {custom.stderr.strip() or custom.stdout.strip()}")
+    if "live-reports: 10" not in custom.stdout:
+        errors.append("custom output-dir build must ignore default .kubeactuary metadata")
+    if not custom_manifest_written:
+        errors.append("custom output-dir build must write a manifest")
     if invalid.returncode == 0 or "supplemental evidence must be ok=true" not in invalid.stdout:
         errors.append("directory builder must reject failed supplemental evidence")
     if manifest_payload.get("schemaVersion") != "kube-actuary.live-evidence-manifest.v1":
@@ -154,6 +168,7 @@ def main() -> int:
     print("live-reports: 10")
     print("supplemental: 3")
     print("closure: complete")
+    print("metadata: ignored")
     return 0
 
 

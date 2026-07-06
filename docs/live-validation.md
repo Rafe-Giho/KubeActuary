@@ -187,8 +187,9 @@ python3 -B scripts/build_release_evidence_directory.py <evidence-dir>
 
 The directory builder writes `<evidence-dir>/.kubeactuary/live-evidence-manifest.json`
 and `<evidence-dir>/.kubeactuary/external-evidence-bundle.json`, ignores those
-generated files on rerun, and prints `release-evidence-directory: passed` when
-the directory is valid. It does not contact clusters or cloud APIs.
+generated files and other `.kubeactuary` metadata on rerun or custom
+`--output-dir` runs, and prints `release-evidence-directory: passed` when the
+directory is valid. It does not contact clusters or cloud APIs.
 
 Inspect a partial evidence directory while gathering external runs:
 

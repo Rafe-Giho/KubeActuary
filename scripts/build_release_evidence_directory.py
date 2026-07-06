@@ -51,8 +51,10 @@ def scan_directory(
     supplemental: list[Path] = []
     errors: list[str] = []
     output_dir = output_dir.resolve()
+    ignored_dirs = {output_dir, (evidence_dir / DEFAULT_OUTPUT_DIR).resolve()}
     for path in sorted(evidence_dir.rglob("*.json")):
-        if is_relative_to(path.resolve(), output_dir):
+        resolved = path.resolve()
+        if any(is_relative_to(resolved, ignored) for ignored in ignored_dirs):
             continue
         try:
             payload = json_payload(path)

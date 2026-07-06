@@ -118,7 +118,7 @@ COMMON_CHECKS = (
     Check(
         "release evidence directory",
         ("python3", "-B", "scripts/verify_release_evidence_directory.py"),
-        contains=("release-evidence-directory: passed", "closure: complete"),
+        contains=("release-evidence-directory: passed", "closure: complete", "metadata: ignored"),
     ),
     Check(
         "release evidence status",

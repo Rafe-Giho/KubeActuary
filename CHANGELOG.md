@@ -37,6 +37,8 @@ Evidence collector release:
 - add supplemental external evidence builder for raw live outputs;
 - add external evidence bundle generation for auditable closure artifacts;
 - add release evidence directory builder for repeated local evidence closure;
+- keep generated `.kubeactuary` metadata out of release evidence directory
+  scans even with custom output directories;
 - add release evidence status inspector for partial evidence directories;
 - surface selected runner status from release evidence directory inspection;
 - surface environment probe and blocker metadata from release evidence status;

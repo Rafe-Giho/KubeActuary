@@ -155,7 +155,9 @@ Expected:
 - external gate evidence check prints `external-gate-evidence: passed`;
 - external evidence builder check prints `external-evidence-builder: passed`;
 - external evidence bundle check prints `external-evidence-bundle: passed`;
-- release evidence directory check prints `release-evidence-directory: passed`;
+- release evidence directory check prints `release-evidence-directory: passed`
+  and verifies generated `.kubeactuary` metadata is ignored with custom output
+  directories;
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, environment metadata, advance status, and idempotent
