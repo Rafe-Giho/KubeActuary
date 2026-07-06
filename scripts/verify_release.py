@@ -266,7 +266,7 @@ COMMON_CHECKS = (
     Check(
         "admission webhook",
         ("python3", "-B", "scripts/verify_admission_webhook.py"),
-        contains=("admission-webhook: passed", "failurePolicy: Ignore"),
+        contains=("admission-webhook: passed", "failurePolicy: Ignore", "evidence-schema: kube-actuary.admission-kind-smoke.v1"),
     ),
     Check(
         "admission policy",

@@ -157,6 +157,8 @@ Add optional admission controls:
 - verify capsule digest;
 - enforce `GateOpen`;
 - record audit annotations.
+- capture kind smoke evidence with server-side dry-run webhook checks and
+  loopback-only local server validation.
 
 This should be optional because admission webhooks add operational risk.
 

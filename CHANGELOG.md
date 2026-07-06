@@ -60,6 +60,7 @@ Evidence collector release:
 - add admission audit annotation fixtures and incident runbook;
 - add AdmissionReview response builder with audit annotation verifier;
 - add local admission HTTP server with verifier;
+- add optional admission kind smoke harness with dry-run evidence output;
 - add upstream Kubernetes N/N-1/N-2 conformance suite seed;
 - add security policy, threat model, and disclosure verifier;
 - add API freeze contract and additive compatibility verifier;

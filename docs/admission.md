@@ -80,3 +80,6 @@ python3 -B scripts/verify_admission_server.py
 ```
 
 Live kind smoke remains a release-gate item when `kind` is available locally.
+Use `docs/admission-kind-smoke.md` and
+`scripts/run_admission_kind_smoke.py --run --output <path>` to capture that
+evidence.

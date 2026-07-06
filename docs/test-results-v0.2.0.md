@@ -85,6 +85,7 @@ Coverage included:
 - admission audit annotation fixture and incident runbook verification;
 - AdmissionReview response and audit annotation generation verification;
 - local admission HTTP server verification;
+- optional admission kind smoke evidence output verification;
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
@@ -157,6 +158,7 @@ python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
 python3 -B scripts/verify_admission_server.py
+python3 -B scripts/run_admission_kind_smoke.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -211,6 +213,7 @@ Result:
 - admission audit check prints `admission-audit: passed`;
 - admission response check prints `admission-response: passed`;
 - admission server check prints `admission-server: passed`;
+- admission kind smoke plan prints `admission-kind-smoke: plan`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

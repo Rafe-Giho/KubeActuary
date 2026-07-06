@@ -53,7 +53,7 @@ Status legend:
 | Controller | DOING | Optional `serve` runtime, Deployment seed, status patch plan, and read-only sync exist; live status apply loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
-| Admission/audit | DOING | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and runbooks exist; live kind webhook smoke remains |
+| Admission/audit | DOING | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; live kind webhook smoke remains |
 
 Last local verification:
 
@@ -156,7 +156,7 @@ operational risk. This remains optional.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.8.0 | Validating admission webhook prototype | VERIFY | `scripts/verify_admission_webhook.py` validates `failurePolicy: Ignore`; live kind smoke pending because kind is not installed |
+| 0.8.0 | Validating admission webhook prototype | VERIFY | `scripts/verify_admission_webhook.py` and `scripts/run_admission_kind_smoke.py`; live kind smoke pending because kind is not installed |
 | 0.8.1 | AI identity selector and annotation requirements | DONE | `scripts/verify_admission_policy.py` validates allow/deny fixtures |
 | 0.8.2 | Capsule digest and gate verification | DONE | `scripts/verify_admission_digest_gate.py` validates digest and closed-gate tamper fixtures |
 | 0.8.3 | Audit annotations and incident runbook | DONE | `scripts/verify_admission_audit.py` validates audit fixtures and incident runbook |

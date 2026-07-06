@@ -92,6 +92,7 @@ python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
 python3 -B scripts/verify_admission_server.py
+python3 -B scripts/run_admission_kind_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -269,6 +270,8 @@ Confirm from code and tests:
   auditAnnotations;
 - admission server verifier exercises the local `/validate` endpoint without
   Kubernetes API access;
+- admission kind smoke helper verifies server-side dry-run webhook checks and
+  loopback-only local admission server evidence output;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -293,4 +296,5 @@ Expected:
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, MCP docs, disabled-execute check, admission webhook,
   admission policy, admission digest/gate, admission audit, admission response,
-  admission server, gate behavior, JSON/YAML parsing, and `git diff --check`.
+  admission server, admission kind smoke, gate behavior, JSON/YAML parsing, and
+  `git diff --check`.

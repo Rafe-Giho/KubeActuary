@@ -61,6 +61,7 @@ python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
 python3 -B scripts/verify_admission_server.py
+python3 -B scripts/run_admission_kind_smoke.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -119,6 +120,7 @@ Expected:
   auditAnnotations;
 - admission server verifier checks the local `/validate` endpoint without
   cluster access;
+- admission kind smoke plan and evidence-output format verify offline;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -171,6 +173,8 @@ Expected:
 - [ ] admission audit fixture and incident runbook check passes.
 - [ ] admission response fixture check passes.
 - [ ] admission local server check passes.
+- [ ] admission kind smoke plan check passes; run with `--run --output <path>`
+      when kind is available.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

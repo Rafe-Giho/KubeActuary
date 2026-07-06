@@ -47,6 +47,9 @@ cluster-writes: disabled
 - For Krew install smoke runs, use
   `scripts/run_krew_smoke.py --run --output <path>` and keep the
   `kube-actuary.krew-smoke.v1` report.
+- For admission kind smoke runs, use
+  `scripts/run_admission_kind_smoke.py --run --output <path>` and keep the
+  `kube-actuary.admission-kind-smoke.v1` report.
 
 Provider run evidence means captured output from the target provider or tool,
 not a local assumption that the path should work.

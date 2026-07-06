@@ -577,6 +577,7 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("admission-webhook: passed", result.stdout)
         self.assertIn("failurePolicy: Ignore", result.stdout)
+        self.assertIn("evidence-schema: kube-actuary.admission-kind-smoke.v1", result.stdout)
 
     def test_verify_admission_policy(self):
         result = subprocess.run(

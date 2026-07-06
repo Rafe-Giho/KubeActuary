@@ -312,6 +312,7 @@ deploy/kustomize/
   overlays/                    optional controller RBAC overlays
 docs/
   admission.md                optional admission prototype and safety defaults
+  admission-kind-smoke.md     optional kind admission smoke runbook
   admission-incident-runbook.md admission audit incident runbook
   api-freeze.md               additive API freeze and compatibility gate
   conformance.md              upstream N/N-1/N-2 conformance suite
@@ -413,6 +414,7 @@ scripts/
   verify_admission_audit.py  admission audit fixture verifier
   verify_admission_response.py AdmissionReview response verifier
   verify_admission_server.py local admission HTTP server verifier
+  run_admission_kind_smoke.py optional kind admission smoke harness
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -471,6 +473,7 @@ python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
 python3 -B scripts/verify_admission_server.py
+python3 -B scripts/run_admission_kind_smoke.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
