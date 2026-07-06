@@ -439,6 +439,28 @@ def main() -> int:
         evidence_history_status_payload = (
             json.loads(evidence_history_status.stdout) if evidence_history_status.returncode == 0 else {}
         )
+        prepared_history_dir = tmpdir / "prepared-history"
+        prepared_history_record = run_record(
+            str(prepared_history_dir),
+            "--run-id",
+            "prepared",
+            "--created-at",
+            "2026-07-06T00:04:00+00:00",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
+        prepared_history_index_path = prepared_history_dir / "index.json"
+        prepared_history_index = (
+            json.loads(prepared_history_index_path.read_text()) if prepared_history_index_path.is_file() else {}
+        )
+        prepared_history_readme = (
+            prepared_history_dir / "README.md"
+        ).read_text() if (prepared_history_dir / "README.md").is_file() else ""
+        prepared_history_status = run_inspect_history(str(prepared_history_dir), "--format", "json")
+        prepared_history_status_payload = (
+            json.loads(prepared_history_status.stdout) if prepared_history_status.returncode == 0 else {}
+        )
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
@@ -623,6 +645,20 @@ def main() -> int:
         errors.append("evidence-aware history status should summarize complete evidence items")
     if evidence_status_summary.get("existingEvidenceFiles", 0) < 3:
         errors.append("evidence-aware history status should summarize existing evidence files")
+    if prepared_history_record.returncode != 0:
+        errors.append(
+            f"prepared queue history failed: "
+            f"{prepared_history_record.stderr.strip() or prepared_history_record.stdout.strip()}"
+        )
+    prepared_runs = prepared_history_index.get("runs", [])
+    prepared_run = prepared_runs[-1] if prepared_runs else {}
+    if prepared_run.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("prepared queue history should preserve queue source")
+    if "queue-source=prepared-live-validation-queue" not in prepared_history_readme:
+        errors.append("prepared queue history README should show queue source")
+    prepared_history_summary = prepared_history_status_payload.get("summary", {})
+    if prepared_history_summary.get("latestQueueSource") != "prepared-live-validation-queue":
+        errors.append("prepared queue history status should report latest queue source")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")

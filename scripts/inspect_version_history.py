@@ -69,6 +69,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "runId": run_id,
         "path": relative_path,
         "worklistSchema": worklist.get("schemaVersion"),
+        "queueSource": run.get("queueSource") or worklist.get("queueSource") or "generated",
         "summary": worklist.get("summary", {}),
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
@@ -103,6 +104,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "summary": {
             "runs": len(inspected_runs),
             "latestRunId": latest.get("runId") if latest else None,
+            "latestQueueSource": latest.get("queueSource") if latest else None,
             "openItems": latest_summary.get("openItems", 0),
             "captureReady": latest_summary.get("captureReady", 0),
             "blockedByTools": latest_summary.get("blockedByTools", 0),
@@ -124,6 +126,7 @@ def render_text(status: dict[str, Any]) -> str:
         f"version-iteration-history-status: {state}",
         f"runs: {summary['runs']}",
         f"latest-run-id: {summary['latestRunId']}",
+        f"latest-queue-source: {summary.get('latestQueueSource')}",
         f"open-items: {summary['openItems']}",
         f"capture-ready: {summary['captureReady']}",
         f"blocked-by-tools: {summary['blockedByTools']}",

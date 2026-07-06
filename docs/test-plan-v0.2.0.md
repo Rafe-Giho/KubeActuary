@@ -151,6 +151,7 @@ Expected:
 - prepared-queue worklist and next-task Markdown output show the queue source;
 - prepared-queue worklist Markdown shows missing tools and next steps;
 - prepared-queue version iteration packs preserve the queue source;
+- prepared-queue version iteration history records and status preserve the queue source;
 - version iteration packs preserve resolved closure commands and evidence
   readiness when `--evidence-dir` is used;
 - version iteration history records and inspects evidence readiness deltas

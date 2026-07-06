@@ -66,7 +66,8 @@ def render_history(index: dict[str, Any]) -> str:
             f"open={run['summary']['openItems']} "
             f"capture-ready={run['summary']['captureReady']} "
             f"blocked-by-environment={run['summary'].get('blockedByEnvironment', 0)} "
-            f"evidence-files={run['summary'].get('existingEvidenceFiles', 0)}/{run['summary'].get('evidenceFiles', 0)}"
+            f"evidence-files={run['summary'].get('existingEvidenceFiles', 0)}/{run['summary'].get('evidenceFiles', 0)} "
+            f"queue-source={run.get('queueSource', 'generated')}"
         )
         if run.get("previousRunId"):
             lines.append(f"  previous: `{run['previousRunId']}`")
@@ -136,6 +137,7 @@ def record_iteration(
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
         },
+        "queueSource": worklist.get("queueSource", "generated"),
         "summary": worklist["summary"],
         "previousRunId": previous.get("runId") if previous else None,
         "diffPath": diff_path,

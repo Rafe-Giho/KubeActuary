@@ -33,6 +33,7 @@ Evidence collector release:
 - surface the worklist queue source in Markdown/text next-task outputs;
 - surface missing tools and next steps in version worklist Markdown;
 - preserve prepared queue source in version iteration packs;
+- preserve prepared queue source in version iteration history records and status;
 - add tool-ready and missing-tool next actions to release progress reports;
 - surface selected next-task, runner, environment, and advance status in release
   progress Markdown for local evidence directories;
