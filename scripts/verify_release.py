@@ -189,6 +189,11 @@ COMMON_CHECKS = (
         contains=("docs-freeze: passed", "public-examples: 10 checked", "writes: disabled"),
     ),
     Check(
+        "live validation readiness",
+        ("python3", "-B", "scripts/verify_live_validation_readiness.py"),
+        contains=("live-validation-readiness: passed", "mode: inventory-only", "cluster-writes: disabled"),
+    ),
+    Check(
         "airgap bundle",
         ("python3", "-B", "scripts/verify_airgap_bundle.py"),
         contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),

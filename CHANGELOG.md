@@ -56,6 +56,7 @@ Evidence collector release:
 - add security policy, threat model, and disclosure verifier;
 - add API freeze contract and additive compatibility verifier;
 - add documentation freeze and public examples verifier;
+- add live validation readiness ledger for external evidence gates;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

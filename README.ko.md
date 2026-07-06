@@ -324,6 +324,7 @@ docs/
   supply-chain.md              SBOM and provenance generation
   air-gapped-install.md        offline install artifact checklist
   krew.md                      Krew manifest generation and verification
+  live-validation.md           external live validation evidence ledger
   policy-adapters.md           policy evidence adapter contracts
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
@@ -373,6 +374,7 @@ scripts/
   verify_security_docs.py     security policy and threat model verifier
   verify_api_freeze.py        additive API freeze verifier
   verify_docs_freeze.py       public docs and examples verifier
+  verify_live_validation_readiness.py external validation readiness inventory
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -429,6 +431,7 @@ python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
+python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py

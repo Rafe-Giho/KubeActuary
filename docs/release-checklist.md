@@ -36,6 +36,7 @@ python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
+python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -80,6 +81,8 @@ Expected:
 - API freeze gate verifies the additive-only public contract and no breaking
   schema diff;
 - documentation freeze verifies public docs and examples;
+- live validation readiness inventories external tool availability without
+  running cluster or cloud checks;
 - air-gapped manifest verifies required release and repository artifacts;
 - agent help contract verifies schema version and compatibility fields;
 - agent examples verify local CI and Codex runbooks without write commands;
@@ -124,6 +127,7 @@ Expected:
 - [ ] security policy and threat model check passes.
 - [ ] API freeze gate check passes.
 - [ ] documentation freeze check passes.
+- [ ] live validation readiness check passes.
 - [ ] air-gapped bundle manifest check passes.
 - [ ] agent help contract check passes.
 - [ ] agent example runbook check passes.
