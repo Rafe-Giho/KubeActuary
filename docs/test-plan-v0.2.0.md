@@ -246,9 +246,9 @@ Confirm from code and tests:
   the release suite check count;
 - release progress verifier checks versioned task status, external gates, live
   readiness, tool-ready next actions, and optional evidence directory status;
-- version worklist verifier checks version-grouped open work, capture-ready
-  items, tool-blocked items, version/open-only filters, and optional
-  environment blockers;
+- version worklist verifier checks version-grouped open work, local iteration
+  pack generation, capture-ready items, tool-blocked items, version/open-only
+  filters, and optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and

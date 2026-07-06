@@ -364,8 +364,10 @@ scripts/
   verify_release_progress.py   release progress verifier
   kube-actuary.release-progress.v1 release progress schema
   generate_version_worklist.py version-grouped task worklist generator with filters
+  prepare_version_iteration.py local version iteration pack generator
   verify_version_worklist.py version worklist verifier
   kube-actuary.version-worklist.v1 version worklist schema
+  kube-actuary.version-iteration.v1 version iteration schema
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   verify_external_gate_command_safety.py external gate command safety verifier
@@ -476,6 +478,7 @@ python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
+python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --version 0.4.3
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py

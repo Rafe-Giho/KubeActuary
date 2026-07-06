@@ -13,17 +13,32 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_version_worklist.py"
+PREPARE = ROOT / "scripts" / "prepare_version_iteration.py"
 README = ROOT / "README.md"
 README_KO = ROOT / "README.ko.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 WORKLIST_TOOL = "generate_version_worklist.py"
+PREPARE_TOOL = "prepare_version_iteration.py"
 VERIFY_TOOL = "verify_version_worklist.py"
 SCHEMA = "kube-actuary.version-worklist.v1"
+ITERATION_SCHEMA = "kube-actuary.version-iteration.v1"
 
 
 def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(GENERATOR), *args],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_prepare(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(PREPARE), *args],
         cwd=ROOT,
         env=env,
         text=True,
@@ -84,6 +99,36 @@ def main() -> int:
         output_written = output.is_file()
         probe_env = fake_all_tools_env(tmpdir / "tools", cluster_ok=False)
         probe_result = run_generator("--format", "json", "--open-only", "--probe-environment", env=probe_env)
+        iteration_dir = tmpdir / "iteration"
+        iteration_result = run_prepare(
+            str(iteration_dir),
+            "--version",
+            "0.4.3",
+            "--open-only",
+        )
+        iteration_paths = (
+            iteration_dir / "README.md",
+            iteration_dir / "worklist.json",
+            iteration_dir / "worklist.md",
+            iteration_dir / "versions" / "0-4-3.json",
+            iteration_dir / "versions" / "0-4-3.md",
+        )
+        iteration_files_present = {path.name: path.is_file() for path in iteration_paths}
+        iteration_payload_path = iteration_dir / "versions" / "0-4-3.json"
+        iteration_payload = json.loads(iteration_payload_path.read_text()) if iteration_payload_path.is_file() else {}
+        iteration_markdown_path = iteration_dir / "versions" / "0-4-3.md"
+        iteration_markdown_text = iteration_markdown_path.read_text() if iteration_markdown_path.is_file() else ""
+        probe_iteration_dir = tmpdir / "probe-iteration"
+        probe_iteration_result = run_prepare(
+            str(probe_iteration_dir),
+            "--version",
+            "0.4.3",
+            "--open-only",
+            "--probe-environment",
+            env=probe_env,
+        )
+        probe_iteration_path = probe_iteration_dir / "versions" / "0-4-3.json"
+        probe_iteration_payload = json.loads(probe_iteration_path.read_text()) if probe_iteration_path.is_file() else {}
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
@@ -96,6 +141,27 @@ def main() -> int:
         errors.append("markdown worklist missing heading")
     if written.returncode != 0 or not output_written:
         errors.append("worklist generator must write requested output file")
+    if iteration_result.returncode != 0:
+        errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
+    for name, present in iteration_files_present.items():
+        if not present:
+            errors.append(f"version iteration pack missing file: {name}")
+    if iteration_payload.get("schemaVersion") != ITERATION_SCHEMA:
+        errors.append("version iteration schemaVersion mismatch")
+    if iteration_payload.get("version") != "0.4.3" or iteration_payload.get("status") != "capture-ready":
+        errors.append("version iteration should capture 0.4.3 as capture-ready")
+    if iteration_payload.get("summary", {}).get("open") != 1:
+        errors.append("version iteration should preserve open item count")
+    if iteration_markdown_text and "Resource budget target" not in iteration_markdown_text:
+        errors.append("version iteration markdown must include the target open item")
+    if probe_iteration_result.returncode != 0:
+        errors.append(
+            f"probe version iteration failed: {probe_iteration_result.stderr.strip() or probe_iteration_result.stdout.strip()}"
+        )
+    if probe_iteration_payload.get("status") != "blocked-by-environment":
+        errors.append("probe version iteration should capture environment blocker")
+    if probe_iteration_payload.get("summary", {}).get("blockedByEnvironment") != 1:
+        errors.append("probe version iteration should preserve environment blocker count")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")
@@ -174,7 +240,7 @@ def main() -> int:
 
     for path in (README, README_KO, TASKBOARD):
         text = path.read_text()
-        for snippet in (WORKLIST_TOOL, VERIFY_TOOL, SCHEMA):
+        for snippet in (WORKLIST_TOOL, PREPARE_TOOL, VERIFY_TOOL, SCHEMA, ITERATION_SCHEMA):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing version worklist detail: {snippet}")
 
