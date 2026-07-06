@@ -19,6 +19,7 @@ HELM_CHART = ROOT / "scripts" / "verify_helm_chart.py"
 KUSTOMIZE = ROOT / "scripts" / "verify_kustomize.py"
 RELEASE_ARCHIVES = ROOT / "scripts" / "verify_release_archives.py"
 KREW_MANIFEST = ROOT / "scripts" / "verify_krew_manifest.py"
+SUPPLY_CHAIN = ROOT / "scripts" / "verify_supply_chain.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -225,6 +226,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("krew-manifest: passed", result.stdout)
         self.assertIn("plugin: actuary", result.stdout)
+
+    def test_verify_supply_chain(self):
+        result = subprocess.run(
+            [sys.executable, str(SUPPLY_CHAIN)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("supply-chain: passed", result.stdout)
+        self.assertIn("archive-digests: verified", result.stdout)
 
 
 if __name__ == "__main__":

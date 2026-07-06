@@ -37,6 +37,7 @@ Status legend:
 | Kustomize | DONE | base and controller overlays render with `kubectl kustomize` |
 | Release archives | DONE | multi-target archive generator, SHA-256 sidecars, and install smoke verifier |
 | Krew manifest | VERIFY | manifest generator and offline verifier added; real Krew install validation not run because Krew is not installed |
+| SBOM and provenance | DONE | deterministic SBOM/provenance generators and archive digest verifier |
 | Controller | TODO | No live controller deployment yet |
 | Packaging | DOING | Helm, Kustomize, and release archive verifiers added; Krew/SBOM/air-gapped work remains |
 | MCP server | TODO | Contract docs only |
@@ -46,7 +47,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (28 checks)
+verification: passed (29 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -104,7 +105,7 @@ Goal: make KubeActuary installable as a serious Kubernetes open-source tool.
 | 0.5.0 | Kustomize base and overlays | DONE | `scripts/verify_kustomize.py` runs `kubectl kustomize` for base and overlays |
 | 0.5.1 | Multi-arch release archives for CLI/plugin | DONE | `scripts/verify_release_archives.py` generates archives, verifies SHA-256, and runs install smoke |
 | 0.5.2 | Krew manifest for `kubectl actuary` | VERIFY | `scripts/verify_krew_manifest.py`; real Krew install validation still required |
-| 0.5.3 | SBOM and provenance generation | TODO | artifact verification |
+| 0.5.3 | SBOM and provenance generation | DONE | `scripts/verify_supply_chain.py` validates SBOM and archive provenance |
 | 0.5.4 | Air-gapped install documentation | TODO | offline artifact checklist |
 
 ## v0.6.x: Policy and Evidence Adapters

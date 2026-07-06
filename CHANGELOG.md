@@ -36,6 +36,7 @@ Evidence collector release:
 - add multi-target release archive packager with SHA-256 and install smoke
   verification;
 - add Krew manifest generator and offline manifest verifier;
+- add deterministic SBOM and SLSA-style provenance generators with verifier;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

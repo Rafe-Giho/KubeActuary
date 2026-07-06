@@ -312,6 +312,7 @@ docs/
   release-checklist.md         릴리스 gate 체크리스트
   release-taskboard.md         로컬 v1.0 taskboard
   release-archives.md          release archive build and verification
+  supply-chain.md              SBOM and provenance generation
   krew.md                      Krew manifest generation and verification
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
@@ -351,6 +352,9 @@ scripts/
   verify_release_archives.py  archive checksum and install smoke
   generate_krew_manifest.py   Krew manifest generator
   verify_krew_manifest.py     offline Krew manifest check
+  generate_sbom.py            CycloneDX SBOM generator
+  generate_provenance.py      release archive provenance generator
+  verify_supply_chain.py      SBOM/provenance verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -379,6 +383,7 @@ python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
+python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

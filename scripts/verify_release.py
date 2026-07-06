@@ -154,6 +154,11 @@ COMMON_CHECKS = (
         ),
     ),
     Check(
+        "supply chain",
+        ("python3", "-B", "scripts/verify_supply_chain.py"),
+        contains=("supply-chain: passed", "provenance-subjects: 4", "archive-digests: verified"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

@@ -31,6 +31,7 @@ python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
+python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -54,6 +55,7 @@ Expected:
 - Kustomize base and overlays render with `kubectl kustomize`;
 - release archives verify SHA-256 sidecars and install smoke;
 - Krew manifest generation verifies platform entries and archive digests;
+- SBOM and provenance generation verify archive digests;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -78,6 +80,7 @@ Expected:
 - [ ] release archive checksum and install smoke pass.
 - [ ] Krew manifest check passes; run real Krew install validation when Krew is
       available.
+- [ ] SBOM and provenance checks pass.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

@@ -18,7 +18,8 @@ Expected:
   structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller resource budget, lightweight cluster
   smoke harness, Helm chart contract, Kustomize rendering, release archives, and
-  Krew manifest generation, and full manifest gate behavior;
+  Krew manifest generation, SBOM/provenance generation, and full manifest gate
+  behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -49,6 +50,7 @@ python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
+python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -73,6 +75,7 @@ Expected:
 - Kustomize check prints `kustomize: passed`;
 - release archive check prints `release-archives: passed`;
 - Krew manifest check prints `krew-manifest: passed`;
+- supply-chain check prints `supply-chain: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -141,6 +144,7 @@ Confirm from code and tests:
   install smoke for CLI/plugin/controller;
 - Krew manifest generator maps `kubectl-actuary` and adjacent `kube-actuary`
   helper for each archive target;
+- SBOM/provenance generator records file hashes and release archive subjects;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -158,5 +162,5 @@ Expected:
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, controller contract, controller RBAC, controller runtime,
   controller resource budget, lightweight cluster smoke, digest, CRD render,
-  Helm chart, Kustomize, release archives, Krew manifest, gate behavior,
-  JSON/YAML parsing, and `git diff --check`.
+  Helm chart, Kustomize, release archives, Krew manifest, supply chain, gate
+  behavior, JSON/YAML parsing, and `git diff --check`.
