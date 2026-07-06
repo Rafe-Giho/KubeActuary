@@ -259,6 +259,7 @@ Result:
   local iteration pack generation, iteration pack diffs, iteration history
   recording, history status inspection, evidence-aware worklist readiness,
   evidence-aware iteration packs, evidence-aware iteration history,
+  prepared live validation queue reuse,
   next-task selection,
   evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;

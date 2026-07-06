@@ -14,16 +14,40 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from scripts.generate_live_validation_queue import SCHEMA_VERSION as LIVE_QUEUE_SCHEMA  # noqa: E402
 from scripts.generate_live_validation_queue import build_queue  # noqa: E402
 from scripts.generate_release_progress import build_progress  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.version-worklist.v1"
+LIVE_QUEUE_PATH = ".kubeactuary/live-validation-queue.json"
 EVIDENCE_FILE_FLAGS = {
     "--sample": "sample",
     "--source": "source",
     "--output": "output",
 }
+
+
+def load_prepared_queue(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / LIVE_QUEUE_PATH
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path}: live validation queue must be a JSON object")
+    if payload.get("schemaVersion") != LIVE_QUEUE_SCHEMA:
+        raise ValueError(f"{path}: unsupported live-validation-queue schemaVersion: {payload.get('schemaVersion')!r}")
+    payload = dict(payload)
+    payload["path"] = path.as_posix()
+    return payload
+
+
+def worklist_queue(evidence_dir: Path | None, probe_environment: bool, kubectl: str) -> tuple[dict[str, Any], str]:
+    if evidence_dir is not None and not probe_environment:
+        prepared = load_prepared_queue(evidence_dir)
+        if prepared is not None:
+            return prepared, "prepared-live-validation-queue"
+    return build_queue(evidence_dir=evidence_dir, probe_environment=probe_environment, kubectl=kubectl), "generated"
 
 
 def queue_lookup(queue: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -139,7 +163,7 @@ def build_worklist(
     evidence_dir: Path | None = None,
 ) -> dict[str, Any]:
     progress = build_progress()
-    queue = build_queue(evidence_dir=evidence_dir, probe_environment=probe_environment, kubectl=kubectl)
+    queue, queue_source = worklist_queue(evidence_dir, probe_environment, kubectl)
     queue_by_key = queue_lookup(queue)
     versions: list[dict[str, Any]] = []
     for group in progress.get("versions", []):
@@ -188,6 +212,7 @@ def build_worklist(
     worklist = {
         "schemaVersion": SCHEMA_VERSION,
         "source": progress.get("source"),
+        "queueSource": queue_source,
         "releaseSuite": progress.get("releaseSuite"),
         "summary": summarize_versions(versions),
         "versions": versions,

@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_version_worklist.py"
 PREPARE = ROOT / "scripts" / "prepare_version_iteration.py"
+PREPARE_LIVE = ROOT / "scripts" / "prepare_live_evidence_directory.py"
 COMPARE = ROOT / "scripts" / "compare_version_iterations.py"
 RECORD = ROOT / "scripts" / "record_version_iteration.py"
 INSPECT_HISTORY = ROOT / "scripts" / "inspect_version_history.py"
@@ -23,6 +24,7 @@ README_KO = ROOT / "README.ko.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 WORKLIST_TOOL = "generate_version_worklist.py"
 PREPARE_TOOL = "prepare_version_iteration.py"
+PREPARE_LIVE_TOOL = "prepare_live_evidence_directory.py"
 COMPARE_TOOL = "compare_version_iterations.py"
 RECORD_TOOL = "record_version_iteration.py"
 INSPECT_HISTORY_TOOL = "inspect_version_history.py"
@@ -51,6 +53,18 @@ def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.C
 def run_prepare(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(PREPARE), *args],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_prepare_live(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(PREPARE_LIVE), *args],
         cwd=ROOT,
         env=env,
         text=True,
@@ -163,6 +177,21 @@ def main() -> int:
         probe_env = fake_all_tools_env(tmpdir / "tools", cluster_ok=False)
         probe_result = run_generator("--format", "json", "--open-only", "--probe-environment", env=probe_env)
         probe_next_task = run_select("--format", "json", "--probe-environment", env=probe_env)
+        prepared_queue_dir = tmpdir / "prepared-queue"
+        prepared_queue = run_prepare_live(str(prepared_queue_dir), "--probe-environment", env=probe_env)
+        prepared_queue_worklist_result = run_generator(
+            "--format",
+            "json",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
+        prepared_queue_next_task = run_select(
+            "--format",
+            "json",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
         next_task_output = tmpdir / "next-task.json"
         written_next_task = run_select("--format", "json", "--output", str(next_task_output))
         next_task_output_written = next_task_output.is_file()
@@ -331,6 +360,13 @@ def main() -> int:
     multi_version = parse_worklist("multi-version worklist", multi_version_result, errors)
     open_only = parse_worklist("open-only worklist", open_only_result, errors)
     probe_worklist = parse_worklist("probe worklist", probe_result, errors)
+    if prepared_queue.returncode != 0:
+        errors.append(f"prepared live queue failed: {prepared_queue.stderr.strip() or prepared_queue.stdout.strip()}")
+        prepared_queue_worklist = {}
+        prepared_queue_next = {}
+    else:
+        prepared_queue_worklist = parse_worklist("prepared queue worklist", prepared_queue_worklist_result, errors)
+        prepared_queue_next = parse_worklist("prepared queue next task", prepared_queue_next_task, errors)
     next_task = parse_worklist("next task", next_task_result, errors)
     next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
@@ -574,6 +610,19 @@ def main() -> int:
     if "blocked-by-environment" not in probe_statuses:
         errors.append("probe worklist must mark affected versions blocked-by-environment")
 
+    prepared_summary = prepared_queue_worklist.get("summary", {})
+    prepared_selected = prepared_queue_next.get("selected") or {}
+    if prepared_queue_worklist.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("prepared evidence-dir worklist must use the persisted live validation queue")
+    if prepared_queue_worklist.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
+        errors.append("prepared evidence-dir worklist must preserve persisted unavailable cluster access")
+    if prepared_summary.get("blockedByEnvironment") != 14:
+        errors.append("prepared evidence-dir worklist must preserve persisted environment blockers")
+    if prepared_summary.get("captureReady") != 2:
+        errors.append("prepared evidence-dir worklist must preserve persisted capture-ready items")
+    if prepared_selected.get("captureStatus") != "tool-ready" or prepared_selected.get("kind") != "krew":
+        errors.append("prepared evidence-dir selector should use persisted queue ordering and choose a Krew item")
+
     next_selected = next_task.get("selected") or {}
     path_selected = next_task_with_paths.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
@@ -637,6 +686,7 @@ def main() -> int:
         for snippet in (
             WORKLIST_TOOL,
             PREPARE_TOOL,
+            PREPARE_LIVE_TOOL,
             COMPARE_TOOL,
             RECORD_TOOL,
             INSPECT_HISTORY_TOOL,

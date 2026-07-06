@@ -110,6 +110,7 @@ def build_selection(
         open_only=not include_complete,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        evidence_dir=evidence_dir,
     )
     items = candidates(worklist)
     selectable_items = [materialize_item(item, evidence_dir) for item in items] if evidence_dir is not None else items

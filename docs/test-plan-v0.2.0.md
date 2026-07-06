@@ -146,6 +146,8 @@ Expected:
 - version worklist check prints `version-worklist: passed` and covers next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
+- evidence-aware worklist and next-task selection use a prepared live
+  validation queue when the evidence directory already contains one;
 - version iteration packs preserve resolved closure commands and evidence
   readiness when `--evidence-dir` is used;
 - version iteration history records and inspects evidence readiness deltas

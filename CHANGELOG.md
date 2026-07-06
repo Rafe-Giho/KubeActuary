@@ -28,6 +28,8 @@ Evidence collector release:
   checks;
 - add deterministic next-task selection from version worklists;
 - add evidence-aware next-task selection that skips completed local evidence files;
+- make evidence-aware worklists and next-task selection prefer prepared live
+  validation queues when an evidence directory already has one;
 - add tool-ready and missing-tool next actions to release progress reports;
 - surface selected next-task, runner, environment, and advance status in release
   progress Markdown for local evidence directories;
