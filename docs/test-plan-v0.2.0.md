@@ -176,6 +176,8 @@ Expected:
   drilldowns in text, JSON, and Markdown;
 - version iteration history status preserves latest advance and runner status
   from the evidence directory in text, JSON, and Markdown;
+- version iteration history status compares latest advance records against the
+  latest next-task selection and reports stale mismatches;
 - version iteration history status preserves latest run, worklist, and diff
   artifact paths in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run diff summaries in text,

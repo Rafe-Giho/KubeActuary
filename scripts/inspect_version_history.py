@@ -329,6 +329,37 @@ def summarize_latest_advance(latest: dict[str, Any] | None, errors: list[str]) -
     }
 
 
+def latest_advance_next_task_consistency(
+    latest_next_task: dict[str, Any] | None,
+    latest_advance: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(latest_next_task, dict) or not isinstance(latest_advance, dict):
+        return None
+    advance_next_task = latest_advance.get("nextTask", {})
+    if not isinstance(advance_next_task, dict):
+        return None
+    latest_id = latest_next_task.get("id")
+    advance_id = advance_next_task.get("selected")
+    comparisons = [
+        ("selected", advance_id, latest_id),
+        ("captureStatus", advance_next_task.get("captureStatus"), latest_next_task.get("captureStatus")),
+        ("environmentStatus", advance_next_task.get("environmentStatus"), latest_next_task.get("environmentStatus")),
+        ("environmentReason", advance_next_task.get("environmentReason"), latest_next_task.get("environmentReason")),
+        ("nextStep", advance_next_task.get("nextStep"), latest_next_task.get("nextStep")),
+    ]
+    mismatches = [
+        field
+        for field, advance_value, latest_value in comparisons
+        if advance_value != latest_value
+    ]
+    return {
+        "status": "mismatched" if mismatches else "matched",
+        "mismatches": mismatches,
+        "advanceSelected": advance_id,
+        "latestSelected": latest_id,
+    }
+
+
 def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
     commands = [
         shell_join(
@@ -440,6 +471,11 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         latest_version_diffs = []
     latest_artifacts = build_latest_artifacts(history_dir, latest)
     latest_advance = summarize_latest_advance(latest, errors)
+    if isinstance(latest_advance, dict):
+        latest_advance["nextTaskConsistency"] = latest_advance_next_task_consistency(
+            latest_next_task,
+            latest_advance,
+        )
     next_commands = build_next_commands(history_dir, latest)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -573,6 +609,11 @@ def render_text(status: dict[str, Any]) -> str:
                 lines.append(f"latest-advance-skipped-complete-evidence: {advance_next_task.get('skippedCompleteEvidence')}")
             for command in list_value(advance_next_task.get("worklistCommands")):
                 lines.append(f"latest-advance-next-task-worklist: {command}")
+        consistency = latest_advance.get("nextTaskConsistency")
+        if isinstance(consistency, dict):
+            lines.append(f"latest-advance-next-task-consistency: {consistency.get('status')}")
+            if consistency.get("mismatches"):
+                lines.append(f"latest-advance-next-task-mismatches: {', '.join(consistency.get('mismatches', []))}")
     for version in status.get("latestVersionDiffs", []) or []:
         if not isinstance(version, dict):
             continue
@@ -749,6 +790,11 @@ def render_markdown(status: dict[str, Any]) -> str:
                 lines.append(f"- skipped complete evidence: {advance_next_task.get('skippedCompleteEvidence')}")
             for command in list_value(advance_next_task.get("worklistCommands")):
                 lines.append(f"- next task worklist: `{command}`")
+        consistency = latest_advance.get("nextTaskConsistency")
+        if isinstance(consistency, dict):
+            lines.append(f"- next task consistency: `{consistency.get('status')}`")
+            if consistency.get("mismatches"):
+                lines.append(f"- next task mismatches: `{', '.join(consistency.get('mismatches', []))}`")
     else:
         lines.append("- none")
     lines.extend(

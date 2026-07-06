@@ -342,7 +342,7 @@ def main() -> int:
                         },
                     },
                     "nextTask": {
-                        "selected": "06-controller",
+                        "selected": "01-controller-resource-budget",
                         "captureStatus": "tool-ready",
                         "nextStep": "capture evidence with the listed commands",
                         "skippedCompleteEvidence": 1,
@@ -572,6 +572,16 @@ def main() -> int:
         )
         evidence_history_status_text = run_inspect_history(str(evidence_history_dir))
         evidence_history_status_markdown = run_inspect_history(str(evidence_history_dir), "--format", "markdown")
+        stale_advance_path = completed_evidence_dir / ".kubeactuary" / "version-iteration-advance.json"
+        stale_advance_payload = json.loads(stale_advance_path.read_text()) if stale_advance_path.is_file() else {}
+        stale_advance_payload.setdefault("nextTask", {})["selected"] = "stale-task"
+        stale_advance_payload.setdefault("nextTask", {})["captureStatus"] = "missing-tools"
+        stale_advance_path.write_text(json.dumps(stale_advance_payload, indent=2, sort_keys=True) + "\n")
+        stale_evidence_history_status = run_inspect_history(str(evidence_history_dir), "--format", "json")
+        stale_evidence_history_status_payload = (
+            json.loads(stale_evidence_history_status.stdout) if stale_evidence_history_status.returncode == 0 else {}
+        )
+        stale_evidence_history_status_text = run_inspect_history(str(evidence_history_dir))
         prepared_history_dir = tmpdir / "prepared-history"
         prepared_history_record = run_record(
             str(prepared_history_dir),
@@ -1111,8 +1121,18 @@ def main() -> int:
         errors.append("evidence-aware history status should include the latest advance runner status")
     if evidence_latest_advance.get("runnerSummary", {}).get("ran") != 2:
         errors.append("evidence-aware history status should include latest advance runner execution counts")
-    if evidence_latest_advance.get("nextTask", {}).get("selected") != "06-controller":
+    if evidence_latest_advance.get("nextTask", {}).get("selected") != "01-controller-resource-budget":
         errors.append("evidence-aware history status should include latest advance next-task summary")
+    evidence_latest_advance_consistency = evidence_latest_advance.get("nextTaskConsistency") or {}
+    if evidence_latest_advance_consistency.get("status") != "matched":
+        errors.append("evidence-aware history status should match latest advance to latest next task")
+    stale_advance_consistency = (
+        (stale_evidence_history_status_payload.get("latestAdvance") or {}).get("nextTaskConsistency") or {}
+    )
+    if stale_advance_consistency.get("status") != "mismatched":
+        errors.append("stale advance history status should report next-task mismatch")
+    if stale_advance_consistency.get("mismatches") != ["selected", "captureStatus"]:
+        errors.append("stale advance history status should identify mismatched next-task fields")
     evidence_status_next_task = evidence_history_status_payload.get("latestNextTask", {})
     if evidence_status_next_task.get("version") != "Current Baseline":
         errors.append("evidence-aware history status should preserve latest next-task version")
@@ -1124,10 +1144,15 @@ def main() -> int:
         "latest-advance-status: passed",
         "latest-advance-runner-status: passed",
         "latest-advance-runner-ran: 2/2",
-        "latest-advance-next-task: 06-controller",
+        "latest-advance-next-task: 01-controller-resource-budget",
+        "latest-advance-next-task-consistency: matched",
     ):
         if snippet not in evidence_history_status_text.stdout:
             errors.append(f"evidence-aware history text should show latest advance detail: {snippet}")
+    if "latest-advance-next-task-consistency: mismatched" not in stale_evidence_history_status_text.stdout:
+        errors.append("stale advance history text should show latest advance mismatch")
+    if "latest-advance-next-task-mismatches: selected, captureStatus" not in stale_evidence_history_status_text.stdout:
+        errors.append("stale advance history text should show mismatched next-task fields")
     if "file `" not in evidence_history_status_markdown.stdout:
         errors.append("evidence-aware history Markdown should show latest next-task files")
     for snippet in (
@@ -1135,7 +1160,8 @@ def main() -> int:
         "status: `passed`",
         "runner: `passed`",
         "runner ran: `2/2`",
-        "next task: `06-controller`",
+        "next task: `01-controller-resource-budget`",
+        "next task consistency: `matched`",
     ):
         if snippet not in evidence_history_status_markdown.stdout:
             errors.append(f"evidence-aware history Markdown should show latest advance detail: {snippet}")
