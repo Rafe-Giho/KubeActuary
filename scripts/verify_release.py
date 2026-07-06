@@ -184,6 +184,11 @@ COMMON_CHECKS = (
         contains=("kube-score-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
     ),
     Check(
+        "pluto adapter",
+        ("python3", "-B", "scripts/verify_pluto_adapter.py"),
+        contains=("pluto-adapter: passed", "pass-fixture: api-compatible", "fail-fixture: deprecated-api-found"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

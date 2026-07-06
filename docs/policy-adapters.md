@@ -99,3 +99,28 @@ python3 -B scripts/verify_kube_score_adapter.py
 ```
 
 The verifier uses pass/fail fixtures under `tests/fixtures/kube-score`.
+
+## Pluto
+
+```sh
+python3 -B scripts/adapt_pluto_evidence.py pluto-output.json
+```
+
+The adapter reads captured `pluto detect-* -o json` output and emits
+`pluto-deprecated-api` evidence. It does not run Pluto, contact a cluster, or
+mutate resources.
+
+Evidence rules:
+
+- zero `items` make evidence `ok: true`;
+- one or more deprecated or removed API findings make evidence `ok: false`;
+- removed APIs, deprecated APIs, unavailable replacements, and target versions
+  are counted in `deprecatedApiResults`.
+
+Verification:
+
+```sh
+python3 -B scripts/verify_pluto_adapter.py
+```
+
+The verifier uses pass/fail fixtures under `tests/fixtures/pluto`.

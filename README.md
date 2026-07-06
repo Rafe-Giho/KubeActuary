@@ -365,6 +365,8 @@ scripts/
   verify_kube_linter_adapter.py kube-linter adapter fixture verifier
   adapt_kube_score_evidence.py kube-score output to evidence adapter
   verify_kube_score_adapter.py kube-score adapter fixture verifier
+  adapt_pluto_evidence.py     Pluto output to evidence adapter
+  verify_pluto_adapter.py     Pluto adapter fixture verifier
   verify_release.py            repeatable release verification suite
 assets/brand/
   kubeactuary-symbol.png       selected project symbol
@@ -399,6 +401,7 @@ python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
 python3 -B scripts/verify_kube_score_adapter.py
+python3 -B scripts/verify_pluto_adapter.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -447,7 +450,7 @@ Later:
 - optional MCP server;
 - real Krew install validation;
 - optional admission webhook for AI-originated writes;
-- remaining policy adapter for Pluto.
+- adapter result schema and severity normalization.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

@@ -1,0 +1,6 @@
+{
+  "items": [],
+  "target-versions": {
+    "k8s": "v1.22.0"
+  }
+}

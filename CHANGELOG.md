@@ -42,6 +42,7 @@ Evidence collector release:
 - add OPA/Rego policy evidence adapter with pass/fail fixtures;
 - add kube-linter policy evidence adapter with pass/fail fixtures;
 - add kube-score policy evidence adapter with pass/fail fixtures;
+- add Pluto deprecated API evidence adapter with pass/fail fixtures;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0
