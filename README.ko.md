@@ -301,6 +301,9 @@ deploy/crds/
   fixtures/                    CRD upgrade와 rollback fixture
 deploy/controller/
   *-rbac.yaml                  optional controller RBAC manifest
+deploy/kustomize/
+  base/                        CRD-only Kustomize base
+  overlays/                    optional controller RBAC overlays
 docs/
   collectors.md                evidence collector 계약
   landscape.md                 생태계 조사
@@ -308,6 +311,7 @@ docs/
   project-assessment.md        현재 성숙도 평가
   release-checklist.md         릴리스 gate 체크리스트
   release-taskboard.md         로컬 v1.0 taskboard
+  kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
   crd-upgrade-rollback.md      CRD fixture upgrade/rollback runbook
@@ -340,6 +344,7 @@ scripts/
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_helm_chart.py        offline Helm chart contract check
+  verify_kustomize.py         Kustomize render check
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -365,6 +370,7 @@ python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
+python3 -B scripts/verify_kustomize.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
@@ -375,7 +381,7 @@ python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.
 python3 -B -m json.tool examples/read-pods.verified.capsule.json
 python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml
 ```
 
 ## 브랜드 후보

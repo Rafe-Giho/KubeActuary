@@ -32,6 +32,7 @@ Evidence collector release:
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
   k3s;
 - add Helm chart seed with CRD packaging and optional controller RBAC;
+- add Kustomize base and controller RBAC overlays with render verification;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

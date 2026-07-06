@@ -17,7 +17,8 @@ Expected:
   validate, doctor, normalized collector failures, human help, agent JSON help,
   structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller resource budget, lightweight cluster
-  smoke harness, Helm chart contract, and full manifest gate behavior;
+  smoke harness, Helm chart contract, Kustomize rendering, and full manifest
+  gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -45,6 +46,7 @@ python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
+python3 -B scripts/verify_kustomize.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -66,6 +68,7 @@ Expected:
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
+- Kustomize check prints `kustomize: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -85,15 +88,15 @@ python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
 python3 -B -m json.tool examples/apply-configmap.diff.capsule.json
 python3 -B -m json.tool examples/apply-configmap.rollback.capsule.json
 python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml
+ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml examples/operationcapsule-scale.yaml examples/configmap-demo.yaml examples/configmap-demo.rollback.yaml
 ```
 
 Expected:
 
 - JSON examples parse;
 - schema JSON parses;
-- GitHub Actions workflow, Helm chart metadata, CRD YAML, CRD rollback fixture
-  YAML, controller RBAC YAML, and example YAML files parse.
+- GitHub Actions workflow, Helm chart metadata, Kustomize manifests, CRD YAML,
+  CRD rollback fixture YAML, controller RBAC YAML, and example YAML files parse.
 
 ## Safety Checks
 
@@ -128,6 +131,8 @@ Confirm from code and tests:
   kind, minikube, MicroK8s, and k3s without default writes;
 - Helm chart packages the CRD under `crds/` and keeps optional controller RBAC
   disabled by default;
+- Kustomize base renders only the CRD, while controller overlays add only
+  optional RBAC;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -145,4 +150,5 @@ Expected:
   release notes dry-run, CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, controller contract, controller RBAC, controller runtime,
   controller resource budget, lightweight cluster smoke, digest, CRD render,
-  Helm chart, gate behavior, JSON/YAML parsing, and `git diff --check`.
+  Helm chart, Kustomize, gate behavior, JSON/YAML parsing, and
+  `git diff --check`.

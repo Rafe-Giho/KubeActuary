@@ -130,6 +130,11 @@ COMMON_CHECKS = (
         contains=("helm-chart: passed", "crd: included", "controller: optional"),
     ),
     Check(
+        "kustomize",
+        ("python3", "-B", "scripts/verify_kustomize.py"),
+        contains=("kustomize: passed", "base: crd", "overlay: controller-namespace", "overlay: controller-cluster"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),
@@ -184,6 +189,9 @@ COMMON_CHECKS = (
             ".github/workflows/ci.yml",
             "charts/kubeactuary/Chart.yaml",
             "charts/kubeactuary/values.yaml",
+            "deploy/kustomize/base/kustomization.yaml",
+            "deploy/kustomize/overlays/controller-namespace/kustomization.yaml",
+            "deploy/kustomize/overlays/controller-cluster/kustomization.yaml",
             "deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml",
             "deploy/crds/fixtures/operationcapsules.ops.kubeactuary.dev.v0.2.0.yaml",
             "deploy/controller/namespace-scoped-rbac.yaml",
