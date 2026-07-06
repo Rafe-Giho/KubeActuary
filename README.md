@@ -366,7 +366,7 @@ scripts/
   compare_version_iterations.py local version iteration diff generator
   record_version_iteration.py local version iteration history recorder
   inspect_version_history.py local version iteration history inspector
-  select_next_version_task.py local next version task selector
+  select_next_version_task.py local next version task selector with evidence skip support
   verify_version_worklist.py version worklist verifier
   kube-actuary.version-worklist.v1 version worklist schema
   kube-actuary.version-iteration.v1 version iteration schema
@@ -493,6 +493,7 @@ python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history 
 python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history
 python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
+python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py

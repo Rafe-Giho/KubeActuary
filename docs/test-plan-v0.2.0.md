@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  release progress reporting, version worklist generation, next version task selection, external gate plan generation, external gate evidence evaluation,
+  release progress reporting, version worklist generation, next version task selection, evidence-aware next-task skipping, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
   clean generated-artifact verification,
@@ -141,6 +141,8 @@ Expected:
 - release taskboard check prints `release-taskboard: passed`;
 - release progress check prints `release-progress: passed`;
 - version worklist check prints `version-worklist: passed` and covers next-task selection;
+- evidence-aware next-task selection skips completed local evidence file sets
+  when `--skip-complete-evidence` is used;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;
@@ -254,8 +256,8 @@ Confirm from code and tests:
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, next-task selection, evidence-directory command
-  resolution, capture-ready items, tool-blocked items, version/open-only
-  filters, and optional environment blockers;
+  resolution, completed-evidence skipping, capture-ready items, tool-blocked
+  items, version/open-only filters, and optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
@@ -387,7 +389,7 @@ Expected:
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
   release notes dry-run, release taskboard audit, release progress, version worklist, external gate plan, external gate command safety, external gate evidence,
-  external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build,
+  evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller

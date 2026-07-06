@@ -106,6 +106,7 @@ Expected:
   inspects history status with schema `kube-actuary.version-iteration-history-status.v1`,
   selects the next task with schema `kube-actuary.next-version-task.v1`,
   resolves next-task evidence paths under a requested evidence directory,
+  skips completed local evidence file sets when requested,
   and exercises version/open-only filters plus optional environment blockers;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;

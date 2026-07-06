@@ -166,6 +166,25 @@ def main() -> int:
         next_task_output = tmpdir / "next-task.json"
         written_next_task = run_select("--format", "json", "--output", str(next_task_output))
         next_task_output_written = next_task_output.is_file()
+        completed_evidence_dir = tmpdir / "completed-evidence"
+        (completed_evidence_dir / "raw").mkdir(parents=True)
+        (completed_evidence_dir / "supplemental").mkdir()
+        (completed_evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
+            "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
+        )
+        (completed_evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json").write_text("{}\n")
+        skipped_complete_task = run_select(
+            "--format",
+            "json",
+            "--evidence-dir",
+            str(completed_evidence_dir),
+            "--skip-complete-evidence",
+        )
+        skipped_complete_text = run_select(
+            "--evidence-dir",
+            str(completed_evidence_dir),
+            "--skip-complete-evidence",
+        )
         iteration_dir = tmpdir / "iteration"
         iteration_result = run_prepare(
             str(iteration_dir),
@@ -251,6 +270,7 @@ def main() -> int:
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
     next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
+    skipped_complete_payload = parse_worklist("skip-complete next task", skipped_complete_task, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
     if "# KubeActuary Version Worklist" not in markdown_result.stdout:
@@ -261,6 +281,8 @@ def main() -> int:
         errors.append("next task selector markdown must render")
     if written_next_task.returncode != 0 or not next_task_output_written:
         errors.append("next task selector must write requested output file")
+    if skipped_complete_text.returncode != 0 or "evidence-files: 0/4" not in skipped_complete_text.stdout:
+        errors.append("skip-complete next task text must report selected evidence file readiness")
     if iteration_result.returncode != 0:
         errors.append(f"version iteration pack failed: {iteration_result.stderr.strip() or iteration_result.stdout.strip()}")
     for name, present in iteration_files_present.items():
@@ -411,6 +433,8 @@ def main() -> int:
         errors.append("next task should record source worklist schema")
     if next_task.get("summary", {}).get("candidateItems") != 16:
         errors.append("next task should search sixteen candidate items by default")
+    if next_task.get("summary", {}).get("eligibleItems") != 16:
+        errors.append("next task should report sixteen eligible items by default")
     if next_selected.get("id") != "01-controller-resource-budget":
         errors.append("next task should select the first baseline tool-ready item")
     if next_selected.get("captureStatus") != "tool-ready":
@@ -433,6 +457,18 @@ def main() -> int:
         next_task_with_paths.get("resolvedClosureCommands", [])
     ):
         errors.append("path-resolved next task should include resolved closure commands")
+    path_summary = path_selected.get("evidenceSummary", {})
+    if path_summary.get("files") != 3 or path_summary.get("existingFiles") != 0:
+        errors.append("path-resolved next task should summarize missing evidence files")
+    skipped_selected = skipped_complete_payload.get("selected") or {}
+    if skipped_complete_payload.get("summary", {}).get("skippedCompleteEvidence") != 1:
+        errors.append("skip-complete selector should skip one completed evidence task")
+    if skipped_complete_payload.get("summary", {}).get("eligibleItems") != 15:
+        errors.append("skip-complete selector should leave fifteen eligible tasks")
+    if skipped_selected.get("id") != "06-controller":
+        errors.append("skip-complete selector should advance to the next tool-ready task")
+    if skipped_selected.get("evidenceSummary", {}).get("complete") is True:
+        errors.append("skip-complete selector must not select a completed evidence task")
     filtered_selected = next_task_filtered.get("selected") or {}
     if filtered_selected.get("version") != "0.4.3" or filtered_selected.get("captureStatus") != "tool-ready":
         errors.append("filtered next task should select the 0.4.3 tool-ready item")

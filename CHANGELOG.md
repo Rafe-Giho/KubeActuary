@@ -24,6 +24,7 @@ Evidence collector release:
 - add local version iteration history recording for run-to-run tracking;
 - add local version iteration history inspection for latest-run status checks;
 - add deterministic next-task selection from version worklists;
+- add evidence-aware next-task selection that skips completed local evidence files;
 - add tool-ready and missing-tool next actions to release progress reports;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,

@@ -117,8 +117,8 @@ Coverage included:
 - version worklist generation for version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording, history
   status inspection, next-task selection, evidence-directory command
-  resolution, capture status, version/open-only filters, and optional
-  environment blockers;
+  resolution, completed-evidence skipping, capture status, version/open-only
+  filters, and optional environment blockers;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -238,7 +238,7 @@ Result:
 - version worklist check prints `version-worklist: passed` and exercises
   local iteration pack generation, iteration pack diffs, iteration history
   recording, history status inspection, next-task selection,
-  evidence-directory command resolution,
+  evidence-directory command resolution, completed-evidence skipping,
   version/open-only filters, and optional environment blockers;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:

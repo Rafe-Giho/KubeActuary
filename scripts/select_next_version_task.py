@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,11 @@ from scripts.generate_version_worklist import build_worklist  # noqa: E402
 
 SCHEMA_VERSION = "kube-actuary.next-version-task.v1"
 DEFAULT_STATUS_PRIORITY = ("tool-ready", "blocked-by-environment", "missing-tools", "not-external-gate")
+NEXT_TASK_FILE_FLAGS = {
+    "--sample": "sample",
+    "--source": "source",
+    "--output": "output",
+}
 
 
 def candidates(worklist: dict[str, Any]) -> list[dict[str, Any]]:
@@ -44,14 +50,61 @@ def select_candidate(items: list[dict[str, Any]], priority: tuple[str, ...]) -> 
     return items[0] if items else None
 
 
+def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for command in selected.get("resolvedCommands", []):
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            continue
+        for index, token in enumerate(tokens[:-1]):
+            role = NEXT_TASK_FILE_FLAGS.get(token)
+            if role is None:
+                continue
+            path = tokens[index + 1]
+            key = (role, path)
+            if key in seen:
+                continue
+            seen.add(key)
+            files.append({"role": role, "path": path, "exists": Path(path).is_file()})
+    return files
+
+
+def evidence_summary(files: list[dict[str, Any]]) -> dict[str, int | bool]:
+    existing = sum(1 for item in files if item["exists"])
+    return {
+        "files": len(files),
+        "existingFiles": existing,
+        "missingFiles": len(files) - existing,
+        "complete": bool(files) and existing == len(files),
+    }
+
+
+def materialize_item(item: dict[str, Any], evidence_dir: Path) -> dict[str, Any]:
+    selected = {
+        **item,
+        "evidenceDir": evidence_dir.as_posix(),
+        "resolvedCommands": [
+            materialize_command(item, command, evidence_dir, index + 1)
+            for index, command in enumerate(item.get("commands", []))
+        ],
+    }
+    files = next_task_files(selected)
+    return {**selected, "files": files, "evidenceSummary": evidence_summary(files)}
+
+
 def build_selection(
     version_filters: list[str],
     include_complete: bool,
     probe_environment: bool,
     kubectl: str,
     evidence_dir: Path | None = None,
+    skip_complete_evidence: bool = False,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
 ) -> dict[str, Any]:
+    if skip_complete_evidence and evidence_dir is None:
+        raise ValueError("--skip-complete-evidence requires --evidence-dir")
     worklist = build_worklist(
         version_filters=version_filters,
         open_only=not include_complete,
@@ -59,16 +112,17 @@ def build_selection(
         kubectl=kubectl,
     )
     items = candidates(worklist)
-    selected = select_candidate(items, priority)
-    if selected is not None and evidence_dir is not None:
-        selected = {
-            **selected,
-            "evidenceDir": evidence_dir.as_posix(),
-            "resolvedCommands": [
-                materialize_command(selected, command, evidence_dir, index + 1)
-                for index, command in enumerate(selected.get("commands", []))
-            ],
-        }
+    selectable_items = [materialize_item(item, evidence_dir) for item in items] if evidence_dir is not None else items
+    if skip_complete_evidence:
+        eligible_items = [
+            item
+            for item in selectable_items
+            if item.get("evidenceSummary", {}).get("complete") is not True
+        ]
+    else:
+        eligible_items = selectable_items
+    selected = select_candidate(eligible_items, priority)
+    skipped_complete_evidence = len(selectable_items) - len(eligible_items)
     selection = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
@@ -80,11 +134,14 @@ def build_selection(
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
             "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
+            "skipCompleteEvidence": skip_complete_evidence,
         },
         "statusPriority": list(priority),
         "summary": {
             **worklist.get("summary", {}),
             "candidateItems": len(items),
+            "eligibleItems": len(eligible_items),
+            "skippedCompleteEvidence": skipped_complete_evidence,
             "selected": selected is not None,
             "selectedCaptureStatus": selected.get("captureStatus") if selected else None,
         },
@@ -124,6 +181,9 @@ def render_text(selection: dict[str, Any]) -> str:
         lines.append(f"missing-tools: {', '.join(selected['missingTools'])}")
     if selected.get("nextStep"):
         lines.append(f"next-step: {selected['nextStep']}")
+    if selected.get("evidenceSummary"):
+        evidence = selected["evidenceSummary"]
+        lines.append(f"evidence-files: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
     for command in selected.get("commands", []):
         lines.append(f"command: {command}")
     for command in selected.get("resolvedCommands", []):
@@ -159,6 +219,9 @@ def render_markdown(selection: dict[str, Any]) -> str:
             lines.append(f"  - missing tools: `{', '.join(selected['missingTools'])}`")
         if selected.get("nextStep"):
             lines.append(f"  - next: {selected['nextStep']}")
+        if selected.get("evidenceSummary"):
+            evidence = selected["evidenceSummary"]
+            lines.append(f"  - evidence files: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
         for command in selected.get("commands", []):
             lines.append(f"  - `{command}`")
         for command in selected.get("resolvedCommands", []):
@@ -177,6 +240,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--include-complete", action="store_true", help="include complete versions in the search scope")
     parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
+    parser.add_argument(
+        "--skip-complete-evidence",
+        action="store_true",
+        help="with --evidence-dir, skip tasks whose resolved evidence files already exist",
+    )
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -188,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
             evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
+            skip_complete_evidence=args.skip_complete_evidence,
         )
     except ValueError as exc:
         print("next-version-task: failed", file=sys.stderr)
