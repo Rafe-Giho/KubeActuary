@@ -739,6 +739,14 @@ def main() -> int:
         errors.append("blocked text status must print environment worklist drilldowns")
     if version_blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:
         errors.append("version-blocked status must preserve version filters")
+    version_blocked_summary = version_blocked_payload.get("summary", {})
+    if version_blocked_summary.get("totalGates") != 1 or version_blocked_summary.get("uncoveredGates") != 1:
+        errors.append("version-blocked status must scope gate totals to the requested version")
+    if version_blocked_summary.get("coverageErrors") != 0:
+        errors.append("version-blocked status must omit unrelated full-release coverage errors")
+    version_missing_gates = version_blocked_payload.get("missing", {}).get("externalGates", [])
+    if [gate.get("id") for gate in version_missing_gates] != ["11-resource-budget-target-idle-50m-cpu-and-64mi-memory"]:
+        errors.append("version-blocked status must scope missing external gates to the requested version")
     version_environment_summary = (version_blocked_payload.get("environmentBlockers") or {}).get("summary", {})
     if version_environment_summary.get("blockedByEnvironment") != 1:
         errors.append("version-blocked status must scope environment blocker summary to the requested version")
@@ -774,6 +782,8 @@ def main() -> int:
         errors.append("version-blocked status must preserve version filters in the probe next command")
     for snippet in (
         "filter-version: 0.4.3",
+        "covered: 0/1",
+        "coverage-errors: 0",
         f"next: {expected_version_probe_command}",
         "environment-blockers: 1",
         "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",

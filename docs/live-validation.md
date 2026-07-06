@@ -316,9 +316,9 @@ kind, and resolved commands still match, making stale next-task artifacts
 visible before another capture attempt. The same status and progress reports
 compare persisted runner and advance records against the current next-task
 artifact, so stale local execution records are visible before repeated
-iteration. Use `--version <version>` to keep blocker drilldowns and
-environment-probe follow-up commands scoped to one release version. The status
-`nextCommands` list recommends only commands whose
+iteration. Use `--version <version>` to keep coverage totals, missing gates,
+blocker drilldowns, and environment-probe follow-up commands scoped to one
+release version. The status `nextCommands` list recommends only commands whose
 prepared queue item is `tool-ready`; `missing-tools` and
 `blocked-by-environment` actions stay in blocker summaries and next-step text
 instead of being suggested as runnable capture commands. Release progress uses

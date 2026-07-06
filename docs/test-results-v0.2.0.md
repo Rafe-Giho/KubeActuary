@@ -142,7 +142,7 @@ Coverage included:
   directories plus persisted next-task output, file readiness, and
   unprepared-directory guidance, with evidence-build status, runner failure
   summaries, resolved prepared-queue command priority, selected next-task
-  worklist drilldowns, version-scoped blocker drilldown commands, and
+  worklist drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, and
   probe-first follow-up guidance for failed runner and environment-blocker states;
 - next-task evidence build from prepared raw files plus passed and
   missing-source recorded status reports and idempotent output-exists handling;
@@ -297,7 +297,7 @@ Result:
   verifies persisted next-task output, file readiness, next-task evidence
   build, next-task-run status, environment metadata, advance status,
   queue-source visibility/origin, next-task queue consistency,
-  selected next-task worklist drilldowns, version-scoped blocker drilldown commands,
+  selected next-task worklist drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands,
   evidence-build/runner/advance record consistency, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
   output, next-task evidence build Markdown output, legacy prepared-record

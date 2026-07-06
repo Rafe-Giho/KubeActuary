@@ -518,6 +518,10 @@ def queue_items_by_id(live_queue: dict[str, Any] | None) -> dict[str, dict[str, 
     }
 
 
+def gate_scope(gate: dict[str, Any]) -> str | None:
+    return gate.get("version") or gate.get("section")
+
+
 def next_task_queue_consistency(next_task: dict[str, Any] | None, live_queue: dict[str, Any] | None) -> dict[str, Any] | None:
     if not isinstance(next_task, dict):
         return None
@@ -649,11 +653,7 @@ def next_commands(
 ) -> list[str]:
     commands: list[str] = []
     requested = set(version_filters or [])
-    scoped_gates = [
-        gate
-        for gate in gates
-        if not requested or (gate.get("version") or gate.get("section")) in requested
-    ]
+    scoped_gates = [gate for gate in gates if not requested or gate_scope(gate) in requested]
     resolved = selected_resolved_commands(next_task)
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     selected_id = str(selected.get("id")) if selected.get("id") else None
@@ -719,6 +719,14 @@ def inspect_directory(
     manifest = build_manifest(live_reports)
     evaluation = evaluate(manifest, supplemental_paths)
     coverage_errors = check_coverage(manifest)
+    requested = set(version_filters)
+    evaluated_gates = [gate for gate in evaluation.get("gates", []) if isinstance(gate, dict)]
+    scoped_gates = [
+        gate
+        for gate in evaluated_gates
+        if not requested or gate_scope(gate) in requested
+    ]
+    scoped_coverage_errors = [] if requested else coverage_errors
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     live_queue = load_live_validation_queue(evidence_dir)
     blockers = live_queue_blockers(live_queue, evidence_dir, version_filters=version_filters)
@@ -751,9 +759,14 @@ def inspect_directory(
             next_task,
             version_iteration_advance.get("nextTask"),
         )
-    uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
-    summary = evaluation.get("summary", {})
-    complete = summary.get("uncovered") == 0 and not coverage_errors
+    uncovered = [gate for gate in scoped_gates if gate.get("covered") is not True]
+    covered_count = sum(1 for gate in scoped_gates if gate.get("covered") is True)
+    summary = {
+        "total": len(scoped_gates),
+        "covered": covered_count,
+        "uncovered": len(scoped_gates) - covered_count,
+    }
+    complete = summary["uncovered"] == 0 and not scoped_coverage_errors
     return {
         "schemaVersion": SCHEMA_VERSION,
         "evidenceDir": str(evidence_dir),
@@ -768,7 +781,7 @@ def inspect_directory(
             "coveredGates": summary.get("covered", 0),
             "uncoveredGates": summary.get("uncovered", 0),
             "totalGates": summary.get("total", 0),
-            "coverageErrors": len(coverage_errors),
+            "coverageErrors": len(scoped_coverage_errors),
         },
         "nextTask": next_task,
         "nextTaskRun": next_task_run,
@@ -787,7 +800,7 @@ def inspect_directory(
             for path, record in zip(supplemental_paths, supplemental)
         ],
         "missing": {
-            "coverage": coverage_errors,
+            "coverage": scoped_coverage_errors,
             "externalGates": [
                 {
                     "id": gate.get("id"),

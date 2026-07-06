@@ -477,6 +477,7 @@ def main() -> int:
     else:
         for snippet in (
             "filter-version: Current Baseline",
+            "evidence-covered: 0/8",
             "--version 'Current Baseline' --capture-status blocked-by-environment --environment-status cluster-unavailable",
             "--version 'Current Baseline' --capture-status blocked-by-environment --environment-reason connection-refused",
             f"next: python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --version 'Current Baseline' --probe-environment",

@@ -205,7 +205,7 @@ Expected:
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, environment metadata, advance status, queue-source
   visibility/origin, next-task queue consistency, selected next-task worklist
-  drilldowns, version-scoped blocker drilldown commands, runner/evidence-build/advance record
+  drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, runner/evidence-build/advance record
   consistency, legacy
   prepared-record queue-source inference, complete
   text/Markdown next-command and next-task detail output, CLI Markdown status
@@ -355,7 +355,7 @@ Confirm from code and tests:
   requiring cluster or cloud access, and checks unprepared evidence directory
   guidance for local next-task evidence builds, runner failure summaries,
   resolved prepared-queue command priority, selected next-task worklist
-  drilldowns, version-scoped blocker drilldown commands, runner/advance record consistency,
+  drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, runner/advance record consistency,
   and probe-first guidance after failed runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files, records passed and missing-source status reports, and
