@@ -137,7 +137,8 @@ Coverage included:
 - release evidence directory artifact generation for repeated local evidence
   closure checks;
 - release evidence status inspection for partial and complete evidence
-  directories plus persisted next-task output and file readiness;
+  directories plus persisted next-task output, file readiness, and
+  unprepared-directory guidance;
 - next-task evidence build from prepared raw files plus idempotent
   output-exists handling;
 - clean generated-artifact verification for Python cache directories and

@@ -291,13 +291,15 @@ Confirm from code and tests:
   one local evidence directory and ignores generated artifacts on rerun;
 - release evidence status verifier reports partial and complete evidence
   directory coverage plus persisted next-task output and file readiness without
-  requiring cluster or cloud access;
+  requiring cluster or cloud access, and checks unprepared evidence directory
+  guidance for local next-task evidence builds;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files and skips existing outputs without cluster, cloud, or
   workload writes;
 - next version task runner verifier validates selected commands, stays
   plan-by-default, and with fake kubectl produces raw and supplemental evidence
-  for the selected task;
+  for the selected task, while reporting a prepare command for unprepared
+  evidence directories;
 - version iteration advance verifier wraps the selected-task runner with
   probe-aware before/after evidence-aware history recording and validates the
   resulting diff or environment blocker;

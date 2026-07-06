@@ -185,6 +185,7 @@ def main() -> int:
         invalid_dir.mkdir()
         write_payload(invalid_dir / "bad.json", {"schemaVersion": "kube-actuary.external-evidence.v1", "kind": "kubectl-explain", "ok": False})
         invalid = run_script(INSPECTOR, str(invalid_dir))
+        unprepared_next_task_build = run_script(NEXT_TASK_BUILDER, str(tmpdir / "unprepared"))
 
     if partial.returncode != 0:
         errors.append(f"partial status failed: {partial.stderr.strip() or partial.stdout.strip()}")
@@ -217,6 +218,10 @@ def main() -> int:
         errors.append("status inspector must write requested output file")
     if invalid.returncode == 0 or "supplemental evidence must be ok=true" not in invalid.stdout:
         errors.append("status inspector must reject invalid supplemental evidence")
+    if unprepared_next_task_build.returncode == 0:
+        errors.append("next-task evidence build must fail for an unprepared evidence directory")
+    if "prepare_live_evidence_directory.py" not in unprepared_next_task_build.stdout:
+        errors.append("next-task evidence build unprepared error must include the prepare command")
 
     if partial_payload.get("schemaVersion") != "kube-actuary.release-evidence-status.v1":
         errors.append("status schemaVersion mismatch")

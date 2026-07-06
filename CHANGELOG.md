@@ -48,6 +48,8 @@ Evidence collector release:
 - add local next-task evidence builder for prepared evidence directories;
 - add selected next-version task runner for plan-by-default evidence command
   execution;
+- report actionable prepare commands when selected next-task artifacts are
+  missing from an evidence directory;
 - add opt-in next-version task runner recording under prepared evidence
   directories;
 - add version iteration advance workflow for selected-task execution plus

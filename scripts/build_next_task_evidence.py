@@ -39,6 +39,11 @@ def option(tokens: list[str], name: str) -> str | None:
 
 def load_next_task(evidence_dir: Path) -> dict[str, Any]:
     path = evidence_dir / ".kubeactuary" / "next-version-task.json"
+    if not path.is_file():
+        raise ValueError(
+            f"{path}: next-task artifact not found; run "
+            f"`python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir}` first"
+        )
     payload = json.loads(path.read_text())
     if payload.get("schemaVersion") != NEXT_TASK_SCHEMA:
         raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")

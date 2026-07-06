@@ -56,6 +56,12 @@ def main() -> int:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
         recorded_dir = tmpdir / "recorded"
+        unprepared_dir = tmpdir / "unprepared"
+        unprepared = run_script(RUNNER, str(unprepared_dir))
+        if unprepared.returncode == 0:
+            errors.append("runner must fail for an unprepared evidence directory")
+        if "prepare_live_evidence_directory.py" not in unprepared.stdout:
+            errors.append("runner unprepared error must include the prepare command")
         prepared = run_script(PREPARE, str(evidence_dir))
         raw = evidence_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt"
         supplemental = evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json"

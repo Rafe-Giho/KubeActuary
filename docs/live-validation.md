@@ -235,6 +235,10 @@ python3 -B scripts/run_next_version_task.py <evidence-dir> --run
 python3 -B scripts/run_next_version_task.py <evidence-dir> --run --record
 ```
 
+If the selected next-task artifact is missing, both
+`run_next_version_task.py` and `build_next_task_evidence.py` fail with the
+`prepare_live_evidence_directory.py` command needed to initialize the directory.
+
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema
 `kube-actuary.version-iteration-advance.v1`. In run mode it also records the
