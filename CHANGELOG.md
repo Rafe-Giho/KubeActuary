@@ -47,6 +47,7 @@ Evidence collector release:
 - preserve prepared queue source in version iteration packs;
 - preserve prepared queue source in version iteration history records and status;
 - show latest blocker summaries and drilldowns in version iteration history status;
+- show latest run filters in version iteration history status;
 - add Markdown output for version iteration history status;
 - add recorded version iteration history status reports;
 - show latest environment probe failures in version iteration history status;

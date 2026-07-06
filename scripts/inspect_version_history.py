@@ -37,6 +37,16 @@ VERSION_DELTA_KEYS = (
     "existingEvidenceFiles",
     "completeEvidenceItems",
 )
+FILTER_KEYS = (
+    "versions",
+    "openOnly",
+    "captureStatuses",
+    "missingTools",
+    "environmentStatuses",
+    "evidenceDir",
+    "probeEnvironment",
+    "kubectl",
+)
 
 
 def shell_join(args: list[str]) -> str:
@@ -52,6 +62,18 @@ def add_repeated_filter_args(args: list[str], flag: str, values: Any) -> None:
 
 def dash_label(value: str) -> str:
     return "".join(f"-{character.lower()}" if character.isupper() else character for character in value)
+
+
+def render_filter_value(value: Any) -> str:
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value) if value else "none"
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    if value is None:
+        return "none"
+    return str(value)
 
 
 def probe_message(check: dict[str, Any]) -> str | None:
@@ -275,6 +297,9 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_summary = latest.get("summary", {}) if latest else {}
     latest_blockers = latest.get("blockers", {}) if latest else {}
     latest_environment_probe = latest.get("environmentProbe", {}) if latest else {}
+    latest_filters = latest.get("filters", {}) if latest else {}
+    if not isinstance(latest_filters, dict):
+        latest_filters = {}
     latest_diff_summary = latest.get("diffSummary", {}) if latest else {}
     if not isinstance(latest_diff_summary, dict):
         latest_diff_summary = {}
@@ -304,6 +329,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         },
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
+        "latestFilters": latest_filters,
         "latestDiffSummary": latest_diff_summary,
         "latestVersionDiffs": latest_version_diffs,
         "latestArtifacts": latest_artifacts,
@@ -338,6 +364,11 @@ def render_text(status: dict[str, Any]) -> str:
         for key in ("runPath", "worklistPath", "diffPath"):
             if key in latest_artifacts:
                 lines.append(f"latest-artifact-{dash_label(key)}: {latest_artifacts[key]}")
+    latest_filters = status.get("latestFilters", {})
+    if isinstance(latest_filters, dict) and latest_filters:
+        for key in FILTER_KEYS:
+            if key in latest_filters:
+                lines.append(f"latest-filter-{dash_label(key)}: {render_filter_value(latest_filters[key])}")
     for version in status.get("latestVersionDiffs", []) or []:
         if not isinstance(version, dict):
             continue
@@ -411,6 +442,20 @@ def render_markdown(status: dict[str, Any]) -> str:
         for key in ("runPath", "worklistPath", "diffPath"):
             if key in latest_artifacts:
                 lines.append(f"- {dash_label(key)}: `{latest_artifacts[key]}`")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Filters",
+            "",
+        ]
+    )
+    latest_filters = status.get("latestFilters", {})
+    if isinstance(latest_filters, dict) and latest_filters:
+        for key in FILTER_KEYS:
+            if key in latest_filters:
+                lines.append(f"- {dash_label(key)}: `{render_filter_value(latest_filters[key])}`")
     else:
         lines.append("- none")
     lines.extend(

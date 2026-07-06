@@ -781,6 +781,15 @@ def main() -> int:
         errors.append("version iteration history status should show latest worklist artifact path")
     if latest_artifacts.get("diffPath") != history_status_diff_path:
         errors.append("version iteration history status should show latest diff artifact path")
+    latest_filters = history_status_payload.get("latestFilters", {})
+    if latest_filters.get("versions") != ["0.4.3"]:
+        errors.append("version iteration history status should show latest version filters")
+    if latest_filters.get("openOnly") is not False:
+        errors.append("version iteration history status should show latest open-only filter")
+    if latest_filters.get("probeEnvironment") is not True:
+        errors.append("version iteration history status should show latest probe filter")
+    if latest_filters.get("kubectl") != "kubectl":
+        errors.append("version iteration history status should show latest kubectl filter")
     latest_version_diffs = history_status_payload.get("latestVersionDiffs", [])
     latest_version_diff = next(
         (item for item in latest_version_diffs if item.get("version") == "0.4.3"),
@@ -836,6 +845,12 @@ def main() -> int:
         errors.append("version iteration history text should show latest worklist artifact path")
     if f"latest-artifact-diff-path: {history_status_diff_path}" not in history_status.stdout:
         errors.append("version iteration history text should show latest diff artifact path")
+    if "latest-filter-versions: 0.4.3" not in history_status.stdout:
+        errors.append("version iteration history text should show latest version filters")
+    if "latest-filter-open-only: false" not in history_status.stdout:
+        errors.append("version iteration history text should show latest open-only filter")
+    if "latest-filter-probe-environment: true" not in history_status.stdout:
+        errors.append("version iteration history text should show latest probe filter")
     if (
         "latest-version-diff: 0.4.3 capture-ready->blocked-by-environment "
         "capture-ready-delta=-1 blocked-by-environment-delta=1 changed-items=1"
@@ -860,6 +875,12 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest diff status changes")
     if "- blocked-by-environment-delta: 1" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest environment diff delta")
+    if "## Latest Filters" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include latest filters")
+    if "- versions: `0.4.3`" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest version filters")
+    if "- probe-environment: `true`" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest probe filter")
     if "## Latest Version Diffs" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include latest per-version diffs")
     if (
@@ -896,6 +917,9 @@ def main() -> int:
     recorded_latest_artifacts = history_status_record_payload.get("latestArtifacts", {})
     if recorded_latest_artifacts.get("diffPath") != history_status_diff_path:
         errors.append("version iteration history recorded JSON should preserve latest artifact paths")
+    recorded_latest_filters = history_status_record_payload.get("latestFilters", {})
+    if recorded_latest_filters.get("versions") != ["0.4.3"]:
+        errors.append("version iteration history recorded JSON should preserve latest filters")
     recorded_version_diffs = history_status_record_payload.get("latestVersionDiffs", [])
     if not any(item.get("version") == "0.4.3" for item in recorded_version_diffs):
         errors.append("version iteration history recorded JSON should preserve latest per-version diffs")
@@ -905,6 +929,10 @@ def main() -> int:
         errors.append("version iteration history recorded Markdown should preserve latest artifact paths")
     if history_status_diff_path not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest diff artifact path")
+    if "## Latest Filters" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest filters")
+    if "- versions: `0.4.3`" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest version filters")
     if "## Latest Diff" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest diff details")
     if "- blocked-by-environment-delta: 1" not in history_status_record_md_text:
@@ -942,6 +970,9 @@ def main() -> int:
         errors.append("evidence-aware history status should summarize complete evidence items")
     if evidence_status_summary.get("existingEvidenceFiles", 0) < 3:
         errors.append("evidence-aware history status should summarize existing evidence files")
+    evidence_status_filters = evidence_history_status_payload.get("latestFilters", {})
+    if evidence_status_filters.get("evidenceDir") != str(completed_evidence_dir):
+        errors.append("evidence-aware history status should preserve latest evidence directory filter")
     evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
     if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history status should preserve latest evidence diff summary")

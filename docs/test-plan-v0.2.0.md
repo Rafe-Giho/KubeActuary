@@ -165,6 +165,8 @@ Expected:
 - prepared-queue version iteration history records and status preserve the queue source;
 - version iteration history status preserves latest blocker summaries and
   drilldown commands in text, JSON, and Markdown output;
+- version iteration history status preserves latest run filters in text, JSON,
+  Markdown, and recorded status reports;
 - version iteration history status preserves latest run, worklist, and diff
   artifact paths in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run diff summaries in text,
