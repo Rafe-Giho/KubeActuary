@@ -46,6 +46,28 @@ python3 -B scripts/evaluate_admission_review.py \
   --response
 ```
 
+The local stdlib HTTP server exposes the same evaluator for disposable local
+smoke checks:
+
+```sh
+python3 -B scripts/kube_actuary_admission_server.py --print-config
+python3 -B scripts/kube_actuary_admission_server.py --port 9443
+```
+
+Endpoints:
+
+- `/healthz`
+- `/validate`
+
+This server does not contact the Kubernetes API. A production-style Kubernetes
+webhook Service, TLS certificate, and live kind smoke remain separate release
+gate work.
+
+`scripts/verify_admission_server.py` runs an HTTP smoke when the local
+environment allows loopback bind. If a sandbox blocks port binding, it falls
+back to the same AdmissionReview response contract and reports that the HTTP
+smoke was skipped.
+
 Verification:
 
 ```sh
@@ -54,6 +76,7 @@ python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
+python3 -B scripts/verify_admission_server.py
 ```
 
 Live kind smoke remains a release-gate item when `kind` is available locally.

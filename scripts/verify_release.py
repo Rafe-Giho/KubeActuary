@@ -284,6 +284,11 @@ COMMON_CHECKS = (
         contains=("admission-response: passed", "responses: 2", "auditAnnotations: present"),
     ),
     Check(
+        "admission server",
+        ("python3", "-B", "scripts/verify_admission_server.py"),
+        contains=("admission-server: passed", "endpoint: /validate", "cluster-access: none"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

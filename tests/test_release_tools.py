@@ -45,6 +45,7 @@ ADMISSION_POLICY = ROOT / "scripts" / "verify_admission_policy.py"
 ADMISSION_DIGEST_GATE = ROOT / "scripts" / "verify_admission_digest_gate.py"
 ADMISSION_AUDIT = ROOT / "scripts" / "verify_admission_audit.py"
 ADMISSION_RESPONSE = ROOT / "scripts" / "verify_admission_response.py"
+ADMISSION_SERVER = ROOT / "scripts" / "verify_admission_server.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -616,6 +617,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("admission-response: passed", result.stdout)
         self.assertIn("auditAnnotations: present", result.stdout)
+
+    def test_verify_admission_server(self):
+        result = subprocess.run(
+            [sys.executable, str(ADMISSION_SERVER)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("admission-server: passed", result.stdout)
+        self.assertIn("cluster-access: none", result.stdout)
 
 
 if __name__ == "__main__":

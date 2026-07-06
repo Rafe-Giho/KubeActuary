@@ -57,6 +57,7 @@ python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/verify_admission_digest_gate.py
 python3 -B scripts/verify_admission_audit.py
 python3 -B scripts/verify_admission_response.py
+python3 -B scripts/verify_admission_server.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -110,6 +111,8 @@ Expected:
 - admission audit verifier checks audit annotations and incident runbook;
 - admission response verifier checks AdmissionReview responses and
   auditAnnotations;
+- admission server verifier checks the local `/validate` endpoint without
+  cluster access;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -160,6 +163,7 @@ Expected:
 - [ ] admission digest/gate tamper fixture check passes.
 - [ ] admission audit fixture and incident runbook check passes.
 - [ ] admission response fixture check passes.
+- [ ] admission local server check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 
