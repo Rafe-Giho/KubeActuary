@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (64 checks)
-Ran 98 tests
+verification: passed (65 checks)
+Ran 99 tests
 OK
 ```
 
@@ -104,6 +104,7 @@ Coverage included:
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
 - external gate plan generation for remaining VERIFY rows;
+- external gate evidence evaluation for captured smoke manifests;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -129,6 +130,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -194,6 +196,7 @@ Result:
 - conformance suite prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
+- external gate evidence check prints `external-gate-evidence: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

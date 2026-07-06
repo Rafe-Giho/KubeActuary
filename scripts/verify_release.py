@@ -85,6 +85,11 @@ COMMON_CHECKS = (
         contains=("external-gate-plan: passed", "verify-gates: 16", "doing: 0"),
     ),
     Check(
+        "external gate evidence",
+        ("python3", "-B", "scripts/verify_external_gate_evidence.py"),
+        contains=("external-gate-evidence: passed", "covered: 12", "uncovered: 4"),
+    ),
+    Check(
         "crd compatibility smoke",
         ("python3", "-B", "scripts/verify_crd_compatibility.py"),
         contains=("crd-compatibility: passed", "upstream-minors: 1.36, 1.35, 1.34"),

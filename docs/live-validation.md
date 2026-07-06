@@ -13,6 +13,7 @@ python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_evidence.py
 ```
 
 Expected:
@@ -85,12 +86,17 @@ Check release-gate coverage from a manifest:
 
 ```sh
 python3 -B scripts/check_live_evidence_coverage.py /tmp/kubeactuary-live-evidence-manifest.json
+python3 -B scripts/evaluate_external_gate_evidence.py /tmp/kubeactuary-live-evidence-manifest.json
 ```
 
 The coverage check requires passing `mode: run` reports for kind, minikube,
 MicroK8s, and k3s; EKS, GKE, and AKS; plus Helm, Krew, and admission smoke
 reports. The verifier prints `required-providers: 7` when this local coverage
 contract is satisfied.
+
+The external gate evaluator maps that same manifest back to the taskboard
+`VERIFY` rows. It intentionally leaves resource-budget and live
+`kubectl explain` rows uncovered until those separate raw outputs are captured.
 
 Supported evidence schemas:
 

@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
+EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
 AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 AGENT_EXAMPLES = ROOT / "scripts" / "verify_agent_examples.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
@@ -114,6 +115,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("external-gate-plan: passed", result.stdout)
         self.assertIn("verify-gates: 16", result.stdout)
+
+    def test_verify_external_gate_evidence(self):
+        result = subprocess.run(
+            [sys.executable, str(EXTERNAL_GATE_EVIDENCE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("external-gate-evidence: passed", result.stdout)
+        self.assertIn("covered: 12", result.stdout)
 
     def test_verify_agent_help_contract(self):
         result = subprocess.run(

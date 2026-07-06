@@ -24,6 +24,7 @@ Status legend:
 | Release checklist and notes | DONE | release checklist doc plus generated notes dry-run |
 | Release taskboard audit | DONE | `scripts/verify_release_taskboard.py` verifies statuses, remaining evidence notes, and release check count |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
+| External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
 | Structured help contract | DONE | schema version and compatibility tests |
 | Human and agent help | DONE | `kube-actuary help`, `kube-actuary help agents --format json` |
 | CRD seed | DONE | YAML parse, CRD field contract tests, and `render-crd` status mapping tests |
@@ -67,7 +68,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (64 checks)
+verification: passed (65 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

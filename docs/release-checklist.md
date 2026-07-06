@@ -24,6 +24,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -86,6 +87,8 @@ Expected:
   release check count;
 - external gate plan verifies remaining `VERIFY` rows are structured and
   mapped to concrete evidence commands;
+- external gate evidence evaluation maps captured smoke manifests back to
+  taskboard rows and keeps non-manifest evidence uncovered;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
@@ -160,6 +163,7 @@ Expected:
 - [ ] controller dry-run contract check passes.
 - [ ] release taskboard audit check passes.
 - [ ] external gate plan check passes.
+- [ ] external gate evidence evaluation check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
 - [ ] controller deployment seed check passes.

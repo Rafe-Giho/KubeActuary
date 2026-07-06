@@ -17,6 +17,7 @@ Evidence collector release:
 - add local release taskboard and repeatable release verification script;
 - add release taskboard audit for status and verification-count drift;
 - add external verification gate plan generation for remaining live evidence;
+- add external gate evidence evaluation against captured smoke manifests;
 - add GitHub Actions CI for the local verification suite;
 - add release checklist and generated release notes dry-run tooling;
 - render CRD objects with capsule digest annotations, post-checks, and richer

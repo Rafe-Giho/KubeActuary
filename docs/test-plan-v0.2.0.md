@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  external gate plan generation,
+  external gate plan generation, external gate evidence evaluation,
   human help, agent JSON help, structured help compatibility, controller dry-run contract, controller RBAC,
   controller runtime contract, controller deployment seed, controller status
   patch plan, controller read-only sync, controller status apply dry-run,
@@ -58,6 +58,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
+python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -121,6 +122,7 @@ Expected:
 - conformance suite check prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
+- external gate evidence check prints `external-gate-evidence: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
@@ -217,6 +219,8 @@ Confirm from code and tests:
   the release suite check count;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
+- external gate evidence verifier maps captured smoke manifests back to
+  taskboard rows while leaving non-manifest live evidence uncovered;
 - offline CRD upgrade fixture check verifies the current CRD, rollback fixture,
   and runbook identity;
 - offline kubectl explain quality check verifies OpenAPI descriptions and
@@ -320,7 +324,8 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, release taskboard audit, external gate plan, CRD compatibility smoke, CRD explain quality, CRD
+  release notes dry-run, release taskboard audit, external gate plan, external gate evidence,
+  CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller
   sync, controller status apply, controller loop, controller resource budget, lightweight cluster smoke, digest, CRD render,
