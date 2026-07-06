@@ -19,6 +19,7 @@ Evidence collector release:
 - add external verification gate plan generation for remaining live evidence;
 - add external gate evidence evaluation against captured smoke manifests and
   supplemental evidence;
+- add supplemental external evidence builder for raw live outputs;
 - add GitHub Actions CI for the local verification suite;
 - add release checklist and generated release notes dry-run tooling;
 - render CRD objects with capsule digest annotations, post-checks, and richer

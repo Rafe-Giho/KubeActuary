@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (65 checks)
-Ran 99 tests
+verification: passed (66 checks)
+Ran 100 tests
 OK
 ```
 
@@ -106,6 +106,7 @@ Coverage included:
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
+- supplemental external evidence builder for raw live outputs;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -132,6 +133,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
+python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -198,6 +200,7 @@ Result:
 - release taskboard check prints `release-taskboard: passed`;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate evidence check prints `external-gate-evidence: passed`;
+- external evidence builder check prints `external-evidence-builder: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;

@@ -25,6 +25,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
+python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -89,6 +90,8 @@ Expected:
   mapped to concrete evidence commands;
 - external gate evidence evaluation maps captured smoke manifests and
   supplemental external evidence back to taskboard rows;
+- external evidence builder creates supplemental evidence records from captured
+  raw outputs and fails invalid resource-budget samples;
 - controller contract emits status-only patch examples and OperationCapsule-only
   watch commands;
 - controller RBAC grants only OperationCapsule read/watch and status patch
@@ -164,6 +167,7 @@ Expected:
 - [ ] release taskboard audit check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate evidence evaluation check passes.
+- [ ] external evidence builder check passes.
 - [ ] controller RBAC check passes.
 - [ ] controller runtime contract check passes.
 - [ ] controller deployment seed check passes.

@@ -14,6 +14,7 @@ python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_evidence.py
+python3 -B scripts/verify_external_evidence_builder.py
 ```
 
 Expected:
@@ -102,6 +103,9 @@ Supplemental evidence files use schema `kube-actuary.external-evidence.v1` with
 `controller-live-loop`:
 
 ```sh
+python3 -B scripts/build_external_evidence.py --kind kubectl-explain --source <kubectl-explain-output.txt> --output <external-evidence.json>
+python3 -B scripts/build_external_evidence.py --kind controller-resource-budget --source <kubectl-top-output.txt> --output <external-evidence.json>
+python3 -B scripts/build_external_evidence.py --kind controller-live-loop --source <controller-loop-output.json> --output <external-evidence.json>
 python3 -B scripts/evaluate_external_gate_evidence.py /tmp/kubeactuary-live-evidence-manifest.json --evidence <external-evidence.json>
 ```
 
