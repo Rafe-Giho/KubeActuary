@@ -781,6 +781,22 @@ def main() -> int:
         errors.append("version iteration history status should show latest worklist artifact path")
     if latest_artifacts.get("diffPath") != history_status_diff_path:
         errors.append("version iteration history status should show latest diff artifact path")
+    latest_version_diffs = history_status_payload.get("latestVersionDiffs", [])
+    latest_version_diff = next(
+        (item for item in latest_version_diffs if item.get("version") == "0.4.3"),
+        {},
+    )
+    latest_version_delta = latest_version_diff.get("summaryDelta", {})
+    if latest_version_diff.get("beforeStatus") != "capture-ready":
+        errors.append("version iteration history status should preserve latest version before status")
+    if latest_version_diff.get("afterStatus") != "blocked-by-environment":
+        errors.append("version iteration history status should preserve latest version after status")
+    if latest_version_delta.get("captureReady") != -1:
+        errors.append("version iteration history status should preserve latest version capture-ready delta")
+    if latest_version_delta.get("blockedByEnvironment") != 1:
+        errors.append("version iteration history status should preserve latest version environment delta")
+    if len(latest_version_diff.get("changedItems", [])) != 1:
+        errors.append("version iteration history status should preserve latest version changed items")
     history_next_commands = history_status_payload.get("nextCommands", [])
     for command in (history_status_record_command, history_status_iteration_command):
         if command not in history_next_commands:
@@ -820,6 +836,11 @@ def main() -> int:
         errors.append("version iteration history text should show latest worklist artifact path")
     if f"latest-artifact-diff-path: {history_status_diff_path}" not in history_status.stdout:
         errors.append("version iteration history text should show latest diff artifact path")
+    if (
+        "latest-version-diff: 0.4.3 capture-ready->blocked-by-environment "
+        "capture-ready-delta=-1 blocked-by-environment-delta=1 changed-items=1"
+    ) not in history_status.stdout:
+        errors.append("version iteration history text should show latest per-version diff")
     if f"next-command: {history_status_record_command}" not in history_status.stdout:
         errors.append("version iteration history text should show the record next command")
     if f"next-command: {history_status_iteration_command}" not in history_status.stdout:
@@ -839,6 +860,13 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest diff status changes")
     if "- blocked-by-environment-delta: 1" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest environment diff delta")
+    if "## Latest Version Diffs" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include latest per-version diffs")
+    if (
+        "`0.4.3` capture-ready -> blocked-by-environment "
+        "capture-ready-delta=-1 blocked-by-environment-delta=1 changed-items=1"
+    ) not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest per-version diff")
     if "## Next Commands" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include next commands")
     for command in (history_status_record_command, history_status_iteration_command):
@@ -868,6 +896,9 @@ def main() -> int:
     recorded_latest_artifacts = history_status_record_payload.get("latestArtifacts", {})
     if recorded_latest_artifacts.get("diffPath") != history_status_diff_path:
         errors.append("version iteration history recorded JSON should preserve latest artifact paths")
+    recorded_version_diffs = history_status_record_payload.get("latestVersionDiffs", [])
+    if not any(item.get("version") == "0.4.3" for item in recorded_version_diffs):
+        errors.append("version iteration history recorded JSON should preserve latest per-version diffs")
     if "# KubeActuary Version Iteration History Status" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should include a title")
     if "## Latest Artifacts" not in history_status_record_md_text:
@@ -878,6 +909,10 @@ def main() -> int:
         errors.append("version iteration history recorded Markdown should preserve latest diff details")
     if "- blocked-by-environment-delta: 1" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest diff summary")
+    if "## Latest Version Diffs" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve per-version diffs")
+    if "`0.4.3` capture-ready -> blocked-by-environment" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest per-version diff")
     if "## Next Commands" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve next commands")
     for command in (history_status_record_command, history_status_iteration_command):
@@ -910,6 +945,17 @@ def main() -> int:
     evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
     if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history status should preserve latest evidence diff summary")
+    evidence_status_version_diffs = evidence_history_status_payload.get("latestVersionDiffs", [])
+    evidence_status_version_delta = next(
+        (
+            item.get("summaryDelta", {})
+            for item in evidence_status_version_diffs
+            if item.get("version") == "Current Baseline"
+        ),
+        {},
+    )
+    if evidence_status_version_delta.get("completeEvidenceItems") != 1:
+        errors.append("evidence-aware history status should preserve latest per-version evidence diff")
     if prepared_history_record.returncode != 0:
         errors.append(
             f"prepared queue history failed: "

@@ -29,6 +29,14 @@ DIFF_SUMMARY_KEYS = (
     "addedItems",
     "removedItems",
 )
+VERSION_DELTA_KEYS = (
+    "open",
+    "captureReady",
+    "blockedByTools",
+    "blockedByEnvironment",
+    "existingEvidenceFiles",
+    "completeEvidenceItems",
+)
 
 
 def shell_join(args: list[str]) -> str:
@@ -81,6 +89,25 @@ def summarize_environment_probe(probe: Any) -> dict[str, Any]:
     }
 
 
+def summarize_version_diff(version: dict[str, Any]) -> dict[str, Any]:
+    summary_delta = version.get("summaryDelta", {})
+    if not isinstance(summary_delta, dict):
+        summary_delta = {}
+    return {
+        "version": version.get("version"),
+        "beforeStatus": version.get("beforeStatus"),
+        "afterStatus": version.get("afterStatus"),
+        "statusChanged": version.get("statusChanged"),
+        "summaryDelta": {
+            key: summary_delta.get(key, 0)
+            for key in VERSION_DELTA_KEYS
+        },
+        "changedItems": version.get("changedItems", []) if isinstance(version.get("changedItems"), list) else [],
+        "addedItems": version.get("addedItems", []) if isinstance(version.get("addedItems"), list) else [],
+        "removedItems": version.get("removedItems", []) if isinstance(version.get("removedItems"), list) else [],
+    }
+
+
 def load_json(path: Path, errors: list[str]) -> dict[str, Any]:
     if not path.is_file():
         errors.append(f"missing file: {path}")
@@ -119,6 +146,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
 
     diff_status = "none"
     diff_summary = None
+    diff_versions: list[dict[str, Any]] = []
     diff_path = run.get("diffPath")
     if diff_path:
         diff = load_json(history_dir / str(diff_path), errors)
@@ -127,6 +155,11 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         else:
             diff_status = "present"
             diff_summary = diff.get("summary", {})
+            diff_versions = [
+                summarize_version_diff(version)
+                for version in diff.get("versions", [])
+                if isinstance(version, dict)
+            ]
 
     if missing_version_files:
         errors.append(f"run {run_id} missing version files: {', '.join(sorted(missing_version_files))}")
@@ -144,6 +177,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "filters": run.get("filters", {}) if isinstance(run.get("filters"), dict) else {},
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
+        "diffVersions": diff_versions,
     }
 
 
@@ -244,6 +278,9 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_diff_summary = latest.get("diffSummary", {}) if latest else {}
     if not isinstance(latest_diff_summary, dict):
         latest_diff_summary = {}
+    latest_version_diffs = latest.get("diffVersions", []) if latest else []
+    if not isinstance(latest_version_diffs, list):
+        latest_version_diffs = []
     latest_artifacts = build_latest_artifacts(history_dir, latest)
     next_commands = build_next_commands(history_dir, latest)
     return {
@@ -268,6 +305,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
         "latestDiffSummary": latest_diff_summary,
+        "latestVersionDiffs": latest_version_diffs,
         "latestArtifacts": latest_artifacts,
         "nextCommands": next_commands,
         "runs": inspected_runs,
@@ -300,6 +338,17 @@ def render_text(status: dict[str, Any]) -> str:
         for key in ("runPath", "worklistPath", "diffPath"):
             if key in latest_artifacts:
                 lines.append(f"latest-artifact-{dash_label(key)}: {latest_artifacts[key]}")
+    for version in status.get("latestVersionDiffs", []) or []:
+        if not isinstance(version, dict):
+            continue
+        delta = version.get("summaryDelta", {}) if isinstance(version.get("summaryDelta"), dict) else {}
+        lines.append(
+            f"latest-version-diff: {version.get('version')} "
+            f"{version.get('beforeStatus')}->{version.get('afterStatus')} "
+            f"capture-ready-delta={delta.get('captureReady', 0)} "
+            f"blocked-by-environment-delta={delta.get('blockedByEnvironment', 0)} "
+            f"changed-items={len(version.get('changedItems', []) or [])}"
+        )
     for command in status.get("nextCommands", []):
         lines.append(f"next-command: {command}")
     blockers = status.get("latestBlockers", {})
@@ -376,6 +425,27 @@ def render_markdown(status: dict[str, Any]) -> str:
         for key in DIFF_SUMMARY_KEYS:
             if key in latest_diff:
                 lines.append(f"- {dash_label(key)}: {latest_diff[key]}")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Version Diffs",
+            "",
+        ]
+    )
+    version_diffs = status.get("latestVersionDiffs", [])
+    if version_diffs:
+        for version in version_diffs:
+            if not isinstance(version, dict):
+                continue
+            delta = version.get("summaryDelta", {}) if isinstance(version.get("summaryDelta"), dict) else {}
+            lines.append(
+                f"- `{version.get('version')}` {version.get('beforeStatus')} -> {version.get('afterStatus')} "
+                f"capture-ready-delta={delta.get('captureReady', 0)} "
+                f"blocked-by-environment-delta={delta.get('blockedByEnvironment', 0)} "
+                f"changed-items={len(version.get('changedItems', []) or [])}"
+            )
     else:
         lines.append("- none")
     lines.extend(

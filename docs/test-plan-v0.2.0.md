@@ -169,6 +169,8 @@ Expected:
   artifact paths in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run diff summaries in text,
   JSON, Markdown, and recorded status reports;
+- version iteration history status preserves latest per-version diff summaries
+  in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest environment probe failures;
 - version iteration history status records `status.json` and `status.md` on request;
 - version iteration history status surfaces next local loop commands for
