@@ -317,7 +317,8 @@ Result:
   queue-source preservation and zero-run reporting for non-`tool-ready`
   selected tasks plus CLI Markdown output;
 - version iteration advance check prints `version-iteration-advance: passed`
-  with version-scoped selection plus blocker status/next-step preservation
+  with version-scoped selection, selector-mode propagation, zero-run blocker
+  status, plus blocker status/next-step preservation
   and verifies queue-source-preserving persisted runner and advance status
   reports plus latest blocker streaks, selected worklist drilldowns, and CLI
   Markdown output;

@@ -43,6 +43,8 @@ def planned_result(
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
+    runnable_only: bool = False,
+    blocked_only: bool = False,
 ) -> dict[str, Any]:
     selection = build_selection(
         version_filters=list(version_filters or []),
@@ -55,6 +57,8 @@ def planned_result(
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
         environment_reason_filters=environment_reason_filters,
+        runnable_only=runnable_only,
+        blocked_only=blocked_only,
     )
     selected = selection.get("selected") or {}
     queue_source = str(selection.get("sourceWorklistQueueSource") or "generated")
@@ -120,6 +124,10 @@ def blocked_runner_result(
                 "item": selected.get("item"),
                 "kind": selected.get("kind"),
                 "captureStatus": selected.get("captureStatus"),
+                "environmentStatus": selected.get("environmentStatus"),
+                "environmentReason": selected.get("environmentReason"),
+                "missingTools": selected.get("missingTools", []),
+                "nextStep": selected.get("nextStep"),
             },
         },
         "summary": {
@@ -152,6 +160,8 @@ def run_advance(
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
     environment_reason_filters: list[str] | None = None,
+    runnable_only: bool = False,
+    blocked_only: bool = False,
 ) -> dict[str, Any]:
     version_filters = list(version_filters or [])
     prepared = prepare_directory(
@@ -164,6 +174,8 @@ def run_advance(
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
         environment_reason_filters=environment_reason_filters,
+        runnable_only=runnable_only,
+        blocked_only=blocked_only,
     )
     prepared_next_task = prepared.get("nextTask") or {}
     queue_source = str(prepared_next_task.get("sourceWorklistQueueSource") or "generated")
@@ -183,7 +195,7 @@ def run_advance(
         prefer_prepared_queue=True,
     )
     selected = prepared_next_task.get("selected") or {}
-    if probe_environment and selected.get("captureStatus") != "tool-ready":
+    if selected.get("captureStatus") != "tool-ready":
         runner = blocked_runner_result(evidence_dir, prepared_next_task, selected, created_at)
         runner_record = record_next_task_run(evidence_dir, runner)
         blocked = record_iteration(
@@ -257,6 +269,8 @@ def run_advance(
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
         environment_reason_filters=environment_reason_filters,
+        runnable_only=runnable_only,
+        blocked_only=blocked_only,
     )
     after = record_iteration(
         history_dir,
@@ -332,6 +346,9 @@ def render_text(result: dict[str, Any]) -> str:
     ]
     for version in filters.get("versions", []):
         lines.append(f"filter-version: {version}")
+    if filters.get("runnableOnly") or filters.get("blockedOnly"):
+        lines.append(f"filter-runnable-only: {str(filters.get('runnableOnly')).lower()}")
+        lines.append(f"filter-blocked-only: {str(filters.get('blockedOnly')).lower()}")
     if result["mode"] == "plan":
         selected = result.get("selected", {})
         lines.append(f"selected: {selected.get('id')}")
@@ -415,6 +432,11 @@ def render_markdown(result: dict[str, Any]) -> str:
                 f"- versions: `{', '.join(str(version) for version in filters['versions'])}`",
             ]
         )
+    if filters.get("runnableOnly") or filters.get("blockedOnly"):
+        if "## Filters" not in lines:
+            lines.extend(["", "## Filters", ""])
+        lines.append(f"- runnable only: `{str(filters.get('runnableOnly')).lower()}`")
+        lines.append(f"- blocked only: `{str(filters.get('blockedOnly')).lower()}`")
     lines.extend(["", "## Run", ""])
     if result["mode"] == "run":
         lines.append(f"- run id: `{result.get('runId')}`")
@@ -500,6 +522,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
     parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
     parser.add_argument("--environment-reason", action="append", default=[], help="filter next-task selection by environment reason; repeatable")
+    parser.add_argument("--runnable-only", action="store_true", help="select only tool-ready next tasks")
+    parser.add_argument("--blocked-only", action="store_true", help="select only non-tool-ready next tasks")
     parser.add_argument("--format", choices=("text", "json", "markdown"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -522,6 +546,8 @@ def main(argv: list[str] | None = None) -> int:
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,
                 environment_reason_filters=args.environment_reason,
+                runnable_only=args.runnable_only,
+                blocked_only=args.blocked_only,
             )
             record_advance_result(evidence_dir, result)
         else:
@@ -535,6 +561,8 @@ def main(argv: list[str] | None = None) -> int:
                 missing_tool_filters=args.missing_tool,
                 environment_status_filters=args.environment_status,
                 environment_reason_filters=args.environment_reason,
+                runnable_only=args.runnable_only,
+                blocked_only=args.blocked_only,
             )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("version-iteration-advance: failed")
@@ -554,7 +582,7 @@ def main(argv: list[str] | None = None) -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(rendered)
         print(f"version-iteration-advance: wrote {args.output}")
-    return 0 if result["status"] in {"plan", "passed", "blocked-by-environment"} else 1
+    return 0 if result["status"] in {"plan", "passed", "blocked-by-environment", "missing-tools", "not-external-gate"} else 1
 
 
 if __name__ == "__main__":

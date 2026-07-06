@@ -77,6 +77,29 @@ def main() -> int:
             "--format",
             "json",
         )
+        runnable_plan = run_script(
+            ADVANCE,
+            str(tmpdir / "runnable-plan-evidence"),
+            str(tmpdir / "runnable-plan-history"),
+            "--runnable-only",
+            "--format",
+            "json",
+        )
+        blocked_plan = run_script(
+            ADVANCE,
+            str(tmpdir / "blocked-plan-evidence"),
+            str(tmpdir / "blocked-plan-history"),
+            "--blocked-only",
+            "--format",
+            "json",
+        )
+        conflicting_plan = run_script(
+            ADVANCE,
+            str(tmpdir / "conflict-plan-evidence"),
+            str(tmpdir / "conflict-plan-history"),
+            "--runnable-only",
+            "--blocked-only",
+        )
         version_plan = run_script(
             ADVANCE,
             str(tmpdir / "version-plan-evidence"),
@@ -130,6 +153,34 @@ def main() -> int:
             errors.append("filtered advance plan must include selected worklist drilldown")
         if (tmpdir / "filtered-plan-evidence").exists() or (tmpdir / "filtered-plan-history").exists():
             errors.append("filtered advance plan must not create evidence or history directories")
+        if runnable_plan.returncode != 0:
+            errors.append(f"runnable-only advance plan failed: {runnable_plan.stderr.strip() or runnable_plan.stdout.strip()}")
+            runnable_plan_payload = {}
+        else:
+            runnable_plan_payload = json.loads(runnable_plan.stdout)
+        if runnable_plan_payload.get("filters", {}).get("runnableOnly") is not True:
+            errors.append("runnable-only advance plan must persist runnable-only filter")
+        if runnable_plan_payload.get("selected", {}).get("id") != "01-controller-resource-budget":
+            errors.append("runnable-only advance plan should select the first runnable task")
+        if runnable_plan_payload.get("selected", {}).get("captureStatus") != "tool-ready":
+            errors.append("runnable-only advance plan should select tool-ready work")
+        if blocked_plan.returncode != 0:
+            errors.append(f"blocked-only advance plan failed: {blocked_plan.stderr.strip() or blocked_plan.stdout.strip()}")
+            blocked_plan_payload = {}
+        else:
+            blocked_plan_payload = json.loads(blocked_plan.stdout)
+        if blocked_plan_payload.get("filters", {}).get("blockedOnly") is not True:
+            errors.append("blocked-only advance plan must persist blocked-only filter")
+        if blocked_plan_payload.get("selected", {}).get("id") != "02-lightweight-cluster-smoke":
+            errors.append("blocked-only advance plan should select the first blocked task")
+        if blocked_plan_payload.get("selected", {}).get("captureStatus") != "missing-tools":
+            errors.append("blocked-only advance plan should select missing-tools work")
+        if conflicting_plan.returncode == 0:
+            errors.append("advance plan must reject conflicting selector modes")
+        if "--runnable-only and --blocked-only are mutually exclusive" not in conflicting_plan.stdout:
+            errors.append("advance plan conflict should report selector mode conflict")
+        if (tmpdir / "runnable-plan-evidence").exists() or (tmpdir / "blocked-plan-evidence").exists():
+            errors.append("selector-mode advance plans must not create evidence directories")
         if version_plan.returncode != 0:
             errors.append(f"version advance plan failed: {version_plan.stderr.strip() or version_plan.stdout.strip()}")
             version_plan_payload = {}
@@ -284,6 +335,44 @@ def main() -> int:
         if "version-iteration-history-status: valid" not in inspect.stdout:
             errors.append("history inspect must report valid status")
 
+        blocked_only_run = run_script(
+            ADVANCE,
+            str(tmpdir / "blocked-only-run-evidence"),
+            str(tmpdir / "blocked-only-run-history"),
+            "--blocked-only",
+            "--run",
+            "--run-id",
+            "blocked-only-advance",
+            "--created-at",
+            "2026-07-06T00:00:00+00:00",
+            "--format",
+            "json",
+        )
+        if blocked_only_run.returncode != 0:
+            errors.append(f"blocked-only advance run should exit cleanly: {blocked_only_run.stderr.strip() or blocked_only_run.stdout.strip()}")
+            blocked_only_payload = {}
+        else:
+            blocked_only_payload = json.loads(blocked_only_run.stdout)
+        if blocked_only_payload.get("status") != "missing-tools":
+            errors.append("blocked-only advance run should preserve missing-tools status")
+        if blocked_only_payload.get("filters", {}).get("blockedOnly") is not True:
+            errors.append("blocked-only advance run should persist blocked-only filter")
+        if blocked_only_payload.get("nextTask", {}).get("selected") != "02-lightweight-cluster-smoke":
+            errors.append("blocked-only advance run should record the selected blocked task")
+        if blocked_only_payload.get("runner", {}).get("summary", {}).get("ran") != 0:
+            errors.append("blocked-only advance run must not execute blocked evidence commands")
+        blocked_only_runner = Path((blocked_only_payload.get("runnerRecord") or {}).get("json", ""))
+        if not blocked_only_runner.is_file():
+            errors.append("blocked-only advance run must write a runner record")
+        else:
+            blocked_only_runner_payload = json.loads(blocked_only_runner.read_text())
+            if blocked_only_runner_payload.get("status") != "missing-tools":
+                errors.append("blocked-only runner record should preserve missing-tools status")
+            if blocked_only_runner_payload.get("summary", {}).get("ran") != 0:
+                errors.append("blocked-only runner record should preserve zero executed commands")
+        if (tmpdir / "blocked-only-run-evidence" / "reports" / "02-lightweight-cluster-smoke-lightweight-kind.json").exists():
+            errors.append("blocked-only advance run must not capture lightweight smoke evidence")
+
         blocked_env = fake_tool_env(tmpdir / "blocked-tools", cluster_ok=False)
         blocked_kubectl = str(tmpdir / "blocked-tools" / "kubectl")
         blocked = run_script(
@@ -418,6 +507,8 @@ def main() -> int:
             "next-version-task-run.json",
             "version-iteration-advance.json",
             "--missing-tool",
+            "--runnable-only",
+            "--blocked-only",
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing advance workflow detail: {snippet}")

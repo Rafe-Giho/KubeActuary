@@ -382,13 +382,16 @@ python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --format markdown
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --version 0.4.3
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --missing-tool kind
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --runnable-only
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --blocked-only
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --probe-environment
 ```
 
 `prepare_live_evidence_directory.py` and `advance_version_iteration.py` both
 accept `--version`, `--capture-status`, `--missing-tool`,
-`--environment-status`, and `--environment-reason`, so the
+`--environment-status`, `--environment-reason`, `--runnable-only`, and
+`--blocked-only`, so the
 prepared next-task and before/after history records can stay focused on the
 same release version and blocker class.
 `advance_version_iteration.py --version <version>` carries that scope through

@@ -545,6 +545,8 @@ python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-v
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --format markdown
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --version 0.4.3
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --runnable-only
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --blocked-only
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
 python3 -B scripts/verify_external_gate_plan.py
