@@ -94,12 +94,10 @@ def write_next_task_run(evidence_dir: Path) -> None:
             "schemaVersion": NEXT_TASK_RUN_SCHEMA,
             "mode": "run",
             "status": "failed",
-            "queueSource": "prepared-live-validation-queue",
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "ranAt": "2026-07-06T00:00:00+00:00",
             "nextTask": {
                 "schemaVersion": NEXT_TASK_SCHEMA,
-                "queueSource": "prepared-live-validation-queue",
                 "selected": {
                     "id": "01-controller-resource-budget",
                     "version": "Current Baseline",
@@ -135,13 +133,11 @@ def write_advance_record(evidence_dir: Path) -> None:
             "schemaVersion": ADVANCE_SCHEMA,
             "mode": "run",
             "status": "passed",
-            "queueSource": "prepared-live-validation-queue",
             "clusterWrites": "disabled-or-server-side-dry-run-only",
             "runId": "test-advance",
             "createdAt": "2026-07-06T00:00:00+00:00",
             "runner": {"status": "passed"},
             "nextTask": {
-                "queueSource": "prepared-live-validation-queue",
                 "selected": "06-controller",
                 "skippedCompleteEvidence": 1,
             },

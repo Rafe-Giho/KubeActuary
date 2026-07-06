@@ -246,7 +246,9 @@ plus the latest advance workflow status from
 the computed status as `.kubeactuary/release-evidence-status.json` and
 `.kubeactuary/release-evidence-status.md`. The status report preserves and
 prints queue-source metadata from the next-task, runner, and advance records
-when present.
+when present. For older prepared evidence directories whose records do not yet
+carry explicit queue-source fields, the inspector infers
+`prepared-live-validation-queue` from `.kubeactuary/live-validation-queue.json`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.

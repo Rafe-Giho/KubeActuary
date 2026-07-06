@@ -79,7 +79,6 @@ def main() -> int:
             evidence_dir / ".kubeactuary" / "next-version-task.json",
             {
                 "schemaVersion": "kube-actuary.next-version-task.v1",
-                "sourceWorklistQueueSource": "prepared-live-validation-queue",
                 "selected": {
                     "id": "01-controller-resource-budget",
                     "version": "Current Baseline",
@@ -99,11 +98,9 @@ def main() -> int:
                 "schemaVersion": "kube-actuary.next-version-task-run.v1",
                 "mode": "run",
                 "status": "failed",
-                "queueSource": "prepared-live-validation-queue",
                 "clusterWrites": "disabled-or-server-side-dry-run-only",
                 "ranAt": "2026-07-06T00:00:00+00:00",
                 "nextTask": {
-                    "queueSource": "prepared-live-validation-queue",
                     "selected": {
                         "id": "01-controller-resource-budget",
                         "version": "Current Baseline",
@@ -157,13 +154,11 @@ def main() -> int:
                 "schemaVersion": "kube-actuary.version-iteration-advance.v1",
                 "mode": "run",
                 "status": "failed",
-                "queueSource": "prepared-live-validation-queue",
                 "clusterWrites": "disabled-or-server-side-dry-run-only",
                 "runId": "test-progress",
                 "createdAt": "2026-07-06T00:00:00+00:00",
                 "runner": {"status": "failed"},
                 "nextTask": {
-                    "queueSource": "prepared-live-validation-queue",
                     "selected": "01-controller-resource-budget",
                     "skippedCompleteEvidence": 0,
                 },

@@ -63,7 +63,21 @@ def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
     return files
 
 
-def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
+def default_queue_source(live_queue: dict[str, Any] | None) -> str:
+    return "prepared-live-validation-queue" if isinstance(live_queue, dict) else "generated"
+
+
+def resolved_queue_source(payload: dict[str, Any], fallback: str) -> str:
+    next_task = payload.get("nextTask") if isinstance(payload.get("nextTask"), dict) else {}
+    return str(
+        payload.get("sourceWorklistQueueSource")
+        or payload.get("queueSource")
+        or next_task.get("queueSource")
+        or fallback
+    )
+
+
+def load_next_task(evidence_dir: Path, fallback_queue_source: str = "generated") -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "next-version-task.json"
     if not path.is_file():
         return None
@@ -72,7 +86,7 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported next-task schemaVersion: {payload.get('schemaVersion')!r}")
     selected = payload.get("selected") or {}
     files = next_task_files(selected)
-    queue_source = payload.get("sourceWorklistQueueSource") or payload.get("queueSource") or "generated"
+    queue_source = resolved_queue_source(payload, fallback_queue_source)
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
@@ -129,7 +143,7 @@ def next_task_run_failure(payload: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
+def load_next_task_run(evidence_dir: Path, fallback_queue_source: str = "generated") -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "next-version-task-run.json"
     if not path.is_file():
         return None
@@ -138,7 +152,7 @@ def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported next-task-run schemaVersion: {payload.get('schemaVersion')!r}")
     next_task = payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
-    queue_source = payload.get("queueSource") or next_task.get("queueSource") or "generated"
+    queue_source = resolved_queue_source(payload, fallback_queue_source)
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
@@ -193,7 +207,10 @@ def load_environment_blockers(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
-def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
+def load_version_iteration_advance(
+    evidence_dir: Path,
+    fallback_queue_source: str = "generated",
+) -> dict[str, Any] | None:
     path = evidence_dir / ".kubeactuary" / "version-iteration-advance.json"
     if not path.is_file():
         return None
@@ -202,7 +219,7 @@ def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
         raise ValueError(f"{path}: unsupported version-iteration-advance schemaVersion: {payload.get('schemaVersion')!r}")
     runner = payload.get("runner") or {}
     next_task = payload.get("nextTask") or {}
-    queue_source = payload.get("queueSource") or next_task.get("queueSource") or "generated"
+    queue_source = resolved_queue_source(payload, fallback_queue_source)
     return {
         "schemaVersion": payload.get("schemaVersion"),
         "path": str(path),
@@ -350,12 +367,13 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     evaluation = evaluate(manifest, supplemental_paths)
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
-    next_task = load_next_task(evidence_dir)
-    next_task_run = load_next_task_run(evidence_dir)
+    live_queue = load_live_validation_queue(evidence_dir)
+    fallback_queue_source = default_queue_source(live_queue)
+    next_task = load_next_task(evidence_dir, fallback_queue_source)
+    next_task_run = load_next_task_run(evidence_dir, fallback_queue_source)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
-    version_iteration_advance = load_version_iteration_advance(evidence_dir)
-    live_queue = load_live_validation_queue(evidence_dir)
+    version_iteration_advance = load_version_iteration_advance(evidence_dir, fallback_queue_source)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
