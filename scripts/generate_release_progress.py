@@ -148,6 +148,48 @@ def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[
     }
 
 
+def unprepared_evidence_status(evidence_dir: Path, output_dir: Path, plan: dict[str, Any]) -> dict[str, Any]:
+    gates = plan.get("gates", [])
+    return {
+        "schemaVersion": "kube-actuary.release-evidence-status.v1",
+        "evidenceDir": str(evidence_dir),
+        "outputDir": str(output_dir),
+        "summary": {
+            "status": "not-prepared",
+            "liveReports": 0,
+            "supplementalEvidence": 0,
+            "coveredGates": 0,
+            "uncoveredGates": len(gates),
+            "totalGates": len(gates),
+            "coverageErrors": 0,
+        },
+        "nextTask": None,
+        "nextTaskRun": None,
+        "environmentProbe": None,
+        "environmentBlockers": None,
+        "versionIterationAdvance": None,
+        "liveReports": [],
+        "supplementalEvidence": [],
+        "missing": {
+            "coverage": ["evidence directory is not prepared"],
+            "externalGates": [
+                {
+                    "id": gate.get("id"),
+                    "item": gate.get("item"),
+                    "kind": gate.get("kind"),
+                    "reason": "evidence directory is not prepared",
+                }
+                for gate in gates
+            ],
+        },
+        "nextCommands": [
+            f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir}",
+            f"python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --probe-environment",
+            f"python3 -B scripts/inspect_release_evidence_directory.py {evidence_dir}",
+        ],
+    }
+
+
 def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = None) -> dict[str, Any]:
     rows = taskboard_rows(TASKBOARD.read_text())
     plan = build_plan()
@@ -170,7 +212,10 @@ def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = N
     }
     if evidence_dir is not None:
         target_output = output_dir if output_dir is not None else evidence_dir / DEFAULT_OUTPUT_DIR
-        report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
+        if evidence_dir.is_dir():
+            report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
+        else:
+            report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
     return report
 
 
@@ -233,6 +278,9 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 f"- supplemental: {status['supplementalEvidence']}",
             ]
         )
+        next_commands = progress["evidenceStatus"].get("nextCommands", [])
+        for command in next_commands[:3]:
+            lines.append(f"- next: `{command}`")
     lines.extend(["", "## Closure", ""])
     for command in progress["externalGatePlan"]["closureCommands"]:
         lines.append(f"- `{command}`")

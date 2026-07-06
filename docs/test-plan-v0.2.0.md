@@ -270,7 +270,8 @@ Confirm from code and tests:
 - release taskboard audit verifies status rows, remaining evidence notes, and
   the release suite check count;
 - release progress verifier checks versioned task status, external gates, live
-  readiness, tool-ready next actions, and optional evidence directory status;
+  readiness, tool-ready next actions, optional evidence directory status, and
+  `not-prepared` guidance for missing evidence directories;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
   history status inspection, evidence-aware worklist readiness,

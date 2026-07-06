@@ -47,6 +47,14 @@ def main() -> int:
         json_result = run_generator("--format", "json")
         markdown_result = run_generator("--format", "markdown")
         with_evidence = run_generator("--format", "json", "--evidence-dir", str(evidence_dir))
+        missing_evidence_dir = tmpdir / "missing-evidence"
+        missing_evidence = run_generator("--format", "json", "--evidence-dir", str(missing_evidence_dir))
+        missing_evidence_markdown = run_generator(
+            "--format",
+            "markdown",
+            "--evidence-dir",
+            str(missing_evidence_dir),
+        )
         output = tmpdir / "progress.json"
         written = run_generator("--format", "json", "--output", str(output))
         output_written = output.is_file()
@@ -63,6 +71,13 @@ def main() -> int:
         evidence_progress = {}
     else:
         evidence_progress = json.loads(with_evidence.stdout)
+    if missing_evidence.returncode != 0:
+        errors.append(f"missing evidence progress failed: {missing_evidence.stderr.strip() or missing_evidence.stdout.strip()}")
+        missing_evidence_progress = {}
+    else:
+        missing_evidence_progress = json.loads(missing_evidence.stdout)
+    if missing_evidence_markdown.returncode != 0 or "status: not-prepared" not in missing_evidence_markdown.stdout:
+        errors.append("missing evidence markdown must report not-prepared status")
     if written.returncode != 0 or not output_written:
         errors.append("progress generator must write requested output file")
 
@@ -102,6 +117,13 @@ def main() -> int:
         errors.append("progress report must include partial evidence-dir status")
     if not evidence_status.get("nextCommands"):
         errors.append("partial evidence progress must include next commands")
+    missing_status = missing_evidence_progress.get("evidenceStatus", {})
+    if missing_status.get("summary", {}).get("status") != "not-prepared":
+        errors.append("missing evidence progress must report not-prepared status")
+    if missing_status.get("summary", {}).get("totalGates") != 16:
+        errors.append("missing evidence progress must preserve external gate count")
+    if not any("prepare_live_evidence_directory.py" in command for command in missing_status.get("nextCommands", [])):
+        errors.append("missing evidence progress must recommend preparing the evidence directory")
 
     for snippet in ("generate_release_progress.py", "kube-actuary.release-progress.v1"):
         if snippet not in README.read_text():

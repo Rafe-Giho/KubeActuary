@@ -10,6 +10,7 @@ Run:
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
 python3 -B scripts/verify_live_validation_readiness.py --probe-environment
+python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_live_validation_queue.py --format markdown
 python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown --evidence-dir evidence/live
@@ -58,6 +59,11 @@ read-only `kubectl` checks to classify current cluster availability. They do not
 create, update, patch, or delete Kubernetes resources. Environment-blocked gates
 are reported as `blocked-by-environment` so local worklists can distinguish
 "tool installed" from "disposable cluster not reachable".
+
+The release progress report can also inspect `--evidence-dir`. If that
+directory has not been prepared yet, it reports `not-prepared` instead of
+failing and prints the `prepare_live_evidence_directory.py` command needed to
+start the local evidence loop.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It
