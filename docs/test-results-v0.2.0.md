@@ -67,7 +67,8 @@ Coverage included:
   smoke evidence output;
 - Kustomize base and controller RBAC overlays;
 - multi-target release archives with SHA-256 sidecars and install smoke;
-- Krew manifest generator with archive digest validation;
+- Krew manifest generator with archive digest validation and isolated install
+  smoke evidence output;
 - SBOM and provenance generation with archive digest verification;
 - security policy, threat model, and disclosure process verification;
 - API freeze and additive compatibility gate verification;
@@ -130,6 +131,7 @@ python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/run_krew_smoke.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py

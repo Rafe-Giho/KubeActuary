@@ -38,4 +38,20 @@ If Krew is installed, run the generated manifest through:
 kubectl krew install --manifest dist/actuary.yaml
 ```
 
+For a repeatable smoke command with isolated local filesystem writes:
+
+```sh
+python3 -B scripts/run_krew_smoke.py
+python3 -B scripts/run_krew_smoke.py --manifest dist/actuary.yaml --run --output /tmp/kubeactuary-krew-smoke.json
+```
+
+Run mode sets `KREW_ROOT` to an isolated temporary directory unless
+`--krew-root` is provided. It does not contact a Kubernetes cluster. The
+manifest URI may still require network access depending on where the release
+archives are hosted.
+
+The optional `--output` file uses `kube-actuary.krew-smoke.v1` and records the
+manifest path, `clusterAccess: none`, `filesystemWrites: isolated-krew-root`,
+the command, isolated KREW_ROOT, exit code, and raw stdout/stderr.
+
 The local verifier does not require Krew and does not install the plugin.

@@ -377,6 +377,7 @@ scripts/
   package_release_archives.py release archive generator
   verify_release_archives.py  archive checksum and install smoke
   generate_krew_manifest.py   Krew manifest generator
+  run_krew_smoke.py           Krew install smoke harness with isolated KREW_ROOT
   verify_krew_manifest.py     offline Krew manifest check
   generate_sbom.py            CycloneDX SBOM generator
   generate_provenance.py      release archive provenance generator
@@ -444,6 +445,7 @@ python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/run_krew_smoke.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py

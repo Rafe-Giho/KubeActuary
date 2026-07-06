@@ -39,7 +39,8 @@ Evidence collector release:
 - add Kustomize base and controller RBAC overlays with render verification;
 - add multi-target release archive packager with SHA-256 and install smoke
   verification;
-- add Krew manifest generator and offline manifest verifier;
+- add Krew manifest generator, isolated install smoke harness, and offline
+  manifest verifier;
 - add deterministic SBOM and SLSA-style provenance generators with verifier;
 - add air-gapped install manifest generator and offline bundle verifier;
 - add Kyverno policy evidence adapter with pass/fail fixtures;

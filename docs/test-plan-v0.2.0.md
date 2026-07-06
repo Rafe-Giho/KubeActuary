@@ -66,6 +66,7 @@ python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
+python3 -B scripts/run_krew_smoke.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_security_docs.py
@@ -220,7 +221,7 @@ Confirm from code and tests:
 - release archive generator emits multi-target archives, SHA-256 sidecars, and
   install smoke for CLI/plugin/controller;
 - Krew manifest generator maps `kubectl-actuary` and adjacent `kube-actuary`
-  helper for each archive target;
+  helper for each archive target and verifies isolated install smoke evidence;
 - SBOM/provenance generator records file hashes and release archive subjects;
 - security docs verifier requires supported versions, disclosure process,
   threat model, mitigations, and residual risk sections;
