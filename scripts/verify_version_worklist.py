@@ -463,7 +463,14 @@ def main() -> int:
         history_diff = json.loads(history_diff_path.read_text()) if history_diff_path.is_file() else {}
         history_status = run_inspect_history(str(history_dir))
         history_status_json = run_inspect_history(str(history_dir), "--format", "json")
+        history_status_markdown = run_inspect_history(str(history_dir), "--format", "markdown")
         history_status_payload = json.loads(history_status_json.stdout) if history_status_json.returncode == 0 else {}
+        history_status_markdown_worklist = (
+            "worklist: `python3 -B scripts/generate_version_worklist.py "
+            "--format markdown --open-only --version 0.4.3 "
+            "--capture-status blocked-by-environment "
+            "--environment-status cluster-unavailable`"
+        )
         history_status_output = tmpdir / "history-status.json"
         written_history_status = run_inspect_history(
             str(history_dir),
@@ -742,6 +749,14 @@ def main() -> int:
         errors.append("version iteration history text should show latest environment blocker summary")
     if "--capture-status blocked-by-environment --environment-status cluster-unavailable" not in history_status.stdout:
         errors.append("version iteration history text should show latest blocker drilldown command")
+    if history_status_markdown.returncode != 0:
+        errors.append("version iteration history Markdown status must pass")
+    if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown status should include a title")
+    if "environment `cluster-unavailable`: 1 items" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest environment blocker summary")
+    if history_status_markdown_worklist not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest blocker drilldown command")
     if written_history_status.returncode != 0 or not history_status_output_written:
         errors.append("version iteration history inspector must write requested output file")
     evidence_runs = evidence_history_index.get("runs", [])

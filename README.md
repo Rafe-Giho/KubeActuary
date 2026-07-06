@@ -511,6 +511,7 @@ python3 -B scripts/compare_version_iterations.py /tmp/kubeactuary-before /tmp/ku
 python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --probe-environment
 python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --evidence-dir evidence/live
 python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history
+python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history --format markdown
 python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence

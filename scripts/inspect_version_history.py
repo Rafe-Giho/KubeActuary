@@ -156,19 +156,67 @@ def render_text(status: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_markdown(status: dict[str, Any]) -> str:
+    summary = status["summary"]
+    state = "valid" if status["valid"] else "failed"
+    lines = [
+        "# KubeActuary Version Iteration History Status",
+        "",
+        f"Schema: `{status['schemaVersion']}`",
+        f"Status: `{state}`",
+        f"History directory: `{status['historyDir']}`",
+        "",
+        "## Summary",
+        "",
+        f"- runs: {summary['runs']}",
+        f"- latest run: `{summary['latestRunId']}`",
+        f"- latest queue source: `{summary.get('latestQueueSource')}`",
+        f"- open items: {summary['openItems']}",
+        f"- capture ready: {summary['captureReady']}",
+        f"- blocked by tools: {summary['blockedByTools']}",
+        f"- blocked by environment: {summary['blockedByEnvironment']}",
+        f"- evidence files: {summary['existingEvidenceFiles']}/{summary['evidenceFiles']}",
+        f"- complete evidence items: {summary['completeEvidenceItems']}/{summary['evidenceItems']}",
+        f"- diffs: {summary['diffs']}",
+        "",
+        "## Latest Blockers",
+        "",
+    ]
+    blockers = status.get("latestBlockers", {})
+    if not isinstance(blockers, dict) or not any(blockers.values()):
+        lines.append("- none")
+    else:
+        for item in blockers.get("missingTools", []) or []:
+            lines.append(f"- missing tool `{item.get('tool')}`: {item.get('items')} items")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+        for item in blockers.get("environment", []) or []:
+            lines.append(f"- environment `{item.get('status')}`: {item.get('items')} items")
+            if item.get("worklistCommand"):
+                lines.append(f"  - worklist: `{item.get('worklistCommand')}`")
+        for item in blockers.get("environmentNextSteps", []) or []:
+            lines.append(f"- next step: {item.get('nextStep')} ({item.get('items')} items)")
+    if status["errors"]:
+        lines.extend(["", "## Errors", ""])
+        for error in status["errors"]:
+            lines.append(f"- {error}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Inspect a KubeActuary version iteration history directory.")
     parser.add_argument("history_dir")
-    parser.add_argument("--format", choices=["text", "json"], default="text")
+    parser.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
     status = inspect_history(Path(args.history_dir))
-    rendered = (
-        json.dumps(status, indent=2, sort_keys=True) + "\n"
-        if args.format == "json"
-        else render_text(status)
-    )
+    if args.format == "json":
+        rendered = json.dumps(status, indent=2, sort_keys=True) + "\n"
+    elif args.format == "markdown":
+        rendered = render_markdown(status)
+    else:
+        rendered = render_text(status)
     if args.output == "-":
         print(rendered, end="")
     else:
