@@ -13,6 +13,7 @@ CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
 CRD_UPGRADE_FIXTURES = ROOT / "scripts" / "verify_crd_upgrade_fixtures.py"
 CRD_EXPLAIN_QUALITY = ROOT / "scripts" / "verify_crd_explain_quality.py"
 CONFORMANCE_SUITE = ROOT / "scripts" / "verify_conformance_suite.py"
+MANAGED_KUBERNETES_SMOKE = ROOT / "scripts" / "verify_managed_kubernetes_smoke.py"
 CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
 CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
@@ -163,6 +164,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("conformance-suite: passed", result.stdout)
         self.assertIn("upstream-minors: 1.36, 1.35, 1.34", result.stdout)
+
+    def test_verify_managed_kubernetes_smoke(self):
+        result = subprocess.run(
+            [sys.executable, str(MANAGED_KUBERNETES_SMOKE)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("managed-kubernetes-smoke: passed", result.stdout)
+        self.assertIn("providers: eks, gke, aks", result.stdout)
 
     def test_verify_controller_contract(self):
         result = subprocess.run(

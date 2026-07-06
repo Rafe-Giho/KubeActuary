@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (57 checks)
-Ran 90 tests
+verification: passed (58 checks)
+Ran 91 tests
 OK
 ```
 
@@ -64,6 +64,7 @@ Coverage included:
 - controller resource budget contract and `kubectl top` measurement parser;
 - lightweight cluster smoke plan and JSON evidence output for kind, minikube,
   MicroK8s, and k3s;
+- managed Kubernetes smoke plan and JSON evidence output for EKS, GKE, and AKS;
 - Helm chart seed for CRD packaging, optional controller RBAC, and dry-run
   smoke evidence output;
 - Kustomize base and controller RBAC overlays;
@@ -130,6 +131,7 @@ python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_managed_kubernetes_smoke.py
 python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
@@ -188,6 +190,7 @@ Result:
 - controller status apply check prints `controller-status-apply: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
+- managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
 - Kustomize check prints `kustomize: passed`;
 - release archive check prints `release-archives: passed`;

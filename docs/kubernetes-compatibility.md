@@ -81,3 +81,8 @@ The local v0.3.1 smoke check verifies:
 Live kind/minikube validation remains a follow-up matrix check because it
 requires Kubernetes binaries and cluster startup outside the current stdlib-only
 CLI path.
+
+Managed provider validation uses `scripts/run_managed_kubernetes_smoke.py`.
+The local verifier checks EKS, GKE, and AKS plan/evidence output offline; actual
+provider support still requires one captured run report per approved provider
+context.

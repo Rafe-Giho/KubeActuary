@@ -32,6 +32,7 @@ python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_managed_kubernetes_smoke.py
 python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
@@ -90,6 +91,8 @@ Expected:
   status-only `--execute` shape;
 - controller resource budget contract and measurement parser verify offline;
 - lightweight cluster smoke plan and JSON evidence output verify offline;
+- managed Kubernetes smoke plan verifies EKS/GKE/AKS current-context evidence
+  output offline;
 - Helm chart contract and dry-run smoke evidence format verify offline;
 - Kustomize base and overlays render with `kubectl kustomize`;
 - release archives verify SHA-256 sidecars and install smoke;
@@ -145,6 +148,8 @@ Expected:
 - [ ] controller status apply dry-run check passes.
 - [ ] controller resource budget check passes.
 - [ ] lightweight cluster smoke plan and evidence-output check passes.
+- [ ] managed Kubernetes smoke plan check passes; run per provider with
+      `--run --output <path>` on approved contexts.
 - [ ] upstream N/N-1/N-2 conformance suite passes.
 - [ ] live kind/minikube/MicroK8s/k3s evidence is attached before claiming
       matrix support.

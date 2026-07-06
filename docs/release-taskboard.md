@@ -50,6 +50,7 @@ Status legend:
 | Pluto adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates without running them |
+| Managed Kubernetes smoke | VERIFY | `scripts/verify_managed_kubernetes_smoke.py` verifies EKS/GKE/AKS plan and evidence JSON; provider runs still needed |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
 | Controller | DOING | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, and status apply dry-run exist; persistent live status loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
@@ -60,7 +61,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (57 checks)
+verification: passed (58 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -172,7 +173,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
 | 0.9.0 | Conformance suite for upstream supported Kubernetes minors | DONE | `scripts/verify_conformance_suite.py` validates N/N-1/N-2 matrix |
-| 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | TODO | provider run evidence |
+| 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | VERIFY | `scripts/verify_managed_kubernetes_smoke.py`; provider run evidence still required |
 | 0.9.1 | Security policy, threat model, disclosure process | DONE | `scripts/verify_security_docs.py` validates `SECURITY.md` and threat model |
 | 0.9.2 | API freeze and upgrade compatibility gate | DONE | `scripts/verify_api_freeze.py` guards additive-only no breaking schema diff |
 | 0.9.3 | Documentation freeze and public examples audit | DONE | `scripts/verify_docs_freeze.py` checks public docs and examples |

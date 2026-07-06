@@ -28,7 +28,7 @@ cluster-writes: disabled
 | Lightweight cluster smoke | plan verifier for kind, minikube, MicroK8s, and k3s | successful run output for each provider |
 | Helm install path | chart contract verifier | `helm template` and install smoke against a disposable cluster |
 | Krew install path | manifest verifier | `kubectl krew install --manifest` smoke |
-| Managed Kubernetes smoke | compatibility notes for providers | provider run evidence for EKS, GKE, and AKS |
+| Managed Kubernetes smoke | compatibility notes and smoke harness for providers | provider run evidence for EKS, GKE, and AKS |
 | Admission webhook smoke | offline optional webhook verifier | kind admission request smoke with opt-in namespace |
 
 ## Evidence Rules
@@ -50,6 +50,9 @@ cluster-writes: disabled
 - For admission kind smoke runs, use
   `scripts/run_admission_kind_smoke.py --run --output <path>` and keep the
   `kube-actuary.admission-kind-smoke.v1` report.
+- For managed Kubernetes smoke runs, use `scripts/run_managed_kubernetes_smoke.py`
+  with `--provider <eks|gke|aks> --run --output <path>` and keep the
+  `kube-actuary.managed-kubernetes-smoke.v1` report.
 
 Provider run evidence means captured output from the target provider or tool,
 not a local assumption that the path should work.

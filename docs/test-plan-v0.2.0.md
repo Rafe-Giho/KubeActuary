@@ -20,7 +20,7 @@ Expected:
   patch plan, controller read-only sync, controller status apply dry-run,
   controller resource budget,
   lightweight cluster smoke harness, upstream conformance suite, Helm chart
-  contract, Kustomize rendering,
+  contract, managed Kubernetes smoke harness, Kustomize rendering,
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory,
@@ -64,6 +64,7 @@ python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_managed_kubernetes_smoke.py
 python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py
@@ -120,6 +121,7 @@ Expected:
 - controller status apply check prints `controller-status-apply: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
+- managed Kubernetes smoke check prints `managed-kubernetes-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;
 - Kustomize check prints `kustomize: passed`;
 - release archive check prints `release-archives: passed`;
@@ -220,6 +222,8 @@ Confirm from code and tests:
 - lightweight cluster smoke helper uses server-side dry-run plans, verifies JSON
   evidence output, and covers kind, minikube, MicroK8s, and k3s without default
   writes;
+- managed Kubernetes smoke helper verifies EKS, GKE, and AKS current-context
+  plans and JSON evidence without default writes or cloud credential mutation;
 - Helm chart packages the CRD under `crds/`, keeps optional controller RBAC
   disabled by default, and verifies dry-run smoke evidence output;
 - Kustomize base renders only the CRD, while controller overlays add only
@@ -295,7 +299,7 @@ Expected:
   upgrade fixtures, conformance suite, controller contract, controller RBAC,
   controller runtime, controller deployment, controller patch plan, controller
   sync, controller status apply, controller resource budget, lightweight cluster smoke, digest, CRD render,
-  Helm chart, Kustomize, release archives, Krew manifest, supply chain,
+  managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, project
   governance, air-gapped bundle, agent help contract, agent examples, Kyverno
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter

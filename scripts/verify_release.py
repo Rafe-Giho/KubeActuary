@@ -95,6 +95,11 @@ COMMON_CHECKS = (
         contains=("conformance-suite: passed", "upstream-minors: 1.36, 1.35, 1.34"),
     ),
     Check(
+        "managed kubernetes smoke",
+        ("python3", "-B", "scripts/verify_managed_kubernetes_smoke.py"),
+        contains=("managed-kubernetes-smoke: passed", "providers: eks, gke, aks", "mode: offline-plan"),
+    ),
+    Check(
         "controller contract",
         ("python3", "-B", "scripts/verify_controller_contract.py"),
         contains=("controller-contract: passed", "patch-scope: status"),

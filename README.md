@@ -328,6 +328,7 @@ docs/
   krew.md                      Krew manifest generation and verification
   helm-smoke.md                Helm template and dry-run install smoke runbook
   live-validation.md           external live validation evidence ledger
+  managed-kubernetes-smoke.md  EKS/GKE/AKS smoke runbook
   mcp.md                       MCP client config and safe-tool guide
   policy-adapters.md           policy evidence adapter contracts
   kustomize.md                 Kustomize install and verification runbook
@@ -371,6 +372,8 @@ scripts/
   run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
   verify_lightweight_cluster_smoke.py offline smoke harness check
   verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier
+  run_managed_kubernetes_smoke.py EKS/GKE/AKS smoke harness
+  verify_managed_kubernetes_smoke.py offline managed smoke verifier
   run_helm_smoke.py           Helm template and dry-run install smoke harness
   verify_helm_chart.py        offline Helm chart contract check
   verify_kustomize.py         Kustomize render check
@@ -443,6 +446,7 @@ python3 -B scripts/verify_controller_sync.py
 python3 -B scripts/verify_controller_status_apply.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
+python3 -B scripts/verify_managed_kubernetes_smoke.py
 python3 -B scripts/run_helm_smoke.py
 python3 -B scripts/verify_helm_chart.py
 python3 -B scripts/verify_kustomize.py

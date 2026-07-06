@@ -164,6 +164,15 @@ Add optional admission controls:
 
 This should be optional because admission webhooks add operational risk.
 
+## v0.9: Release Candidate Evidence
+
+Freeze public contracts and capture external compatibility evidence:
+
+- managed Kubernetes smoke harness covers EKS, GKE, and AKS current-context
+  checks with server-side dry-run only;
+- provider run reports use `kube-actuary.managed-kubernetes-smoke.v1`;
+- actual provider support still requires one approved run report per provider.
+
 ## v1.0 Direction
 
 KubeActuary becomes a small standard for evidence-carrying Kubernetes
