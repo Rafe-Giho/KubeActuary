@@ -292,6 +292,7 @@ controller/
   reconcile.py                 pure OperationCapsule status reconcile model
 .github/workflows/
   ci.yml                       GitHub Actions verification workflow
+SECURITY.md                    security policy and disclosure process
 charts/
   kubeactuary/                 Helm chart seed
 deploy/crds/
@@ -308,6 +309,7 @@ docs/
   admission.md                optional admission prototype and safety defaults
   admission-incident-runbook.md admission audit incident runbook
   conformance.md              upstream N/N-1/N-2 conformance suite
+  threat-model.md             project threat model
   collectors.md                evidence collector contract
   landscape.md                 ecosystem research
   paradigm.md                  operating model
@@ -363,6 +365,7 @@ scripts/
   generate_sbom.py            CycloneDX SBOM generator
   generate_provenance.py      release archive provenance generator
   verify_supply_chain.py      SBOM/provenance verifier
+  verify_security_docs.py     security policy and threat model verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
@@ -416,6 +419,7 @@ python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
+python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py

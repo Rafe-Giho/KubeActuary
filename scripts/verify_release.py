@@ -174,6 +174,11 @@ COMMON_CHECKS = (
         contains=("supply-chain: passed", "provenance-subjects: 4", "archive-digests: verified"),
     ),
     Check(
+        "security docs",
+        ("python3", "-B", "scripts/verify_security_docs.py"),
+        contains=("security-docs: passed", "security-policy: present", "threat-model: present"),
+    ),
+    Check(
         "airgap bundle",
         ("python3", "-B", "scripts/verify_airgap_bundle.py"),
         contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),

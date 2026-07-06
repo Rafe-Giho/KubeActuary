@@ -33,6 +33,7 @@ python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
+python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -73,6 +74,7 @@ Expected:
 - release archives verify SHA-256 sidecars and install smoke;
 - Krew manifest generation verifies platform entries and archive digests;
 - SBOM and provenance generation verify archive digests;
+- security docs verify policy, threat model, and disclosure process;
 - air-gapped manifest verifies required release and repository artifacts;
 - agent help contract verifies schema version and compatibility fields;
 - agent examples verify local CI and Codex runbooks without write commands;
@@ -114,6 +116,7 @@ Expected:
 - [ ] Krew manifest check passes; run real Krew install validation when Krew is
       available.
 - [ ] SBOM and provenance checks pass.
+- [ ] security policy and threat model check passes.
 - [ ] air-gapped bundle manifest check passes.
 - [ ] agent help contract check passes.
 - [ ] agent example runbook check passes.

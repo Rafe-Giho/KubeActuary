@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (45 checks)
-Ran 74 tests
+verification: passed (46 checks)
+Ran 75 tests
 OK
 ```
 
@@ -61,6 +61,7 @@ Coverage included:
 - multi-target release archives with SHA-256 sidecars and install smoke;
 - Krew manifest generator with archive digest validation;
 - SBOM and provenance generation with archive digest verification;
+- security policy, threat model, and disclosure process verification;
 - air-gapped artifact manifest and offline checklist verification;
 - agent help schema compatibility verification;
 - local CI and Codex agent runbook verification;
@@ -112,6 +113,7 @@ python3 -B scripts/verify_kustomize.py
 python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
+python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_agent_examples.py
@@ -155,6 +157,7 @@ Result:
 - release archive check prints `release-archives: passed`;
 - Krew manifest check prints `krew-manifest: passed`;
 - supply-chain check prints `supply-chain: passed`;
+- security docs check prints `security-docs: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
 - agent help contract check prints `agent-help-contract: passed`;
 - agent examples check prints `agent-examples: passed`;

@@ -23,6 +23,7 @@ KUSTOMIZE = ROOT / "scripts" / "verify_kustomize.py"
 RELEASE_ARCHIVES = ROOT / "scripts" / "verify_release_archives.py"
 KREW_MANIFEST = ROOT / "scripts" / "verify_krew_manifest.py"
 SUPPLY_CHAIN = ROOT / "scripts" / "verify_supply_chain.py"
+SECURITY_DOCS = ROOT / "scripts" / "verify_security_docs.py"
 AIRGAP_BUNDLE = ROOT / "scripts" / "verify_airgap_bundle.py"
 KYVERNO_ADAPTER = ROOT / "scripts" / "verify_kyverno_adapter.py"
 OPA_ADAPTER = ROOT / "scripts" / "verify_opa_adapter.py"
@@ -298,6 +299,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("supply-chain: passed", result.stdout)
         self.assertIn("archive-digests: verified", result.stdout)
+
+    def test_verify_security_docs(self):
+        result = subprocess.run(
+            [sys.executable, str(SECURITY_DOCS)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("security-docs: passed", result.stdout)
+        self.assertIn("threat-model: present", result.stdout)
 
     def test_verify_airgap_bundle(self):
         result = subprocess.run(
