@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (37 checks)
-Ran 66 tests
+verification: passed (38 checks)
+Ran 67 tests
 OK
 ```
 
@@ -61,6 +61,7 @@ Coverage included:
 - Krew manifest generator with archive digest validation;
 - SBOM and provenance generation with archive digest verification;
 - air-gapped artifact manifest and offline checklist verification;
+- agent help schema compatibility verification;
 - Kyverno policy adapter pass/fail fixture verification;
 - OPA/Rego policy adapter pass/fail fixture verification;
 - kube-linter policy adapter pass/fail fixture verification;
@@ -104,6 +105,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
@@ -139,6 +141,7 @@ Result:
 - Krew manifest check prints `krew-manifest: passed`;
 - supply-chain check prints `supply-chain: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
+- agent help contract check prints `agent-help-contract: passed`;
 - Kyverno adapter check prints `kyverno-adapter: passed`;
 - OPA adapter check prints `opa-adapter: passed`;
 - kube-linter adapter check prints `kube-linter-adapter: passed`;

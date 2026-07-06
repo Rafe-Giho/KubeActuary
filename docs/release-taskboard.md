@@ -54,7 +54,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (37 checks)
+verification: passed (38 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -136,7 +136,7 @@ execution by default.
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
 | 0.7.0 | Safe MCP tools: draft, inspect, attach, verify, gate | DONE | `scripts/verify_mcp_contract.py` validates JSON-RPC/MCP contract |
-| 0.7.1 | Agent help contract versioning | TODO | `help agents --format json` compatibility test |
+| 0.7.1 | Agent help contract versioning | DONE | `scripts/verify_agent_help_contract.py` validates schema compatibility |
 | 0.7.2 | Agent examples for local CI and Codex workflows | TODO | example runbooks |
 | 0.7.3 | Explicitly disabled experimental execute tool | TODO | tests prove disabled-by-default |
 

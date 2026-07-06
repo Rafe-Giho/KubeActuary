@@ -357,6 +357,7 @@ scripts/
   verify_supply_chain.py      SBOM/provenance verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
+  verify_agent_help_contract.py agent help schema contract verifier
   adapt_kyverno_evidence.py   Kyverno output to evidence adapter
   verify_kyverno_adapter.py   Kyverno adapter fixture verifier
   adapt_opa_evidence.py       OPA output to evidence adapter
@@ -400,6 +401,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py

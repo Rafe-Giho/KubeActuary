@@ -45,6 +45,7 @@ Evidence collector release:
 - add Pluto deprecated API evidence adapter with pass/fail fixtures;
 - add common adapter evidence contract and normalized severity verification;
 - add safe stdlib MCP/JSON-RPC wrapper for draft, inspect, attach, verify, and gate;
+- add dedicated agent help contract verifier for schema compatibility;
 - add v0.2 tests, docs, and examples.
 
 ## 0.1.0

@@ -19,10 +19,10 @@ Expected:
   controller runtime contract, controller resource budget, lightweight cluster
   smoke harness, Helm chart contract, Kustomize rendering, release archives, and
   Krew manifest generation, SBOM/provenance generation, air-gapped manifest
-  generation, Kyverno adapter fixtures, OPA adapter fixtures, kube-linter
-  adapter fixtures, kube-score adapter fixtures, Pluto adapter fixtures, and
-  adapter contract severity normalization, MCP safe-tool contract verification,
-  and full manifest gate behavior;
+  generation, agent help schema compatibility, Kyverno adapter fixtures, OPA
+  adapter fixtures, kube-linter adapter fixtures, kube-score adapter fixtures,
+  Pluto adapter fixtures, adapter contract severity normalization, MCP
+  safe-tool contract verification, and full manifest gate behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -55,6 +55,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
@@ -88,6 +89,7 @@ Expected:
 - Krew manifest check prints `krew-manifest: passed`;
 - supply-chain check prints `supply-chain: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
+- agent help contract check prints `agent-help-contract: passed`;
 - Kyverno adapter check prints `kyverno-adapter: passed`;
 - OPA adapter check prints `opa-adapter: passed`;
 - kube-linter adapter check prints `kube-linter-adapter: passed`;
@@ -166,6 +168,8 @@ Confirm from code and tests:
 - SBOM/provenance generator records file hashes and release archive subjects;
 - air-gapped manifest generator lists required release and repository artifacts
   with SHA-256 digests;
+- agent help contract verifier requires schema version, compatibility metadata,
+  top-level fields, and per-command required fields;
 - Kyverno adapter converts captured CLI JSON to `kyverno-policy` evidence and
   fails on policy failures;
 - OPA adapter converts captured `opa eval --format=json` output to
@@ -198,6 +202,6 @@ Expected:
   upgrade fixtures, controller contract, controller RBAC, controller runtime,
   controller resource budget, lightweight cluster smoke, digest, CRD render,
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
-  air-gapped bundle, Kyverno adapter, OPA adapter, kube-linter adapter,
+  air-gapped bundle, agent help contract, Kyverno adapter, OPA adapter, kube-linter adapter,
   kube-score adapter, Pluto adapter, adapter contract, MCP contract, gate
   behavior, JSON/YAML parsing, and `git diff --check`.

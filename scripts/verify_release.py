@@ -45,6 +45,11 @@ COMMON_CHECKS = (
         json_probe="agent_help",
     ),
     Check(
+        "agent help contract",
+        ("python3", "-B", "scripts/verify_agent_help_contract.py"),
+        contains=("agent-help-contract: passed", "schemaVersion: kube-actuary.help.v1"),
+    ),
+    Check(
         "collect help",
         ("python3", "-B", "bin/kube-actuary", "collect", "--help"),
         contains=("auth", "dry-run", "diff", "rollback", "health-plan"),

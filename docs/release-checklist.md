@@ -33,6 +33,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_agent_help_contract.py
 python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/verify_opa_adapter.py
 python3 -B scripts/verify_kube_linter_adapter.py
@@ -65,6 +66,7 @@ Expected:
 - Krew manifest generation verifies platform entries and archive digests;
 - SBOM and provenance generation verify archive digests;
 - air-gapped manifest verifies required release and repository artifacts;
+- agent help contract verifies schema version and compatibility fields;
 - Kyverno adapter verifies pass and fail fixtures;
 - OPA adapter verifies pass and fail fixtures;
 - kube-linter adapter verifies pass and fail fixtures;
@@ -98,6 +100,7 @@ Expected:
       available.
 - [ ] SBOM and provenance checks pass.
 - [ ] air-gapped bundle manifest check passes.
+- [ ] agent help contract check passes.
 - [ ] Kyverno adapter fixture check passes.
 - [ ] OPA adapter fixture check passes.
 - [ ] kube-linter adapter fixture check passes.

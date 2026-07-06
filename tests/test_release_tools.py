@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
+AGENT_HELP_CONTRACT = ROOT / "scripts" / "verify_agent_help_contract.py"
 CRD_COMPATIBILITY = ROOT / "scripts" / "verify_crd_compatibility.py"
 CRD_UPGRADE_FIXTURES = ROOT / "scripts" / "verify_crd_upgrade_fixtures.py"
 CRD_EXPLAIN_QUALITY = ROOT / "scripts" / "verify_crd_explain_quality.py"
@@ -59,6 +60,20 @@ class ReleaseToolTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(output.is_file())
             self.assertIn("Status: draft", output.read_text())
+
+    def test_verify_agent_help_contract(self):
+        result = subprocess.run(
+            [sys.executable, str(AGENT_HELP_CONTRACT)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("agent-help-contract: passed", result.stdout)
+        self.assertIn("schemaVersion: kube-actuary.help.v1", result.stdout)
 
     def test_verify_crd_compatibility_smoke(self):
         result = subprocess.run(
