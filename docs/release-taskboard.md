@@ -67,7 +67,7 @@ Status legend:
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates and missing tools without running them; optional environment probe classifies current cluster availability without writes |
 | Live validation queue | DONE | `scripts/generate_live_validation_queue.py` and `scripts/verify_live_validation_queue.py` verify schema `kube-actuary.live-validation-queue.v1` for ordered evidence commands plus environment-blocked gates |
 | Live validation queue safety | DONE | `scripts/verify_live_validation_queue_safety.py` verifies placeholder and resolved queue commands stay dry-run/read-only/evidence-only |
-| Live evidence directory scaffold | DONE | `scripts/prepare_live_evidence_directory.py` and `scripts/verify_live_evidence_directory_scaffold.py` verify local reports/raw/supplemental/.kubeactuary scaffold generation plus probe-aware next-task artifacts and `--skip-complete-evidence` advancement |
+| Live evidence directory scaffold | DONE | `scripts/prepare_live_evidence_directory.py` and `scripts/verify_live_evidence_directory_scaffold.py` verify local reports/raw/supplemental/.kubeactuary scaffold generation plus probe-aware next-task artifacts, schema `kube-actuary.environment-blockers.v1`, and `--skip-complete-evidence` advancement |
 | Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |
 | Live evidence manifest | DONE | `scripts/verify_live_evidence_manifest.py` verifies captured report manifest generation |
 | Live evidence coverage | DONE | `scripts/verify_live_evidence_coverage.py` verifies release-gate and provider coverage rules |

@@ -85,7 +85,7 @@ Coverage included:
   resolved evidence commands;
 - live evidence directory scaffold generation for repeated evidence capture,
   including probe-aware next-task artifacts and `--skip-complete-evidence`
-  advancement;
+  advancement plus `kube-actuary.environment-blockers.v1` reports;
 - selected next-version task runner for plan-by-default raw plus supplemental
   evidence execution;
 - version iteration advance workflow with probe-aware before/after

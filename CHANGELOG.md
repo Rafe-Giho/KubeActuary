@@ -45,6 +45,7 @@ Evidence collector release:
   before/after history recording;
 - add probe-aware live evidence directory and iteration advance status for
   unavailable cluster environments;
+- add local environment blocker reports for prepared evidence directories;
 - add clean-artifact verification for generated Python cache files;
 - add live validation queue generation with ordered external evidence commands,
   optional environment blockers, and deterministic evidence-directory paths;

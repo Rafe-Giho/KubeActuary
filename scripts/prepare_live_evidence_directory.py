@@ -21,6 +21,9 @@ QUEUE_JSON = "live-validation-queue.json"
 QUEUE_MD = "live-validation-queue.md"
 NEXT_TASK_JSON = "next-version-task.json"
 NEXT_TASK_MD = "next-version-task.md"
+ENVIRONMENT_BLOCKERS_JSON = "environment-blockers.json"
+ENVIRONMENT_BLOCKERS_MD = "environment-blockers.md"
+ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 
 
 def readme_text(evidence_dir: Path, queue: dict) -> str:
@@ -65,6 +68,85 @@ def write_text(path: Path, text: str) -> None:
     path.write_text(text if text.endswith("\n") else text + "\n")
 
 
+def environment_blocker_report(evidence_dir: Path, queue: dict, next_task: dict) -> dict:
+    environment_probe = queue.get("environmentProbe") or {}
+    blocked_items = [
+        {
+            "id": item.get("id"),
+            "version": item.get("version"),
+            "item": item.get("item"),
+            "kind": item.get("kind"),
+            "status": item.get("status"),
+            "environmentStatus": item.get("environmentStatus"),
+            "nextStep": item.get("nextStep"),
+        }
+        for item in queue.get("items", [])
+        if isinstance(item, dict) and item.get("status") == "blocked-by-environment"
+    ]
+    selected = next_task.get("selected") or {}
+    return {
+        "schemaVersion": ENVIRONMENT_BLOCKERS_SCHEMA,
+        "evidenceDir": evidence_dir.as_posix(),
+        "clusterWrites": "disabled",
+        "environmentProbe": environment_probe or None,
+        "summary": {
+            "clusterAccess": environment_probe.get("clusterAccess", "not-run"),
+            "blockedByEnvironment": len(blocked_items),
+            "selectedBlocked": selected.get("captureStatus") == "blocked-by-environment",
+        },
+        "selected": {
+            "id": selected.get("id"),
+            "version": selected.get("version"),
+            "item": selected.get("item"),
+            "kind": selected.get("kind"),
+            "captureStatus": selected.get("captureStatus"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "nextStep": selected.get("nextStep"),
+        },
+        "items": blocked_items,
+    }
+
+
+def render_environment_blockers(report: dict) -> str:
+    summary = report["summary"]
+    lines = [
+        "# KubeActuary Environment Blockers",
+        "",
+        f"Schema: `{report['schemaVersion']}`",
+        f"Evidence directory: `{report['evidenceDir']}`",
+        f"Cluster writes: `{report['clusterWrites']}`",
+        "",
+        "## Summary",
+        "",
+        f"- cluster access: `{summary['clusterAccess']}`",
+        f"- blocked by environment: {summary['blockedByEnvironment']}",
+        f"- selected blocked: {str(summary['selectedBlocked']).lower()}",
+        "",
+        "## Selected",
+        "",
+    ]
+    selected = report.get("selected") or {}
+    if selected.get("id"):
+        lines.append(f"- `{selected.get('id')}` {selected.get('item')} ({selected.get('captureStatus')})")
+        if selected.get("environmentStatus"):
+            lines.append(f"  environment: `{selected.get('environmentStatus')}`")
+        if selected.get("nextStep"):
+            lines.append(f"  next: {selected.get('nextStep')}")
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Blocked Items", ""])
+    if report.get("items"):
+        for item in report["items"]:
+            lines.append(f"- `{item.get('id')}` {item.get('item')} ({item.get('version')})")
+            if item.get("environmentStatus"):
+                lines.append(f"  environment: `{item.get('environmentStatus')}`")
+            if item.get("nextStep"):
+                lines.append(f"  next: {item.get('nextStep')}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines) + "\n"
+
+
 def prepare_directory(
     evidence_dir: Path,
     skip_complete_evidence: bool = False,
@@ -79,6 +161,8 @@ def prepare_directory(
     metadata_dir = evidence_dir / ".kubeactuary"
     queue_json = metadata_dir / QUEUE_JSON
     queue_md = metadata_dir / QUEUE_MD
+    blockers_json = metadata_dir / ENVIRONMENT_BLOCKERS_JSON
+    blockers_md = metadata_dir / ENVIRONMENT_BLOCKERS_MD
     next_task = build_selection(
         version_filters=[],
         include_complete=False,
@@ -90,15 +174,21 @@ def prepare_directory(
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD
     readme = evidence_dir / "README.md"
+    blockers = environment_blocker_report(evidence_dir, queue, next_task)
     write_text(queue_json, json.dumps(queue, indent=2, sort_keys=True))
     write_text(queue_md, render_markdown(queue))
     write_text(next_task_json, json.dumps(next_task, indent=2, sort_keys=True))
     write_text(next_task_md, render_next_task_markdown(next_task))
+    write_text(blockers_json, json.dumps(blockers, indent=2, sort_keys=True))
+    write_text(blockers_md, render_environment_blockers(blockers))
     write_text(readme, readme_text(evidence_dir, queue))
     return {
         "queue": queue,
         "queueJson": queue_json,
         "queueMarkdown": queue_md,
+        "environmentBlockers": blockers,
+        "environmentBlockersJson": blockers_json,
+        "environmentBlockersMarkdown": blockers_md,
         "nextTask": next_task,
         "nextTaskJson": next_task_json,
         "nextTaskMarkdown": next_task_md,
@@ -142,6 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     if queue.get("environmentProbe"):
         print(f"cluster-access: {queue['environmentProbe'].get('clusterAccess')}")
     print(f"queue: {result['queueJson']}")
+    print(f"environment-blockers: {result['environmentBlockersJson']}")
     print(f"next-task: {result['nextTaskJson']}")
     next_task = result["nextTask"]
     next_task_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
