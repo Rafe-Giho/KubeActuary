@@ -381,6 +381,8 @@ scripts/
   verify_mcp_contract.py      MCP safe-tool contract verifier
   verify_execute_disabled.py  disabled execute surface verifier
   verify_admission_webhook.py optional admission prototype verifier
+  evaluate_admission_review.py offline admission policy evaluator
+  verify_admission_policy.py AI identity/annotation admission verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -422,6 +424,7 @@ python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
+python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

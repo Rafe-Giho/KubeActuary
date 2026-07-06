@@ -1,0 +1,23 @@
+{
+  "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
+  "request": {
+    "uid": "allow-ai-annotated",
+    "operation": "PATCH",
+    "userInfo": {
+      "username": "system:serviceaccount:ai-agents:codex",
+      "groups": [
+        "system:serviceaccounts",
+        "kubeactuary.dev/ai-writers"
+      ]
+    },
+    "object": {
+      "metadata": {
+        "annotations": {
+          "kubeactuary.dev/capsule": "opcap-example-read-pods",
+          "kubeactuary.dev/capsule-digest": "sha256:0123456789abcdef"
+        }
+      }
+    }
+  }
+}

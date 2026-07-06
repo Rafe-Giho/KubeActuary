@@ -219,6 +219,11 @@ COMMON_CHECKS = (
         contains=("admission-webhook: passed", "failurePolicy: Ignore"),
     ),
     Check(
+        "admission policy",
+        ("python3", "-B", "scripts/verify_admission_policy.py"),
+        contains=("admission-policy: passed", "allow-fixtures: 2", "deny-fixtures: 2"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),

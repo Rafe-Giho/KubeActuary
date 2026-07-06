@@ -54,7 +54,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (41 checks)
+verification: passed (42 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -148,7 +148,7 @@ operational risk. This remains optional.
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
 | 0.8.0 | Validating admission webhook prototype | VERIFY | `scripts/verify_admission_webhook.py` validates `failurePolicy: Ignore`; live kind smoke pending because kind is not installed |
-| 0.8.1 | AI identity selector and annotation requirements | TODO | admission allow/deny tests |
+| 0.8.1 | AI identity selector and annotation requirements | DONE | `scripts/verify_admission_policy.py` validates allow/deny fixtures |
 | 0.8.2 | Capsule digest and gate verification | TODO | tamper fixtures |
 | 0.8.3 | Audit annotations and incident runbook | TODO | audit fixture review |
 

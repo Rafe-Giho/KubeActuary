@@ -32,6 +32,7 @@ ADAPTER_CONTRACT = ROOT / "scripts" / "verify_adapter_contract.py"
 MCP_CONTRACT = ROOT / "scripts" / "verify_mcp_contract.py"
 EXECUTE_DISABLED = ROOT / "scripts" / "verify_execute_disabled.py"
 ADMISSION_WEBHOOK = ROOT / "scripts" / "verify_admission_webhook.py"
+ADMISSION_POLICY = ROOT / "scripts" / "verify_admission_policy.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -420,6 +421,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("admission-webhook: passed", result.stdout)
         self.assertIn("failurePolicy: Ignore", result.stdout)
+
+    def test_verify_admission_policy(self):
+        result = subprocess.run(
+            [sys.executable, str(ADMISSION_POLICY)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("admission-policy: passed", result.stdout)
+        self.assertIn("deny-fixtures: 2", result.stdout)
 
 
 if __name__ == "__main__":

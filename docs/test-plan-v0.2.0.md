@@ -24,7 +24,8 @@ Expected:
   fixtures, kube-score adapter fixtures, Pluto adapter fixtures, adapter
   contract severity normalization, MCP safe-tool contract verification, and
   disabled-execute surface verification, optional admission webhook prototype,
-  and full manifest gate behavior;
+  admission identity/annotation policy fixtures, and full manifest gate
+  behavior;
 - no `__pycache__` directories are left behind when using `-B`.
 
 ## CLI Smoke Tests
@@ -68,6 +69,7 @@ python3 -B scripts/verify_adapter_contract.py
 python3 -B scripts/verify_mcp_contract.py
 python3 -B scripts/verify_execute_disabled.py
 python3 -B scripts/verify_admission_webhook.py
+python3 -B scripts/verify_admission_policy.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 python3 -B bin/kube-actuary render-crd examples/apply-configmap.preflight.capsule.json --name apply-configmap --namespace default
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
@@ -105,6 +107,7 @@ Expected:
 - MCP contract check prints `mcp-contract: passed`;
 - disabled-execute check prints `execute-disabled: passed`;
 - admission webhook check prints `admission-webhook: passed`;
+- admission policy check prints `admission-policy: passed`;
 - `help` output includes `USAGE`, command groups, help topics, examples, and
   the safety model;
 - `help agents --format json` parses as JSON and exposes command safety,
@@ -199,6 +202,8 @@ Confirm from code and tests:
   execute tools and MCP calls to reject `execute_approved_capsule`;
 - admission webhook prototype verifier requires `failurePolicy: Ignore`,
   opt-in namespace selection, and bounded timeout;
+- admission policy verifier allows non-AI identities, requires capsule and
+  digest annotations for selected AI writers, and denies missing annotations;
 - `collect rollback`, `collect health-plan`, `validate`, and `digest` do not
   call `kubectl`;
 - failed required evidence closes the gate.
@@ -219,5 +224,5 @@ Expected:
   Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   air-gapped bundle, agent help contract, agent examples, Kyverno adapter, OPA
   adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
-  contract, MCP contract, disabled-execute check, admission webhook, gate
-  behavior, JSON/YAML parsing, and `git diff --check`.
+  contract, MCP contract, disabled-execute check, admission webhook, admission
+  policy, gate behavior, JSON/YAML parsing, and `git diff --check`.
