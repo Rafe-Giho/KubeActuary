@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -47,11 +48,57 @@ def missing_tools_for_gate(gate: dict[str, Any], readiness: dict[str, Any]) -> l
     )
 
 
-def build_item(gate: dict[str, Any], readiness: dict[str, Any]) -> dict[str, Any]:
+def evidence_path(evidence_dir: Path, *parts: str) -> str:
+    return evidence_dir.joinpath(*parts).as_posix()
+
+
+def provider_from_command(command: str) -> str | None:
+    tokens = shlex.split(command)
+    if "--provider" not in tokens:
+        return None
+    index = tokens.index("--provider")
+    if index + 1 >= len(tokens):
+        return None
+    return tokens[index + 1]
+
+
+def report_output_path(item: dict[str, Any], command: str, evidence_dir: Path, index: int) -> str:
+    item_id = str(item["id"])
+    provider = provider_from_command(command)
+    if "run_lightweight_cluster_smoke.py" in command and provider:
+        name = f"{item_id}-lightweight-{provider}.json"
+    elif "run_managed_kubernetes_smoke.py" in command and provider:
+        name = f"{item_id}-managed-{provider}.json"
+    elif "run_helm_smoke.py" in command:
+        name = f"{item_id}-helm-smoke.json"
+    elif "run_krew_smoke.py" in command:
+        name = f"{item_id}-krew-smoke.json"
+    elif "run_admission_kind_smoke.py" in command:
+        name = f"{item_id}-admission-kind-smoke.json"
+    else:
+        name = f"{item_id}-report-{index}.json"
+    return evidence_path(evidence_dir, "reports", name)
+
+
+def materialize_command(item: dict[str, Any], command: str, evidence_dir: Path, index: int) -> str:
+    item_id = str(item["id"])
+    replacements = {
+        "<kubectl-top-output.txt>": evidence_path(evidence_dir, "raw", f"{item_id}-kubectl-top.txt"),
+        "<controller-loop-output.json>": evidence_path(evidence_dir, "raw", f"{item_id}-controller-loop-output.json"),
+        "<kubectl-explain-output.txt>": evidence_path(evidence_dir, "raw", f"{item_id}-kubectl-explain-output.txt"),
+        "<external-evidence.json>": evidence_path(evidence_dir, "supplemental", f"{item_id}-external-{index}.json"),
+    }
+    rendered = command.replace("<path>", report_output_path(item, command, evidence_dir, index))
+    for placeholder, value in replacements.items():
+        rendered = rendered.replace(placeholder, value)
+    return rendered
+
+
+def build_item(gate: dict[str, Any], readiness: dict[str, Any], evidence_dir: Path | None = None) -> dict[str, Any]:
     missing_tools = missing_tools_for_gate(gate, readiness)
     commands = list(gate.get("recommendedCommands") or [])
     status = "tool-ready" if not missing_tools else "missing-tools"
-    return {
+    item = {
         "id": gate.get("id"),
         "version": gate.get("version") or gate.get("section"),
         "item": gate.get("item"),
@@ -65,15 +112,35 @@ def build_item(gate: dict[str, Any], readiness: dict[str, Any]) -> dict[str, Any
             else "install missing tools or run on a host that has them"
         ),
     }
+    if evidence_dir is not None:
+        item["evidenceDir"] = evidence_dir.as_posix()
+        item["resolvedCommands"] = [
+            materialize_command(item, command, evidence_dir, index + 1)
+            for index, command in enumerate(commands)
+        ]
+    return item
 
 
-def build_queue() -> dict[str, Any]:
+def resolved_closure_commands(evidence_dir: Path) -> list[str]:
+    manifest = evidence_path(evidence_dir, ".kubeactuary", "live-evidence-manifest.json")
+    return [
+        f"python3 -B scripts/validate_live_evidence.py {evidence_path(evidence_dir, 'reports', '*.json')}",
+        (
+            "python3 -B scripts/build_live_evidence_manifest.py "
+            f"{evidence_path(evidence_dir, 'reports', '*.json')} --output {manifest}"
+        ),
+        f"python3 -B scripts/check_live_evidence_coverage.py {manifest}",
+        f"python3 -B scripts/build_release_evidence_directory.py {evidence_dir.as_posix()}",
+    ]
+
+
+def build_queue(evidence_dir: Path | None = None) -> dict[str, Any]:
     plan = build_plan()
     readiness = build_readiness_report()
-    items = [build_item(gate, readiness) for gate in plan.get("gates", [])]
+    items = [build_item(gate, readiness, evidence_dir) for gate in plan.get("gates", [])]
     tool_ready = sum(1 for item in items if item["status"] == "tool-ready")
     missing_tools = sorted({tool for item in items for tool in item["missingTools"]})
-    return {
+    queue = {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(TASKBOARD.relative_to(ROOT)),
         "mode": "inventory-only",
@@ -87,6 +154,10 @@ def build_queue() -> dict[str, Any]:
         "items": items,
         "closureCommands": list(plan.get("closureCommands", [])),
     }
+    if evidence_dir is not None:
+        queue["evidenceDir"] = evidence_dir.as_posix()
+        queue["resolvedClosureCommands"] = resolved_closure_commands(evidence_dir)
+    return queue
 
 
 def render_markdown(queue: dict[str, Any]) -> str:
@@ -120,21 +191,29 @@ def render_markdown(queue: dict[str, Any]) -> str:
                 lines.append(f"  Missing tools: `{', '.join(item['missingTools'])}`")
             for command in item["commands"]:
                 lines.append(f"  Command: `{command}`")
+            for command in item.get("resolvedCommands", []):
+                lines.append(f"  Resolved: `{command}`")
             lines.append(f"  Next: {item['nextStep']}")
         lines.append("")
     lines.extend(["## Closure", ""])
     for command in queue["closureCommands"]:
         lines.append(f"- `{command}`")
+    if queue.get("resolvedClosureCommands"):
+        lines.extend(["", "## Resolved Closure", ""])
+        for command in queue["resolvedClosureCommands"]:
+            lines.append(f"- `{command}`")
     return "\n".join(lines) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate KubeActuary live validation queue.")
     parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     args = parser.parse_args(argv)
 
-    queue = build_queue()
+    evidence_dir = Path(args.evidence_dir) if args.evidence_dir else None
+    queue = build_queue(evidence_dir)
     if args.format == "json":
         rendered = json.dumps(queue, indent=2, sort_keys=True) + "\n"
     else:

@@ -36,6 +36,7 @@ def main() -> int:
     errors: list[str] = []
     json_result = run_generator("--format", "json")
     markdown_result = run_generator("--format", "markdown")
+    path_result = run_generator("--format", "json", "--evidence-dir", "evidence/live")
     with tempfile.TemporaryDirectory() as tmp:
         output = Path(tmp) / "queue.json"
         written = run_generator("--output", str(output))
@@ -51,6 +52,15 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             errors.append(f"json queue must parse: {exc}")
             queue = {}
+    if path_result.returncode != 0:
+        errors.append(f"path queue failed: {path_result.stderr.strip() or path_result.stdout.strip()}")
+        path_queue = {}
+    else:
+        try:
+            path_queue = json.loads(path_result.stdout)
+        except json.JSONDecodeError as exc:
+            errors.append(f"path queue must parse: {exc}")
+            path_queue = {}
 
     if markdown_result.returncode != 0:
         errors.append(f"markdown queue failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
@@ -98,12 +108,38 @@ def main() -> int:
             errors.append(f"queue missing command snippet: {snippet}")
     if not queue.get("closureCommands"):
         errors.append("queue must include closure commands")
+    if path_queue.get("evidenceDir") != "evidence/live":
+        errors.append("path queue must record requested evidence directory")
+    path_items = path_queue.get("items", [])
+    if not all(item.get("resolvedCommands") for item in path_items if isinstance(item, dict)):
+        errors.append("path queue must include resolved commands for every item")
+    resolved_commands = "\n".join(
+        command
+        for item in path_items
+        if isinstance(item, dict)
+        for command in item.get("resolvedCommands", [])
+    )
+    for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>"):
+        if placeholder in resolved_commands:
+            errors.append(f"resolved commands must not keep placeholder: {placeholder}")
+    for snippet in (
+        "evidence/live/reports/02-lightweight-cluster-smoke-lightweight-kind.json",
+        "evidence/live/raw/01-controller-resource-budget-kubectl-top.txt",
+        "evidence/live/supplemental/10-add-kubectl-explain-quality-checks-and-examples-external-3.json",
+    ):
+        if snippet not in resolved_commands:
+            errors.append(f"resolved commands missing path: {snippet}")
+    resolved_closure = "\n".join(path_queue.get("resolvedClosureCommands", []))
+    if "scripts/build_release_evidence_directory.py evidence/live" not in resolved_closure:
+        errors.append("path queue must include resolved release evidence directory closure")
 
     for path in (README, README_KO, TASKBOARD, LIVE_VALIDATION):
         text = path.read_text()
         for snippet in (QUEUE_TOOL, VERIFY_TOOL, SCHEMA):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing live validation queue detail: {snippet}")
+    if "--evidence-dir" not in LIVE_VALIDATION.read_text():
+        errors.append("live validation doc missing queue evidence-dir example")
 
     if errors:
         print("live-validation-queue: failed")
