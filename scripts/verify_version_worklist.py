@@ -186,9 +186,22 @@ def main() -> int:
             "--evidence-dir",
             str(prepared_queue_dir),
         )
+        prepared_queue_worklist_markdown = run_generator(
+            "--format",
+            "markdown",
+            "--open-only",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
         prepared_queue_next_task = run_select(
             "--format",
             "json",
+            "--evidence-dir",
+            str(prepared_queue_dir),
+        )
+        prepared_queue_next_markdown = run_select(
+            "--format",
+            "markdown",
             "--evidence-dir",
             str(prepared_queue_dir),
         )
@@ -367,6 +380,16 @@ def main() -> int:
     else:
         prepared_queue_worklist = parse_worklist("prepared queue worklist", prepared_queue_worklist_result, errors)
         prepared_queue_next = parse_worklist("prepared queue next task", prepared_queue_next_task, errors)
+        if (
+            prepared_queue_worklist_markdown.returncode != 0
+            or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_worklist_markdown.stdout
+        ):
+            errors.append("prepared queue worklist Markdown must show prepared queue source")
+        if (
+            prepared_queue_next_markdown.returncode != 0
+            or "Queue source: `prepared-live-validation-queue`" not in prepared_queue_next_markdown.stdout
+        ):
+            errors.append("prepared queue next-task Markdown must show prepared queue source")
     next_task = parse_worklist("next task", next_task_result, errors)
     next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
@@ -614,6 +637,8 @@ def main() -> int:
     prepared_selected = prepared_queue_next.get("selected") or {}
     if prepared_queue_worklist.get("queueSource") != "prepared-live-validation-queue":
         errors.append("prepared evidence-dir worklist must use the persisted live validation queue")
+    if prepared_queue_next.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
+        errors.append("prepared evidence-dir selector must report the persisted live validation queue source")
     if prepared_queue_worklist.get("environmentProbe", {}).get("clusterAccess") != "unavailable":
         errors.append("prepared evidence-dir worklist must preserve persisted unavailable cluster access")
     if prepared_summary.get("blockedByEnvironment") != 14:

@@ -127,6 +127,7 @@ def build_selection(
     selection = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
+        "sourceWorklistQueueSource": worklist.get("queueSource"),
         "source": worklist.get("source"),
         "releaseSuite": worklist.get("releaseSuite"),
         "filters": {
@@ -170,6 +171,7 @@ def render_text(selection: dict[str, Any]) -> str:
         ) + "\n"
     lines = [
         "next-version-task: selected",
+        f"queue-source: {selection.get('sourceWorklistQueueSource') or 'generated'}",
         f"version: {selected.get('version')}",
         f"item-id: {selected.get('id')}",
         f"item: {selected.get('item')}",
@@ -200,6 +202,7 @@ def render_markdown(selection: dict[str, Any]) -> str:
         "",
         f"Schema: `{selection['schemaVersion']}`",
         f"Source: `{selection['source']}`",
+        f"Queue source: `{selection.get('sourceWorklistQueueSource') or 'generated'}`",
         "",
         "## Summary",
         "",

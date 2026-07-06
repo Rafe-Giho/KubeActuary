@@ -148,6 +148,7 @@ Expected:
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live
   validation queue when the evidence directory already contains one;
+- prepared-queue worklist and next-task Markdown output show the queue source;
 - version iteration packs preserve resolved closure commands and evidence
   readiness when `--evidence-dir` is used;
 - version iteration history records and inspects evidence readiness deltas

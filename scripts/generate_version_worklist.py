@@ -233,6 +233,7 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         "",
         f"Schema: `{worklist['schemaVersion']}`",
         f"Source: `{worklist['source']}`",
+        f"Queue source: `{worklist.get('queueSource', 'generated')}`",
         "",
         "## Summary",
         "",

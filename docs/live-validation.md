@@ -73,6 +73,8 @@ match the last local probe instead of the inventory-only tool snapshot.
 Evidence-aware version worklists and next-task selection use that same
 prepared queue when `--evidence-dir` is passed, so local iteration commands
 show the last probed environment blockers until the directory is refreshed.
+Their Markdown/text output also prints the queue source, making prepared queue
+reuse visible during repeated local verification.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It
