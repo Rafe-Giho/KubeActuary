@@ -215,10 +215,13 @@ def load_version_iteration_advance(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
-def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
+def unique_commands(gates: list[dict[str, Any]], skip_gate_ids: set[str] | None = None) -> list[str]:
     commands: list[str] = []
     seen: set[str] = set()
+    skip_gate_ids = skip_gate_ids or set()
     for gate in gates:
+        if str(gate.get("id")) in skip_gate_ids:
+            continue
         for command in gate.get("recommendedCommands", []):
             if command not in seen:
                 commands.append(command)
@@ -228,14 +231,30 @@ def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
     return commands
 
 
+def selected_resolved_commands(next_task: dict[str, Any] | None) -> list[str]:
+    selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+    return [
+        command
+        for command in selected.get("resolvedCommands", [])
+        if isinstance(command, str)
+    ]
+
+
 def next_commands(
     gates: list[dict[str, Any]],
     evidence_dir: Path,
+    next_task: dict[str, Any] | None,
     environment_probe: dict[str, Any] | None,
     environment_blockers: dict[str, Any] | None,
     next_task_run: dict[str, Any] | None,
 ) -> list[str]:
-    commands = unique_commands(gates)
+    commands: list[str] = []
+    resolved = selected_resolved_commands(next_task)
+    selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
+    skip_gate_ids = {str(selected.get("id"))} if resolved and selected.get("id") else set()
+    for command in [*resolved, *unique_commands(gates, skip_gate_ids)]:
+        if command not in commands:
+            commands.append(command)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
     blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
@@ -305,7 +324,14 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
                 for gate in uncovered
             ],
         },
-        "nextCommands": next_commands(uncovered, evidence_dir, environment_probe, environment_blockers, next_task_run),
+        "nextCommands": next_commands(
+            uncovered,
+            evidence_dir,
+            next_task,
+            environment_probe,
+            environment_blockers,
+            next_task_run,
+        ),
     }
 
 

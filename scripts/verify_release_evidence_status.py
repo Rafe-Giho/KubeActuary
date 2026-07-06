@@ -308,6 +308,14 @@ def main() -> int:
     expected_probe_command = f"python3 -B scripts/prepare_live_evidence_directory.py {partial_dir} --probe-environment"
     if not partial_payload.get("nextCommands") or partial_payload.get("nextCommands", [None])[0] != expected_probe_command:
         errors.append("partial status must recommend environment probing before more live capture after runner failure")
+    expected_resolved_capture = (
+        f"python3 -B scripts/capture_controller_resource_budget.py "
+        f"--output {partial_dir / 'raw' / '01-controller-resource-budget-kubectl-top.txt'} --run"
+    )
+    if len(partial_payload.get("nextCommands", [])) < 2 or partial_payload["nextCommands"][1] != expected_resolved_capture:
+        errors.append("partial status must prioritize resolved selected next-task commands after the probe")
+    if any("<kubectl-top-output.txt>" in command for command in partial_payload.get("nextCommands", [])[:3]):
+        errors.append("partial status must not keep selected next-task placeholders before resolved commands")
     next_task = partial_payload.get("nextTask") or {}
     selected = next_task.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
@@ -366,6 +374,8 @@ def main() -> int:
         errors.append("partial text status must print next-task-run failure message")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
         errors.append("partial text status must print the environment probe next command")
+    if f"next: {expected_resolved_capture}" not in partial_text.stdout:
+        errors.append("partial text status must print resolved selected next-task command")
     if "environment-probe: not-run" not in partial_text.stdout:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:
@@ -411,6 +421,14 @@ def main() -> int:
         errors.append("blocked evidence status must preserve selected blocker next step")
     if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
         errors.append("blocked evidence status must recommend rerunning the environment probe first")
+    expected_blocked_capture = (
+        f"python3 -B scripts/capture_controller_resource_budget.py "
+        f"--output {blocked_dir / 'raw' / '01-controller-resource-budget-kubectl-top.txt'} --run"
+    )
+    if len(blocked_payload.get("nextCommands", [])) < 2 or blocked_payload["nextCommands"][1] != expected_blocked_capture:
+        errors.append("blocked evidence status must prioritize resolved selected next-task command after the probe")
+    if any("<kubectl-top-output.txt>" in command for command in blocked_payload.get("nextCommands", [])[:3]):
+        errors.append("blocked evidence status must not keep selected next-task placeholders before resolved commands")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
 

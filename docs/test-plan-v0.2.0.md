@@ -296,8 +296,9 @@ Confirm from code and tests:
 - release evidence status verifier reports partial and complete evidence
   directory coverage plus persisted next-task output and file readiness without
   requiring cluster or cloud access, and checks unprepared evidence directory
-  guidance for local next-task evidence builds, runner failure summaries, and
-  probe-first guidance after failed runner attempts or environment blockers;
+  guidance for local next-task evidence builds, runner failure summaries,
+  resolved next-task command priority, and probe-first guidance after failed
+  runner attempts or environment blockers;
 - next-task evidence builder verifier coverage creates supplemental evidence
   from prepared raw files and skips existing outputs without cluster, cloud, or
   workload writes;
