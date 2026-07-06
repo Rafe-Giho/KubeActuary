@@ -167,6 +167,8 @@ Expected:
   drilldown commands in text, JSON, and Markdown output;
 - version iteration history status preserves latest run filters in text, JSON,
   Markdown, and recorded status reports;
+- version iteration history status preserves selected latest next-task details
+  in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run, worklist, and diff
   artifact paths in text, JSON, Markdown, and recorded status reports;
 - version iteration history status preserves latest run diff summaries in text,

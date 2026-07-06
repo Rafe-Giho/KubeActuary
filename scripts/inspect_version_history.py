@@ -47,6 +47,7 @@ FILTER_KEYS = (
     "probeEnvironment",
     "kubectl",
 )
+NEXT_TASK_STATUS_PRIORITY = ("tool-ready", "blocked-by-environment", "missing-tools", "not-external-gate")
 
 
 def shell_join(args: list[str]) -> str:
@@ -130,6 +131,49 @@ def summarize_version_diff(version: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def list_value(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def dict_value(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def summarize_task(version: dict[str, Any], item: dict[str, Any], version_index: int, item_index: int) -> dict[str, Any]:
+    return {
+        "version": version.get("version"),
+        "versionStatus": version.get("status"),
+        "versionIndex": version_index,
+        "itemIndex": item_index,
+        "id": item.get("id"),
+        "item": item.get("item"),
+        "status": item.get("status"),
+        "captureStatus": item.get("captureStatus"),
+        "kind": item.get("kind"),
+        "environmentStatus": item.get("environmentStatus"),
+        "missingTools": list_value(item.get("missingTools")),
+        "nextStep": item.get("nextStep"),
+        "evidenceSummary": dict_value(item.get("evidenceSummary")),
+        "commands": list_value(item.get("commands")),
+        "resolvedCommands": list_value(item.get("resolvedCommands")),
+    }
+
+
+def summarize_next_task(worklist: dict[str, Any]) -> dict[str, Any] | None:
+    candidates: list[dict[str, Any]] = []
+    for version_index, version in enumerate(worklist.get("versions", []), start=1):
+        if not isinstance(version, dict):
+            continue
+        for item_index, item in enumerate(version.get("openItems", []), start=1):
+            if isinstance(item, dict):
+                candidates.append(summarize_task(version, item, version_index, item_index))
+    for status in NEXT_TASK_STATUS_PRIORITY:
+        for candidate in candidates:
+            if candidate.get("captureStatus") == status:
+                return candidate
+    return candidates[0] if candidates else None
+
+
 def load_json(path: Path, errors: list[str]) -> dict[str, Any]:
     if not path.is_file():
         errors.append(f"missing file: {path}")
@@ -196,6 +240,7 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "summary": worklist.get("summary", {}),
         "blockers": blockers if isinstance(blockers, dict) else {},
         "environmentProbe": summarize_environment_probe(worklist.get("environmentProbe")),
+        "nextTask": summarize_next_task(worklist),
         "filters": run.get("filters", {}) if isinstance(run.get("filters"), dict) else {},
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
@@ -297,6 +342,9 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_summary = latest.get("summary", {}) if latest else {}
     latest_blockers = latest.get("blockers", {}) if latest else {}
     latest_environment_probe = latest.get("environmentProbe", {}) if latest else {}
+    latest_next_task = latest.get("nextTask") if latest else None
+    if not isinstance(latest_next_task, dict):
+        latest_next_task = None
     latest_filters = latest.get("filters", {}) if latest else {}
     if not isinstance(latest_filters, dict):
         latest_filters = {}
@@ -329,6 +377,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         },
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
+        "latestNextTask": latest_next_task,
         "latestFilters": latest_filters,
         "latestDiffSummary": latest_diff_summary,
         "latestVersionDiffs": latest_version_diffs,
@@ -369,6 +418,29 @@ def render_text(status: dict[str, Any]) -> str:
         for key in FILTER_KEYS:
             if key in latest_filters:
                 lines.append(f"latest-filter-{dash_label(key)}: {render_filter_value(latest_filters[key])}")
+    latest_next_task = status.get("latestNextTask")
+    if isinstance(latest_next_task, dict):
+        lines.extend(
+            [
+                f"latest-next-task-version: {latest_next_task.get('version')}",
+                f"latest-next-task-id: {latest_next_task.get('id')}",
+                f"latest-next-task-item: {latest_next_task.get('item')}",
+                f"latest-next-task-capture-status: {latest_next_task.get('captureStatus')}",
+                f"latest-next-task-kind: {latest_next_task.get('kind')}",
+            ]
+        )
+        if latest_next_task.get("environmentStatus"):
+            lines.append(f"latest-next-task-environment-status: {latest_next_task['environmentStatus']}")
+        if latest_next_task.get("missingTools"):
+            lines.append(f"latest-next-task-missing-tools: {', '.join(str(tool) for tool in latest_next_task['missingTools'])}")
+        if latest_next_task.get("nextStep"):
+            lines.append(f"latest-next-task-next-step: {latest_next_task['nextStep']}")
+        evidence = dict_value(latest_next_task.get("evidenceSummary"))
+        if evidence:
+            lines.append(f"latest-next-task-evidence-files: {evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}")
+        commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
+        for command in commands:
+            lines.append(f"latest-next-task-command: {command}")
     for version in status.get("latestVersionDiffs", []) or []:
         if not isinstance(version, dict):
             continue
@@ -456,6 +528,36 @@ def render_markdown(status: dict[str, Any]) -> str:
         for key in FILTER_KEYS:
             if key in latest_filters:
                 lines.append(f"- {dash_label(key)}: `{render_filter_value(latest_filters[key])}`")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Next Task",
+            "",
+        ]
+    )
+    latest_next_task = status.get("latestNextTask")
+    if isinstance(latest_next_task, dict):
+        lines.append(
+            f"- `{latest_next_task.get('captureStatus')}` {latest_next_task.get('item')} "
+            f"({latest_next_task.get('version')})"
+        )
+        lines.append(f"  - id: `{latest_next_task.get('id')}`")
+        if latest_next_task.get("kind"):
+            lines.append(f"  - kind: `{latest_next_task.get('kind')}`")
+        if latest_next_task.get("environmentStatus"):
+            lines.append(f"  - environment: `{latest_next_task['environmentStatus']}`")
+        if latest_next_task.get("missingTools"):
+            lines.append(f"  - missing tools: `{', '.join(str(tool) for tool in latest_next_task['missingTools'])}`")
+        if latest_next_task.get("nextStep"):
+            lines.append(f"  - next: {latest_next_task['nextStep']}")
+        evidence = dict_value(latest_next_task.get("evidenceSummary"))
+        if evidence:
+            lines.append(f"  - evidence files: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
+        commands = list_value(latest_next_task.get("resolvedCommands")) or list_value(latest_next_task.get("commands"))
+        for command in commands:
+            lines.append(f"  - `{command}`")
     else:
         lines.append("- none")
     lines.extend(

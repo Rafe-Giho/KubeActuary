@@ -790,6 +790,17 @@ def main() -> int:
         errors.append("version iteration history status should show latest probe filter")
     if latest_filters.get("kubectl") != "kubectl":
         errors.append("version iteration history status should show latest kubectl filter")
+    latest_next_task = history_status_payload.get("latestNextTask", {})
+    if latest_next_task.get("version") != "0.4.3":
+        errors.append("version iteration history status should show latest next-task version")
+    if latest_next_task.get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+        errors.append("version iteration history status should show latest next-task id")
+    if latest_next_task.get("captureStatus") != "blocked-by-environment":
+        errors.append("version iteration history status should show latest next-task capture status")
+    if latest_next_task.get("kind") != "controller-resource-budget":
+        errors.append("version iteration history status should show latest next-task kind")
+    if not latest_next_task.get("commands"):
+        errors.append("version iteration history status should preserve latest next-task commands")
     latest_version_diffs = history_status_payload.get("latestVersionDiffs", [])
     latest_version_diff = next(
         (item for item in latest_version_diffs if item.get("version") == "0.4.3"),
@@ -851,6 +862,12 @@ def main() -> int:
         errors.append("version iteration history text should show latest open-only filter")
     if "latest-filter-probe-environment: true" not in history_status.stdout:
         errors.append("version iteration history text should show latest probe filter")
+    if "latest-next-task-id: 11-resource-budget-target-idle-50m-cpu-and-64mi-memory" not in history_status.stdout:
+        errors.append("version iteration history text should show latest next-task id")
+    if "latest-next-task-capture-status: blocked-by-environment" not in history_status.stdout:
+        errors.append("version iteration history text should show latest next-task capture status")
+    if "latest-next-task-command: python3 -B scripts/capture_controller_resource_budget.py" not in history_status.stdout:
+        errors.append("version iteration history text should show latest next-task command")
     if (
         "latest-version-diff: 0.4.3 capture-ready->blocked-by-environment "
         "capture-ready-delta=-1 blocked-by-environment-delta=1 changed-items=1"
@@ -881,6 +898,12 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest version filters")
     if "- probe-environment: `true`" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest probe filter")
+    if "## Latest Next Task" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should include latest next-task details")
+    if "`blocked-by-environment` Resource budget target: idle <50m CPU and <64Mi memory (0.4.3)" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest next-task summary")
+    if "id: `11-resource-budget-target-idle-50m-cpu-and-64mi-memory`" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show latest next-task id")
     if "## Latest Version Diffs" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include latest per-version diffs")
     if (
@@ -920,6 +943,9 @@ def main() -> int:
     recorded_latest_filters = history_status_record_payload.get("latestFilters", {})
     if recorded_latest_filters.get("versions") != ["0.4.3"]:
         errors.append("version iteration history recorded JSON should preserve latest filters")
+    recorded_latest_next_task = history_status_record_payload.get("latestNextTask", {})
+    if recorded_latest_next_task.get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
+        errors.append("version iteration history recorded JSON should preserve latest next-task details")
     recorded_version_diffs = history_status_record_payload.get("latestVersionDiffs", [])
     if not any(item.get("version") == "0.4.3" for item in recorded_version_diffs):
         errors.append("version iteration history recorded JSON should preserve latest per-version diffs")
@@ -933,6 +959,10 @@ def main() -> int:
         errors.append("version iteration history recorded Markdown should preserve latest filters")
     if "- versions: `0.4.3`" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest version filters")
+    if "## Latest Next Task" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest next-task details")
+    if "id: `11-resource-budget-target-idle-50m-cpu-and-64mi-memory`" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve latest next-task id")
     if "## Latest Diff" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest diff details")
     if "- blocked-by-environment-delta: 1" not in history_status_record_md_text:
@@ -973,6 +1003,9 @@ def main() -> int:
     evidence_status_filters = evidence_history_status_payload.get("latestFilters", {})
     if evidence_status_filters.get("evidenceDir") != str(completed_evidence_dir):
         errors.append("evidence-aware history status should preserve latest evidence directory filter")
+    evidence_status_next_task = evidence_history_status_payload.get("latestNextTask", {})
+    if evidence_status_next_task.get("version") != "Current Baseline":
+        errors.append("evidence-aware history status should preserve latest next-task version")
     evidence_status_diff = evidence_history_status_payload.get("latestDiffSummary", {})
     if evidence_status_diff.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history status should preserve latest evidence diff summary")
