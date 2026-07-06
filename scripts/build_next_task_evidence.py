@@ -124,6 +124,10 @@ def build_next_task_evidence(evidence_dir: Path, force: bool = False) -> dict[st
                 "item": selected.get("item"),
                 "kind": selected.get("kind"),
                 "captureStatus": selected.get("captureStatus"),
+                "environmentStatus": selected.get("environmentStatus"),
+                "environmentReason": selected.get("environmentReason"),
+                "missingTools": selected.get("missingTools", []),
+                "nextStep": selected.get("nextStep"),
             },
         },
         "summary": {

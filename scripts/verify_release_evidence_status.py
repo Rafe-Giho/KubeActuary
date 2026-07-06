@@ -147,6 +147,58 @@ def write_advance_record(evidence_dir: Path) -> None:
     )
 
 
+def write_old_blocked_records(evidence_dir: Path) -> None:
+    selected = {
+        "id": "01-controller-resource-budget",
+        "version": "Current Baseline",
+        "item": "Controller resource budget",
+        "kind": "controller-resource-budget",
+        "captureStatus": "blocked-by-environment",
+    }
+    write_payload(
+        evidence_dir / ".kubeactuary" / "next-version-task-run.json",
+        {
+            "schemaVersion": NEXT_TASK_RUN_SCHEMA,
+            "mode": "run",
+            "status": "blocked-by-environment",
+            "clusterWrites": "disabled-or-server-side-dry-run-only",
+            "ranAt": "2026-07-06T00:00:00+00:00",
+            "nextTask": {
+                "schemaVersion": NEXT_TASK_SCHEMA,
+                "selected": selected,
+            },
+            "summary": {
+                "commands": 2,
+                "validCommands": 0,
+                "ran": 0,
+                "failed": 0,
+                "validationErrors": 0,
+            },
+            "records": [],
+        },
+    )
+    write_payload(
+        evidence_dir / ".kubeactuary" / "next-task-evidence-build.json",
+        {
+            "schemaVersion": NEXT_TASK_BUILD_SCHEMA,
+            "builtAt": "2026-07-06T00:00:00+00:00",
+            "nextTask": {
+                "schemaVersion": NEXT_TASK_SCHEMA,
+                "selected": selected,
+            },
+            "summary": {
+                "status": "failed",
+                "buildableCommands": 1,
+                "built": 0,
+                "skipped": 0,
+                "errors": 1,
+            },
+            "records": [],
+            "errors": ["missing source: old record"],
+        },
+    )
+
+
 def write_full_matrix(evidence_dir: Path) -> None:
     for provider in LIGHTWEIGHT_PROVIDERS:
         payload = sample("kube-actuary.lightweight-smoke.v1")
@@ -282,6 +334,7 @@ def main() -> int:
             "--probe-environment",
             env=fake_probe_env(tmpdir / "probe-tools"),
         )
+        write_old_blocked_records(blocked_dir)
         blocked = run_script(INSPECTOR, str(blocked_dir), "--format", "json")
         blocked_text = run_script(INSPECTOR, str(blocked_dir))
         version_blocked_dir = tmpdir / "version-blocked"
@@ -698,6 +751,21 @@ def main() -> int:
         errors.append("blocked evidence status must preserve selected blocker next step")
     if blocked_selected.get("environmentReason") != "command-failed":
         errors.append("blocked evidence status must preserve selected blocker reason")
+    blocked_next_task = blocked_payload.get("nextTask") or {}
+    blocked_next_task_selected = blocked_next_task.get("selected") or {}
+    if blocked_next_task_selected.get("environmentReason") != "command-failed":
+        errors.append("blocked evidence status must preserve selected next-task blocker reason")
+    if not any(
+        "--environment-status cluster-unavailable --environment-reason command-failed" in command
+        for command in blocked_next_task.get("worklistCommands", [])
+    ):
+        errors.append("blocked evidence status must include reason-filtered selected next-task worklist")
+    blocked_run_selected = (blocked_payload.get("nextTaskRun") or {}).get("selected") or {}
+    if blocked_run_selected.get("environmentReason") != "command-failed":
+        errors.append("blocked evidence status must backfill old next-task-run blocker reason")
+    blocked_build_selected = (blocked_payload.get("nextTaskEvidenceBuild") or {}).get("selected") or {}
+    if blocked_build_selected.get("environmentReason") != "command-failed":
+        errors.append("blocked evidence status must backfill old next-task evidence-build blocker reason")
     blocked_status_blockers = (blocked_payload.get("blockers") or {}).get("environment") or []
     if not any(
         item.get("status") == "cluster-unavailable"

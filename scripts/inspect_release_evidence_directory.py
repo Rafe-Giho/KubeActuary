@@ -36,6 +36,12 @@ NEXT_TASK_FILE_FLAGS = {
     "--source": "source",
     "--output": "output",
 }
+SELECTED_METADATA_FIELDS = (
+    "environmentStatus",
+    "environmentReason",
+    "missingTools",
+    "nextStep",
+)
 
 
 def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
@@ -63,6 +69,22 @@ def next_task_files(selected: dict[str, Any]) -> list[dict[str, Any]]:
                 }
             )
     return files
+
+
+def fill_selected_metadata(record: dict[str, Any] | None, next_task: dict[str, Any] | None) -> None:
+    if not isinstance(record, dict) or not isinstance(next_task, dict):
+        return
+    selected = record.get("selected")
+    current = next_task.get("selected")
+    if not isinstance(selected, dict) or not isinstance(current, dict):
+        return
+    if selected.get("id") != current.get("id"):
+        return
+    for field in SELECTED_METADATA_FIELDS:
+        if selected.get(field) in (None, "", []):
+            value = current.get(field)
+            if value not in (None, "", []):
+                selected[field] = value
 
 
 def default_queue_source(live_queue: dict[str, Any] | None) -> tuple[str, str]:
@@ -117,6 +139,7 @@ def load_next_task(
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
             "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
             "missingTools": selected.get("missingTools", []),
             "commands": selected.get("commands", []),
             "resolvedCommands": selected.get("resolvedCommands", []),
@@ -192,6 +215,8 @@ def load_next_task_run(
             "item": selected.get("item"),
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
         },
     }
 
@@ -216,6 +241,8 @@ def load_next_task_evidence_build(evidence_dir: Path) -> dict[str, Any] | None:
             "item": selected.get("item"),
             "kind": selected.get("kind"),
             "captureStatus": selected.get("captureStatus"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
         },
         "records": [
             {
@@ -745,11 +772,13 @@ def inspect_directory(
         fallback_queue_source_origin,
     )
     if next_task_run is not None:
+        fill_selected_metadata(next_task_run, next_task)
         next_task_run["nextTaskConsistency"] = record_next_task_consistency(
             next_task,
             next_task_run.get("selected"),
         )
     if next_task_evidence_build is not None:
+        fill_selected_metadata(next_task_evidence_build, next_task)
         next_task_evidence_build["nextTaskConsistency"] = record_next_task_consistency(
             next_task,
             next_task_evidence_build.get("selected"),
