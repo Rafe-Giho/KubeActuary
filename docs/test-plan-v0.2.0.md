@@ -140,7 +140,9 @@ Expected:
 - release notes dry-run prints verification and rollback sections;
 - conformance suite check prints `conformance-suite: passed`;
 - release taskboard check prints `release-taskboard: passed`;
-- release progress check prints `release-progress: passed`;
+- release progress check prints `release-progress: passed` and confirms
+  prepared evidence directories use the persisted live validation queue as the
+  next-action source;
 - version worklist check prints `version-worklist: passed` and covers next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;

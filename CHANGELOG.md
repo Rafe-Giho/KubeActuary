@@ -37,6 +37,8 @@ Evidence collector release:
   before any probe has run;
 - surface selected environment-blocker next steps in release evidence status
   and progress output;
+- use persisted live validation queues as the release progress next-action
+  source for prepared evidence directories;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,
   read-only, and evidence-only commands;

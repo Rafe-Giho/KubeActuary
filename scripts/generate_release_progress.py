@@ -21,6 +21,7 @@ from scripts.verify_release import COMMON_CHECKS  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.release-progress.v1"
+LIVE_QUEUE_SCHEMA = "kube-actuary.live-validation-queue.v1"
 ORDERED_STATUSES = ("DONE", "VERIFY", "DOING", "TODO", "BLOCKED")
 KIND_READINESS_GATES = {
     "admission": ("admission webhook live kind smoke",),
@@ -139,10 +140,54 @@ def build_next_actions(plan: dict[str, Any], readiness: dict[str, Any]) -> dict[
         )
     tool_ready = sum(1 for action in actions if action["status"] == "tool-ready")
     return {
+        "source": "live-readiness-inventory",
         "summary": {
             "total": len(actions),
             "toolReady": tool_ready,
             "blockedByTools": len(actions) - tool_ready,
+            "blockedByEnvironment": 0,
+        },
+        "actions": actions,
+    }
+
+
+def load_live_validation_queue(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
+    if not path.is_file():
+        return None
+    queue = json.loads(path.read_text())
+    if queue.get("schemaVersion") != LIVE_QUEUE_SCHEMA:
+        raise ValueError(f"{path}: unsupported live-validation-queue schemaVersion: {queue.get('schemaVersion')!r}")
+    return queue
+
+
+def next_actions_from_queue(queue: dict[str, Any]) -> dict[str, Any]:
+    actions: list[dict[str, Any]] = []
+    for item in queue.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        commands = item.get("resolvedCommands") or item.get("commands") or []
+        actions.append(
+            {
+                "id": item.get("id"),
+                "item": item.get("item"),
+                "kind": item.get("kind"),
+                "version": item.get("version"),
+                "status": item.get("status"),
+                "missingTools": item.get("missingTools", []),
+                "environmentStatus": item.get("environmentStatus"),
+                "nextStep": item.get("nextStep"),
+                "firstCommand": commands[0] if commands else None,
+            }
+        )
+    summary = queue.get("summary", {})
+    return {
+        "source": "prepared-live-validation-queue",
+        "summary": {
+            "total": summary.get("total", len(actions)),
+            "toolReady": summary.get("toolReady", 0),
+            "blockedByTools": summary.get("blockedByTools", 0),
+            "blockedByEnvironment": summary.get("blockedByEnvironment", 0),
         },
         "actions": actions,
     }
@@ -213,6 +258,15 @@ def build_progress(evidence_dir: Path | None = None, output_dir: Path | None = N
     if evidence_dir is not None:
         target_output = output_dir if output_dir is not None else evidence_dir / DEFAULT_OUTPUT_DIR
         if evidence_dir.is_dir():
+            live_queue = load_live_validation_queue(evidence_dir)
+            if live_queue is not None:
+                report["liveValidationQueue"] = {
+                    "schemaVersion": live_queue.get("schemaVersion"),
+                    "mode": live_queue.get("mode"),
+                    "clusterWrites": live_queue.get("clusterWrites"),
+                    "summary": live_queue.get("summary", {}),
+                }
+                report["nextActions"] = next_actions_from_queue(live_queue)
             report["evidenceStatus"] = inspect_directory(evidence_dir, target_output)
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
@@ -247,6 +301,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
         for item in group["openItems"][:3]:
             lines.append(f"  - {item['status']}: {item['item']}")
     readiness = progress["liveValidationReadiness"]["summary"]
+    next_action_source = progress["nextActions"].get("source")
     next_actions = progress["nextActions"]["summary"]
     lines.extend(
         [
@@ -255,7 +310,10 @@ def render_markdown(progress: dict[str, Any]) -> str:
             "",
             f"- tool-ready-gates: {readiness['toolReadyGates']}/{readiness['liveGates']}",
             f"- tools: {readiness['toolsAvailable']}/{readiness['toolsTotal']} available",
+            f"- next-action-source: `{next_action_source}`",
             f"- tool-ready-actions: {next_actions['toolReady']}/{next_actions['total']}",
+            f"- tool-blocked-actions: {next_actions.get('blockedByTools', 0)}",
+            f"- environment-blocked-actions: {next_actions.get('blockedByEnvironment', 0)}",
         ]
     )
     tool_ready_actions = [action for action in progress["nextActions"]["actions"] if action["status"] == "tool-ready"]

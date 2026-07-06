@@ -45,6 +45,37 @@ def main() -> int:
         payload["provider"] = "kind"
         write_payload(evidence_dir / "kind.json", payload)
         write_payload(
+            evidence_dir / ".kubeactuary" / "live-validation-queue.json",
+            {
+                "schemaVersion": "kube-actuary.live-validation-queue.v1",
+                "source": "docs/release-taskboard.md",
+                "mode": "inventory-plus-environment-probe",
+                "clusterWrites": "disabled",
+                "summary": {
+                    "total": 1,
+                    "toolReady": 0,
+                    "blockedByTools": 0,
+                    "blockedByEnvironment": 1,
+                    "missingTools": [],
+                },
+                "items": [
+                    {
+                        "id": "01-controller-resource-budget",
+                        "version": "Current Baseline",
+                        "item": "Controller resource budget",
+                        "kind": "controller-resource-budget",
+                        "status": "blocked-by-environment",
+                        "missingTools": [],
+                        "environmentStatus": "cluster-unavailable",
+                        "nextStep": "start or select a disposable cluster, then rerun the probe",
+                        "resolvedCommands": [
+                            "python3 -B scripts/capture_controller_resource_budget.py --output /tmp/kubectl-top.txt --run",
+                        ],
+                    }
+                ],
+            },
+        )
+        write_payload(
             evidence_dir / ".kubeactuary" / "next-version-task.json",
             {
                 "schemaVersion": "kube-actuary.next-version-task.v1",
@@ -170,6 +201,8 @@ def main() -> int:
             "environment-probe: `not-run`",
             "environment-next: start or select a disposable cluster, then rerun the probe",
             "version-iteration-advance: `failed`",
+            "next-action-source: `prepared-live-validation-queue`",
+            "environment-blocked-actions: 1",
             "prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_markdown.stdout:
@@ -220,6 +253,16 @@ def main() -> int:
         errors.append("progress report must include partial evidence-dir status")
     if not evidence_status.get("nextCommands"):
         errors.append("partial evidence progress must include next commands")
+    evidence_queue = evidence_progress.get("liveValidationQueue", {})
+    evidence_next_actions = evidence_progress.get("nextActions", {})
+    if evidence_queue.get("schemaVersion") != "kube-actuary.live-validation-queue.v1":
+        errors.append("evidence progress must include the persisted live validation queue summary")
+    if evidence_next_actions.get("source") != "prepared-live-validation-queue":
+        errors.append("evidence progress must use the persisted live validation queue as next action source")
+    if evidence_next_actions.get("summary", {}).get("blockedByEnvironment") != 1:
+        errors.append("evidence progress must preserve persisted environment-blocked action count")
+    if (evidence_next_actions.get("actions") or [{}])[0].get("environmentStatus") != "cluster-unavailable":
+        errors.append("evidence progress next actions must preserve environment status")
     missing_status = missing_evidence_progress.get("evidenceStatus", {})
     if missing_status.get("summary", {}).get("status") != "not-prepared":
         errors.append("missing evidence progress must report not-prepared status")
