@@ -15,7 +15,7 @@ Expected:
 - all tests pass;
 - collector tests cover auth, dry-run, diff, rollback, health-plan, digest,
   validate, doctor, normalized collector failures, release taskboard audit,
-  release progress reporting, version worklist generation, evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, next version task selection, evidence-aware next-task skipping, external gate plan generation, external gate evidence evaluation,
+  release progress reporting, version worklist generation, version blocker ledger recording, evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, next version task selection, evidence-aware next-task skipping, external gate plan generation, external gate evidence evaluation,
   supplemental external evidence builder, external evidence bundle generation,
   release evidence directory artifact generation, release evidence status inspection,
   clean generated-artifact verification,
@@ -67,6 +67,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
+python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -154,6 +155,10 @@ Expected:
   and version/history context, blocker-focused filters, next-task selection,
   `--runnable-only`, `--blocked-only`, scaffold persistence for those selector
   modes, and non-runnable selector output for blocked tasks;
+- version blocker ledger check prints `version-blockers: passed` and covers
+  prepared-queue-sourced blocker records, affected versions, filtered worklist
+  drilldowns, environment reasons, next local loop commands, and persisted
+  `.kubeactuary/version-blockers.json` plus Markdown reports;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live
@@ -354,6 +359,9 @@ Confirm from code and tests:
   version-scoped blocker drilldown commands, environment-reason drilldowns,
   blocker-focused filters, and
   optional environment blockers;
+- version blocker ledger verifier checks prepared queue reuse, grouped
+  missing-tool/environment blockers, affected versions, filtered worklist
+  drilldowns, next local loop commands, and persisted local blocker metadata;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
@@ -502,7 +510,7 @@ Expected:
 
 - `0.2.0` and `current` suites are available;
 - suite checks cover unit tests, CLI help, agent JSON help, validate, doctor,
-  release notes dry-run, release taskboard audit, release progress, version worklist, external gate plan, external gate command safety, external gate evidence,
+  release notes dry-run, release taskboard audit, release progress, version worklist, version blocker ledger, external gate plan, external gate command safety, external gate evidence,
   evidence-aware worklist readiness, evidence-aware iteration packs, evidence-aware iteration history, evidence-aware next-task skipping, external evidence builder, external evidence bundle, release evidence directory, release evidence status, next-task evidence build, next-version task run, version iteration advance,
   CRD compatibility smoke, CRD explain quality, CRD
   upgrade fixtures, conformance suite, controller contract, controller RBAC,

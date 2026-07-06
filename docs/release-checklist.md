@@ -25,6 +25,7 @@ python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
 python3 -B scripts/verify_version_worklist.py
+python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -113,6 +114,9 @@ Expected:
   carries those blocker filters through live evidence scaffold and advance
   workflows,
   resolves evidence paths and file readiness for the full local worklist,
+  records grouped blocker metadata with schema
+  `kube-actuary.version-blockers.v1` and persisted
+  `.kubeactuary/version-blockers.json` reports,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving blocker summaries, drilldown commands, and evidence
   readiness when `--evidence-dir` is used,
@@ -254,6 +258,7 @@ Expected:
 - [ ] release taskboard audit check passes.
 - [ ] release progress check passes.
 - [ ] version worklist check passes.
+- [ ] version blocker ledger check passes.
 - [ ] external gate plan check passes.
 - [ ] external gate command safety check passes.
 - [ ] external gate evidence evaluation check passes.

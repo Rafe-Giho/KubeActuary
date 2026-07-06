@@ -398,7 +398,7 @@ def main() -> int:
         for snippet in (
             "schema: kube-actuary.release-progress.v1",
             "verify: 16",
-            "release-checks: 79",
+            "release-checks: 80",
             "version: 0.4.4 done=0 verify=1",
             "missing-tool-blocker: minikube",
             "blocker-worklist: python3 -B scripts/generate_version_worklist.py",
@@ -644,8 +644,8 @@ def main() -> int:
 
     if progress.get("schemaVersion") != "kube-actuary.release-progress.v1":
         errors.append("release progress schemaVersion mismatch")
-    if progress.get("releaseSuite", {}).get("checks") != 79:
-        errors.append("release progress must report 79 release checks")
+    if progress.get("releaseSuite", {}).get("checks") != 80:
+        errors.append("release progress must report 80 release checks")
     if progress.get("summary", {}).get("verify") != 16:
         errors.append("release progress must report 16 VERIFY rows")
     if progress.get("summary", {}).get("doing") != 0 or progress.get("summary", {}).get("todo") != 0:
@@ -808,7 +808,7 @@ def main() -> int:
     print("release-progress: passed")
     print("versions: ok")
     print("verify: 16")
-    print("checks: 79")
+    print("checks: 80")
     return 0
 
 

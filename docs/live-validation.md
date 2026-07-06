@@ -18,6 +18,8 @@ python3 -B scripts/generate_live_validation_queue.py --format markdown
 python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
+python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_validation_queue.py
@@ -105,6 +107,12 @@ reuse visible during repeated local verification. Worklist Markdown also prints
 missing tools and next steps per item, and worklist text output keeps the same
 local task summary available without Markdown rendering, so blocked local loops
 remain actionable.
+`record_version_blockers.py` turns that same prepared queue snapshot into a
+dedicated local blocker ledger. With `--record`, it writes
+`.kubeactuary/version-blockers.json` and `.kubeactuary/version-blockers.md`
+under the evidence directory, preserving version groups, affected versions,
+filtered worklist drilldowns, environment reasons, next steps, and evidence file
+readiness without running cluster or cloud commands.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, including environment reasons such as
 `connection-refused`, so repeated validation can focus on the shared blocker

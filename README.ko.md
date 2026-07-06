@@ -370,12 +370,16 @@ scripts/
   inspect_version_history.py local version iteration history inspector with evidence status, blocker streaks, and blocker actions
   select_next_version_task.py local next version task selector with evidence skip support
   verify_version_worklist.py version worklist verifier
+  record_version_blockers.py local version blocker ledger recorder with prepared queue reuse
+  verify_version_blockers.py version blocker ledger verifier
   kube-actuary.version-worklist.v1 version worklist schema
   kube-actuary.version-iteration.v1 version iteration schema
   kube-actuary.version-iteration-diff.v1 version iteration diff schema
   kube-actuary.version-iteration-history.v1 version iteration history schema
   kube-actuary.version-iteration-history-status.v1 version iteration history status schema
   kube-actuary.next-version-task.v1 next version task schema
+  kube-actuary.version-blockers.v1 version blocker ledger schema
+  version-blockers.json persisted local blocker ledger report
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   verify_external_gate_command_safety.py external gate command safety verifier
@@ -505,10 +509,13 @@ python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.
 python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/generate_release_progress.py --format markdown --history-dir evidence/version-history
 python3 -B scripts/verify_version_worklist.py
+python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind
+python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_version_task.py --missing-tool kind
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment --environment-reason connection-refused

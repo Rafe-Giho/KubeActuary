@@ -13,6 +13,7 @@ RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 RELEASE_PROGRESS = ROOT / "scripts" / "verify_release_progress.py"
 VERSION_WORKLIST = ROOT / "scripts" / "verify_version_worklist.py"
+VERSION_BLOCKERS = ROOT / "scripts" / "verify_version_blockers.py"
 EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
 EXTERNAL_GATE_COMMAND_SAFETY = ROOT / "scripts" / "verify_external_gate_command_safety.py"
 EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
@@ -131,7 +132,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 79", result.stdout)
+        self.assertIn("checks: 80", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(
@@ -147,6 +148,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("version-worklist: passed", result.stdout)
         self.assertIn("capture-ready: 4", result.stdout)
         self.assertIn("blocked-by-tools: 12", result.stdout)
+
+    def test_verify_version_blockers(self):
+        result = subprocess.run(
+            [sys.executable, str(VERSION_BLOCKERS)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("version-blockers: passed", result.stdout)
+        self.assertIn("blocked-items: 3", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(
