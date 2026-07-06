@@ -42,7 +42,11 @@ def is_relative_to(path: Path, parent: Path) -> bool:
     return True
 
 
-def scan_directory(evidence_dir: Path, output_dir: Path) -> tuple[list[Path], list[Path], list[str]]:
+def scan_directory(
+    evidence_dir: Path,
+    output_dir: Path,
+    require_live_reports: bool = True,
+) -> tuple[list[Path], list[Path], list[str]]:
     live_reports: list[Path] = []
     supplemental: list[Path] = []
     errors: list[str] = []
@@ -73,7 +77,7 @@ def scan_directory(evidence_dir: Path, output_dir: Path) -> tuple[list[Path], li
             continue
         else:
             errors.append(f"{path}: unsupported evidence schemaVersion: {schema!r}")
-    if not live_reports:
+    if require_live_reports and not live_reports:
         errors.append(f"{evidence_dir}: no live evidence report JSON files found")
     return live_reports, supplemental, errors
 

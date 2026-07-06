@@ -105,6 +105,11 @@ COMMON_CHECKS = (
         contains=("release-evidence-directory: passed", "closure: complete"),
     ),
     Check(
+        "release evidence status",
+        ("python3", "-B", "scripts/verify_release_evidence_status.py"),
+        contains=("release-evidence-status: passed", "complete: ok"),
+    ),
+    Check(
         "crd compatibility smoke",
         ("python3", "-B", "scripts/verify_crd_compatibility.py"),
         contains=("crd-compatibility: passed", "upstream-minors: 1.36, 1.35, 1.34"),

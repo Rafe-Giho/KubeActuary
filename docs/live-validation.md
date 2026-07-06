@@ -17,6 +17,7 @@ python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
 python3 -B scripts/verify_release_evidence_directory.py
+python3 -B scripts/verify_release_evidence_status.py
 ```
 
 Expected:
@@ -126,6 +127,17 @@ The directory builder writes `<evidence-dir>/.kubeactuary/live-evidence-manifest
 and `<evidence-dir>/.kubeactuary/external-evidence-bundle.json`, ignores those
 generated files on rerun, and prints `release-evidence-directory: passed` when
 the directory is valid. It does not contact clusters or cloud APIs.
+
+Inspect a partial evidence directory while gathering external runs:
+
+```sh
+python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir>
+python3 -B scripts/inspect_release_evidence_directory.py <evidence-dir> --format json
+```
+
+The status inspector uses schema `kube-actuary.release-evidence-status.v1`,
+reports covered and uncovered external gates, and prints next evidence commands
+without requiring complete release closure.
 
 Supported evidence schemas:
 

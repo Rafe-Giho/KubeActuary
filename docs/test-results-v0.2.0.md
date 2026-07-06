@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (68 checks)
-Ran 102 tests
+verification: passed (69 checks)
+Ran 103 tests
 OK
 ```
 
@@ -111,6 +111,8 @@ Coverage included:
   SHA-256 digests plus closure status;
 - release evidence directory artifact generation for repeated local evidence
   closure checks;
+- release evidence status inspection for partial and complete evidence
+  directories;
 - digest stability across status evidence changes;
 - human help sections;
 - safety help execution boundary;
@@ -140,6 +142,7 @@ python3 -B scripts/verify_external_gate_evidence.py
 python3 -B scripts/verify_external_evidence_builder.py
 python3 -B scripts/verify_external_evidence_bundle.py
 python3 -B scripts/verify_release_evidence_directory.py
+python3 -B scripts/verify_release_evidence_status.py
 python3 -B scripts/verify_crd_upgrade_fixtures.py
 python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
@@ -209,6 +212,7 @@ Result:
 - external evidence builder check prints `external-evidence-builder: passed`;
 - external evidence bundle check prints `external-evidence-bundle: passed`;
 - release evidence directory check prints `release-evidence-directory: passed`;
+- release evidence status check prints `release-evidence-status: passed`;
 - CRD upgrade fixture check prints `crd-upgrade-fixtures: passed`;
 - controller contract check prints `controller-contract: passed`;
 - controller RBAC check prints `controller-rbac: passed`;
