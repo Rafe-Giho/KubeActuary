@@ -173,6 +173,20 @@ def main() -> int:
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
         )
         (completed_evidence_dir / "supplemental" / "01-controller-resource-budget-external-2.json").write_text("{}\n")
+        evidence_worklist_result = run_generator(
+            "--format",
+            "json",
+            "--open-only",
+            "--evidence-dir",
+            str(completed_evidence_dir),
+        )
+        evidence_worklist_markdown = run_generator(
+            "--format",
+            "markdown",
+            "--open-only",
+            "--evidence-dir",
+            str(completed_evidence_dir),
+        )
         skipped_complete_task = run_select(
             "--format",
             "json",
@@ -270,6 +284,7 @@ def main() -> int:
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
     next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
+    evidence_worklist = parse_worklist("evidence-aware worklist", evidence_worklist_result, errors)
     skipped_complete_payload = parse_worklist("skip-complete next task", skipped_complete_task, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
@@ -279,6 +294,8 @@ def main() -> int:
         errors.append("worklist generator must write requested output file")
     if next_task_markdown.returncode != 0 or "# KubeActuary Next Version Task" not in next_task_markdown.stdout:
         errors.append("next task selector markdown must render")
+    if evidence_worklist_markdown.returncode != 0 or "evidence: `3/3`" not in evidence_worklist_markdown.stdout:
+        errors.append("evidence-aware worklist markdown must render file readiness")
     if written_next_task.returncode != 0 or not next_task_output_written:
         errors.append("next task selector must write requested output file")
     if skipped_complete_text.returncode != 0 or "evidence-files: 0/4" not in skipped_complete_text.stdout:
@@ -408,6 +425,35 @@ def main() -> int:
         errors.append("open-only filter should return nine open versions and sixteen open items")
     if any(version.get("status") == "complete" for version in open_versions):
         errors.append("open-only filter must not include complete versions")
+
+    evidence_summary = evidence_worklist.get("summary", {})
+    evidence_versions = {
+        version.get("version"): version
+        for version in evidence_worklist.get("versions", [])
+        if isinstance(version, dict)
+    }
+    evidence_baseline = evidence_versions.get("Current Baseline", {})
+    evidence_baseline_items = evidence_baseline.get("openItems", [])
+    completed_resource_item = next(
+        (item for item in evidence_baseline_items if item.get("id") == "01-controller-resource-budget"),
+        {},
+    )
+    if evidence_worklist.get("evidenceDir") != str(completed_evidence_dir):
+        errors.append("evidence-aware worklist should record the evidence directory")
+    if evidence_summary.get("openItems") != 16:
+        errors.append("evidence-aware worklist should preserve open item count")
+    if evidence_summary.get("evidenceItems") != 16:
+        errors.append("evidence-aware worklist should summarize all external evidence items")
+    if evidence_summary.get("completeEvidenceItems") != 1:
+        errors.append("evidence-aware worklist should count one complete evidence item")
+    if evidence_summary.get("existingEvidenceFiles", 0) < 3:
+        errors.append("evidence-aware worklist should count existing evidence files")
+    if not evidence_worklist.get("resolvedClosureCommands"):
+        errors.append("evidence-aware worklist should include resolved closure commands")
+    if completed_resource_item.get("evidenceSummary", {}).get("complete") is not True:
+        errors.append("evidence-aware worklist should mark the prepared resource budget task complete")
+    if "resolvedCommands" not in completed_resource_item:
+        errors.append("evidence-aware worklist should include resolved commands on open items")
 
     probe_summary = probe_worklist.get("summary", {})
     probe_versions = probe_worklist.get("versions", [])

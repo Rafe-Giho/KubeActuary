@@ -13,6 +13,7 @@ python3 -B scripts/verify_live_validation_readiness.py --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown
 python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
 python3 -B scripts/generate_live_validation_queue.py --format markdown --evidence-dir evidence/live
+python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_validation_queue.py

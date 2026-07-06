@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,11 @@ from scripts.generate_release_progress import build_progress  # noqa: E402
 
 
 SCHEMA_VERSION = "kube-actuary.version-worklist.v1"
+EVIDENCE_FILE_FLAGS = {
+    "--sample": "sample",
+    "--source": "source",
+    "--output": "output",
+}
 
 
 def queue_lookup(queue: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -26,6 +32,37 @@ def queue_lookup(queue: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]
         if isinstance(item, dict):
             lookup[(str(item.get("version")), str(item.get("item")))] = item
     return lookup
+
+
+def evidence_files(item: dict[str, Any]) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for command in item.get("resolvedCommands", []):
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            continue
+        for index, token in enumerate(tokens[:-1]):
+            role = EVIDENCE_FILE_FLAGS.get(token)
+            if role is None:
+                continue
+            path = tokens[index + 1]
+            key = (role, path)
+            if key in seen:
+                continue
+            seen.add(key)
+            files.append({"role": role, "path": path, "exists": Path(path).is_file()})
+    return files
+
+
+def evidence_summary(files: list[dict[str, Any]]) -> dict[str, int | bool]:
+    existing = sum(1 for item in files if item["exists"])
+    return {
+        "files": len(files),
+        "existingFiles": existing,
+        "missingFiles": len(files) - existing,
+        "complete": bool(files) and existing == len(files),
+    }
 
 
 def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[str, Any]:
@@ -51,6 +88,13 @@ def work_item(item: dict[str, Any], queue_item: dict[str, Any] | None) -> dict[s
     }
     if queue_item.get("environmentStatus") is not None:
         record["environmentStatus"] = queue_item.get("environmentStatus")
+    if queue_item.get("evidenceDir") is not None:
+        record["evidenceDir"] = queue_item.get("evidenceDir")
+    if queue_item.get("resolvedCommands"):
+        record["resolvedCommands"] = queue_item.get("resolvedCommands", [])
+        files = evidence_files(record)
+        record["files"] = files
+        record["evidenceSummary"] = evidence_summary(files)
     return record
 
 
@@ -67,6 +111,12 @@ def version_status(open_items: list[dict[str, Any]]) -> str:
 
 
 def summarize_versions(versions: list[dict[str, Any]]) -> dict[str, int]:
+    evidence_items = [
+        item
+        for version in versions
+        for item in version["openItems"]
+        if item.get("evidenceSummary")
+    ]
     return {
         "versions": len(versions),
         "openVersions": sum(1 for version in versions if version["status"] != "complete"),
@@ -74,6 +124,10 @@ def summarize_versions(versions: list[dict[str, Any]]) -> dict[str, int]:
         "captureReady": sum(version["summary"].get("captureReady", 0) for version in versions),
         "blockedByTools": sum(version["summary"].get("blockedByTools", 0) for version in versions),
         "blockedByEnvironment": sum(version["summary"].get("blockedByEnvironment", 0) for version in versions),
+        "evidenceItems": len(evidence_items),
+        "completeEvidenceItems": sum(1 for item in evidence_items if item["evidenceSummary"].get("complete")),
+        "evidenceFiles": sum(item["evidenceSummary"].get("files", 0) for item in evidence_items),
+        "existingEvidenceFiles": sum(item["evidenceSummary"].get("existingFiles", 0) for item in evidence_items),
     }
 
 
@@ -82,9 +136,10 @@ def build_worklist(
     open_only: bool = False,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    evidence_dir: Path | None = None,
 ) -> dict[str, Any]:
     progress = build_progress()
-    queue = build_queue(probe_environment=probe_environment, kubectl=kubectl)
+    queue = build_queue(evidence_dir=evidence_dir, probe_environment=probe_environment, kubectl=kubectl)
     queue_by_key = queue_lookup(queue)
     versions: list[dict[str, Any]] = []
     for group in progress.get("versions", []):
@@ -98,6 +153,7 @@ def build_worklist(
         blocked_by_environment = sum(
             1 for item in open_items if item.get("captureStatus") == "blocked-by-environment"
         )
+        evidence_items = [item for item in open_items if item.get("evidenceSummary")]
         versions.append(
             {
                 "version": version,
@@ -108,6 +164,14 @@ def build_worklist(
                     "captureReady": capture_ready,
                     "blockedByTools": blocked_by_tools,
                     "blockedByEnvironment": blocked_by_environment,
+                    "evidenceItems": len(evidence_items),
+                    "completeEvidenceItems": sum(
+                        1 for item in evidence_items if item["evidenceSummary"].get("complete")
+                    ),
+                    "evidenceFiles": sum(item["evidenceSummary"].get("files", 0) for item in evidence_items),
+                    "existingEvidenceFiles": sum(
+                        item["evidenceSummary"].get("existingFiles", 0) for item in evidence_items
+                    ),
                 },
                 "openItems": open_items,
             }
@@ -131,6 +195,9 @@ def build_worklist(
     }
     if queue.get("environmentProbe"):
         worklist["environmentProbe"] = queue["environmentProbe"]
+    if evidence_dir is not None:
+        worklist["evidenceDir"] = evidence_dir.as_posix()
+        worklist["resolvedClosureCommands"] = queue.get("resolvedClosureCommands", [])
     return worklist
 
 
@@ -165,10 +232,16 @@ def render_markdown(worklist: dict[str, Any]) -> str:
             first_command = (item.get("commands") or [None])[0]
             if item.get("environmentStatus"):
                 lines.append(f"    environment: `{item['environmentStatus']}`")
+            if item.get("evidenceSummary"):
+                evidence = item["evidenceSummary"]
+                lines.append(f"    evidence: `{evidence.get('existingFiles', 0)}/{evidence.get('files', 0)}`")
             if first_command:
                 lines.append(f"    command: `{first_command}`")
+            first_resolved = (item.get("resolvedCommands") or [None])[0]
+            if first_resolved:
+                lines.append(f"    resolved: `{first_resolved}`")
     lines.extend(["", "## Closure", ""])
-    for command in worklist["closureCommands"]:
+    for command in worklist.get("resolvedClosureCommands") or worklist["closureCommands"]:
         lines.append(f"- `{command}`")
     return "\n".join(lines) + "\n"
 
@@ -179,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--open-only", action="store_true", help="include only versions with open work")
+    parser.add_argument("--evidence-dir", help="optional evidence directory for resolved commands and file readiness")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -189,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
             open_only=args.open_only,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
         )
     except ValueError as exc:
         print("version-worklist: failed", file=sys.stderr)
