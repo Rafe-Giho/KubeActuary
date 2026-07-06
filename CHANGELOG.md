@@ -21,6 +21,7 @@ Evidence collector release:
   open task and capture status;
 - add local version iteration packs for repeated per-version verification;
 - add local version iteration diffs for comparing repeated verification runs;
+- add local version iteration history recording for run-to-run tracking;
 - add tool-ready and missing-tool next actions to release progress reports;
 - add external verification gate plan generation for remaining live evidence;
 - add external gate command safety verification for generated dry-run,

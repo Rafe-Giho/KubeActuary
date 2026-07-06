@@ -15,16 +15,19 @@ ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_version_worklist.py"
 PREPARE = ROOT / "scripts" / "prepare_version_iteration.py"
 COMPARE = ROOT / "scripts" / "compare_version_iterations.py"
+RECORD = ROOT / "scripts" / "record_version_iteration.py"
 README = ROOT / "README.md"
 README_KO = ROOT / "README.ko.md"
 TASKBOARD = ROOT / "docs" / "release-taskboard.md"
 WORKLIST_TOOL = "generate_version_worklist.py"
 PREPARE_TOOL = "prepare_version_iteration.py"
 COMPARE_TOOL = "compare_version_iterations.py"
+RECORD_TOOL = "record_version_iteration.py"
 VERIFY_TOOL = "verify_version_worklist.py"
 SCHEMA = "kube-actuary.version-worklist.v1"
 ITERATION_SCHEMA = "kube-actuary.version-iteration.v1"
 DIFF_SCHEMA = "kube-actuary.version-iteration-diff.v1"
+HISTORY_SCHEMA = "kube-actuary.version-iteration-history.v1"
 
 
 def run_generator(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -55,6 +58,18 @@ def run_compare(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-B", str(COMPARE), *args],
         cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_record(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-B", str(RECORD), *args],
+        cwd=ROOT,
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -149,6 +164,32 @@ def main() -> int:
         diff_output = tmpdir / "iteration-diff.json"
         written_compare = run_compare(str(iteration_dir), str(probe_iteration_dir), "--output", str(diff_output))
         diff_output_written = diff_output.is_file()
+        history_dir = tmpdir / "history"
+        first_record = run_record(
+            str(history_dir),
+            "--run-id",
+            "before",
+            "--created-at",
+            "2026-07-06T00:00:00+00:00",
+            "--version",
+            "0.4.3",
+        )
+        second_record = run_record(
+            str(history_dir),
+            "--run-id",
+            "after",
+            "--created-at",
+            "2026-07-06T00:01:00+00:00",
+            "--version",
+            "0.4.3",
+            "--probe-environment",
+            env=probe_env,
+        )
+        history_index_path = history_dir / "index.json"
+        history_index = json.loads(history_index_path.read_text()) if history_index_path.is_file() else {}
+        history_readme_text = (history_dir / "README.md").read_text() if (history_dir / "README.md").is_file() else ""
+        history_diff_path = history_dir / "runs" / "after" / "diff-from-previous.json"
+        history_diff = json.loads(history_diff_path.read_text()) if history_diff_path.is_file() else {}
 
     worklist = parse_worklist("json worklist", json_result, errors)
     single_version = parse_worklist("single-version worklist", single_version_result, errors)
@@ -199,6 +240,23 @@ def main() -> int:
         errors.append("version iteration diff markdown must render")
     if written_compare.returncode != 0 or not diff_output_written:
         errors.append("version iteration diff must write requested output file")
+    if first_record.returncode != 0:
+        errors.append(f"first version iteration history failed: {first_record.stderr.strip() or first_record.stdout.strip()}")
+    if second_record.returncode != 0:
+        errors.append(f"second version iteration history failed: {second_record.stderr.strip() or second_record.stdout.strip()}")
+    if history_index.get("schemaVersion") != HISTORY_SCHEMA:
+        errors.append("version iteration history schemaVersion mismatch")
+    if len(history_index.get("runs", [])) != 2:
+        errors.append("version iteration history should record two runs")
+    second_run = history_index.get("runs", [{}])[-1] if history_index.get("runs") else {}
+    if second_run.get("previousRunId") != "before":
+        errors.append("version iteration history should link to previous run")
+    if second_run.get("diffSummary", {}).get("blockedByEnvironmentDelta") != 1:
+        errors.append("version iteration history should preserve diff summary")
+    if history_diff.get("schemaVersion") != DIFF_SCHEMA:
+        errors.append("version iteration history should write diff artifact")
+    if "after" not in history_readme_text or "blocked-by-environment-delta=1" not in history_readme_text:
+        errors.append("version iteration history README should summarize runs and diff")
     invalid_text = invalid_version_result.stdout + invalid_version_result.stderr
     if invalid_version_result.returncode == 0:
         errors.append("unknown version filter must fail")
@@ -277,7 +335,17 @@ def main() -> int:
 
     for path in (README, README_KO, TASKBOARD):
         text = path.read_text()
-        for snippet in (WORKLIST_TOOL, PREPARE_TOOL, COMPARE_TOOL, VERIFY_TOOL, SCHEMA, ITERATION_SCHEMA, DIFF_SCHEMA):
+        for snippet in (
+            WORKLIST_TOOL,
+            PREPARE_TOOL,
+            COMPARE_TOOL,
+            RECORD_TOOL,
+            VERIFY_TOOL,
+            SCHEMA,
+            ITERATION_SCHEMA,
+            DIFF_SCHEMA,
+            HISTORY_SCHEMA,
+        ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing version worklist detail: {snippet}")
 
