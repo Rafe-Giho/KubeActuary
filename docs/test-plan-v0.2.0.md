@@ -24,7 +24,7 @@ Expected:
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory,
-  project governance, air-gapped manifest generation, agent help schema
+  live evidence schema validation, project governance, air-gapped manifest generation, agent help schema
   compatibility, local CI and Codex agent runbooks, Kyverno adapter fixtures,
   OPA adapter fixtures, kube-linter adapter fixtures, kube-score adapter
   fixtures, Pluto adapter fixtures, adapter
@@ -77,6 +77,7 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
@@ -133,6 +134,7 @@ Expected:
 - API freeze check prints `api-freeze: passed`;
 - docs freeze check prints `docs-freeze: passed`;
 - live validation readiness check prints `live-validation-readiness: passed`;
+- live evidence schema check prints `live-evidence-schema: passed`;
 - project governance check prints `project-governance: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
 - agent help contract check prints `agent-help-contract: passed`;
@@ -245,6 +247,7 @@ Confirm from code and tests:
   agent runbooks;
 - live validation readiness verifier inventories remaining external validation
   gates without contacting clusters or cloud APIs;
+- live evidence schema verifier validates all supported smoke report schemas;
 - project governance verifier requires LICENSE, NOTICE, SECURITY, and
   CONTRIBUTING;
 - air-gapped manifest generator lists required release and repository artifacts
@@ -304,8 +307,8 @@ Expected:
   controller runtime, controller deployment, controller patch plan, controller
   sync, controller status apply, controller resource budget, lightweight cluster smoke, digest, CRD render,
   managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
-  security docs, API freeze, docs freeze, live validation readiness, project
-  governance, air-gapped bundle, agent help contract, agent examples, Kyverno
+  security docs, API freeze, docs freeze, live validation readiness, live
+  evidence schema, project governance, air-gapped bundle, agent help contract, agent examples, Kyverno
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, MCP docs, disabled-execute check, admission webhook,
   admission policy, admission digest/gate, admission audit, admission response,

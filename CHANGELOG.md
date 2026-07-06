@@ -69,6 +69,7 @@ Evidence collector release:
 - add API freeze contract and additive compatibility verifier;
 - add documentation freeze and public examples verifier;
 - add live validation readiness ledger for external evidence gates;
+- add live evidence JSON validator for captured smoke reports;
 - add contribution policy, NOTICE, and project governance verifier;
 - add v0.2 tests, docs, and examples.
 

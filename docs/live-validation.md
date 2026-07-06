@@ -9,6 +9,7 @@ Run:
 ```sh
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_readiness.py --json
+python3 -B scripts/verify_live_evidence_schema.py
 ```
 
 Expected:
@@ -53,6 +54,19 @@ cluster-writes: disabled
 - For managed Kubernetes smoke runs, use `scripts/run_managed_kubernetes_smoke.py`
   with `--provider <eks|gke|aks> --run --output <path>` and keep the
   `kube-actuary.managed-kubernetes-smoke.v1` report.
+- Validate captured reports before using them as release evidence:
+
+```sh
+python3 -B scripts/validate_live_evidence.py <evidence.json> [...]
+```
+
+Supported evidence schemas:
+
+- `kube-actuary.lightweight-smoke.v1`
+- `kube-actuary.helm-smoke.v1`
+- `kube-actuary.krew-smoke.v1`
+- `kube-actuary.admission-kind-smoke.v1`
+- `kube-actuary.managed-kubernetes-smoke.v1`
 
 Provider run evidence means captured output from the target provider or tool,
 not a local assumption that the path should work.

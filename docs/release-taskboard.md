@@ -51,6 +51,7 @@ Status legend:
 | Pluto adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates without running them |
+| Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |
 | Managed Kubernetes smoke | VERIFY | `scripts/verify_managed_kubernetes_smoke.py` verifies EKS/GKE/AKS plan and evidence JSON; provider runs still needed |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
 | Controller | DOING | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, and status apply dry-run exist; persistent live status loop remains |
@@ -62,7 +63,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (59 checks)
+verification: passed (60 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -180,6 +181,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 | 0.9.2 | API freeze and upgrade compatibility gate | DONE | `scripts/verify_api_freeze.py` guards additive-only no breaking schema diff |
 | 0.9.3 | Documentation freeze and public examples audit | DONE | `scripts/verify_docs_freeze.py` checks public docs and examples |
 | 0.9.4 | Live validation readiness ledger | DONE | `scripts/verify_live_validation_readiness.py` tracks remaining external evidence gates |
+| 0.9.4 | Captured live evidence schema validator | DONE | `scripts/verify_live_evidence_schema.py` validates five smoke evidence schemas |
 | 0.9.5 | Project governance and contribution policy | DONE | `scripts/verify_project_governance.py` checks contribution, notice, security, and license files |
 
 ## v1.0.0: GA

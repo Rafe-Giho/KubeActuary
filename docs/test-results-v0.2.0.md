@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (59 checks)
-Ran 92 tests
+verification: passed (60 checks)
+Ran 93 tests
 OK
 ```
 
@@ -76,6 +76,7 @@ Coverage included:
 - API freeze and additive compatibility gate verification;
 - documentation freeze and public examples audit verification;
 - live validation readiness inventory verification;
+- live evidence schema validation for captured smoke reports;
 - project governance, contribution, notice, and license verification;
 - air-gapped artifact manifest and offline checklist verification;
 - agent help schema compatibility verification;
@@ -145,6 +146,7 @@ python3 -B scripts/verify_security_docs.py
 python3 -B scripts/verify_api_freeze.py
 python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
+python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_project_governance.py
 python3 -B scripts/verify_airgap_bundle.py
 python3 -B scripts/verify_agent_help_contract.py
@@ -203,6 +205,7 @@ Result:
 - API freeze check prints `api-freeze: passed`;
 - docs freeze check prints `docs-freeze: passed`;
 - live validation readiness check prints `live-validation-readiness: passed`;
+- live evidence schema check prints `live-evidence-schema: passed`;
 - project governance check prints `project-governance: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
 - agent help contract check prints `agent-help-contract: passed`;
