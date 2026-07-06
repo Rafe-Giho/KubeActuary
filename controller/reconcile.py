@@ -132,6 +132,64 @@ def status_patch(document: dict[str, Any]) -> dict[str, Any]:
     return {"status": reconcile_status(document)}
 
 
+def operationcapsule_items(document: dict[str, Any]) -> list[dict[str, Any]]:
+    items = document.get("items")
+    if isinstance(items, list):
+        return [item for item in items if isinstance(item, dict)]
+    return [document]
+
+
+def object_identity(document: dict[str, Any]) -> tuple[str, str | None]:
+    metadata = document.get("metadata", {})
+    name = metadata.get("name")
+    if not isinstance(name, str) or not name:
+        raise ValueError("OperationCapsule metadata.name is required")
+    namespace = metadata.get("namespace")
+    if not isinstance(namespace, str) or not namespace:
+        namespace = None
+    return name, namespace
+
+
+def status_patch_command(document: dict[str, Any], kubectl: str = "kubectl") -> list[str]:
+    name, namespace = object_identity(document)
+    patch = json.dumps(status_patch(document), sort_keys=True, separators=(",", ":"))
+    command = [
+        kubectl,
+        "patch",
+        WATCH_RESOURCE,
+        name,
+        "--type",
+        "merge",
+        "--subresource",
+        "status",
+        "-p",
+        patch,
+    ]
+    if namespace:
+        command.extend(["-n", namespace])
+    return command
+
+
+def status_patch_plan(document: dict[str, Any], kubectl: str = "kubectl") -> dict[str, Any]:
+    patches = []
+    for item in operationcapsule_items(document):
+        name, namespace = object_identity(item)
+        patches.append(
+            {
+                "name": name,
+                "namespace": namespace,
+                "resource": WATCH_RESOURCE,
+                "patch": status_patch(item),
+                "command": status_patch_command(item, kubectl=kubectl),
+            }
+        )
+    return {
+        "writeExecution": "disabled",
+        "patches": patches,
+        "count": len(patches),
+    }
+
+
 def watch_command(namespace: str | None = None) -> list[str]:
     command = ["kubectl", "get", WATCH_RESOURCE, "-o", "json", "--watch"]
     if namespace:

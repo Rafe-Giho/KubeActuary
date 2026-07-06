@@ -186,3 +186,28 @@ Derived fields:
 Future live controller work may patch only the `status` subresource of
 `operationcapsules.ops.kubeactuary.dev`. It must not update `spec`, execute
 `spec.proposedAction.command`, or mutate target workloads directly.
+
+## Status Patch Plan
+
+The local patch planner computes status-only patch payloads for one
+`OperationCapsule` object or a Kubernetes list. It does not execute the patch:
+
+```sh
+python3 bin/kube-actuary-controller patch-plan operationcapsules.json
+python3 bin/kube-actuary-controller patch-plan operationcapsules.json --format commands
+```
+
+The generated command shape is limited to:
+
+```sh
+kubectl patch operationcapsules.ops.kubeactuary.dev <name> --type merge --subresource status -p <status-only-patch>
+```
+
+The JSON output includes `writeExecution: disabled`, and each patch body has
+only a top-level `status` field.
+
+Offline verifier:
+
+```sh
+python3 -B scripts/verify_controller_patch_plan.py
+```

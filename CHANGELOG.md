@@ -29,6 +29,7 @@ Evidence collector release:
 - add controller health, readiness, metrics, and leader-election runtime
   contracts;
 - add optional controller runtime Deployment seed and verifier;
+- add controller status patch planner with status-only verifier;
 - add controller resource-budget contract and kubectl-top measurement harness;
 - add lightweight cluster smoke plan harness for kind, minikube, MicroK8s, and
   k3s;

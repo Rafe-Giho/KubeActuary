@@ -14,7 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from controller.reconcile import WATCH_RESOURCE, reconcile_status, status_patch, watch_command
+from controller.reconcile import (
+    WATCH_RESOURCE,
+    reconcile_status,
+    status_patch,
+    status_patch_plan,
+    watch_command,
+)
 from controller.runtime import (
     health_payload,
     leader_election_config,
@@ -27,6 +33,8 @@ from controller.runtime import (
 
 def load_json(path: str) -> dict:
     try:
+        if path == "-":
+            return json.loads(sys.stdin.read())
         return json.loads(Path(path).read_text())
     except FileNotFoundError as exc:
         raise SystemExit(f"file not found: {path}") from exc
@@ -49,6 +57,17 @@ def reconcile(args: argparse.Namespace) -> int:
 
 def print_watch_command(args: argparse.Namespace) -> int:
     print(shlex.join(watch_command(args.namespace)))
+    return 0
+
+
+def patch_plan(args: argparse.Namespace) -> int:
+    document = load_json(args.file)
+    plan = status_patch_plan(document, kubectl=args.kubectl)
+    if args.format == "commands":
+        for patch in plan["patches"]:
+            print(shlex.join(patch["command"]))
+    else:
+        write_json(plan)
     return 0
 
 
@@ -153,6 +172,12 @@ def build_parser() -> argparse.ArgumentParser:
     watch_parser = sub.add_parser("watch-command", help="print the only Kubernetes watch command this controller needs")
     watch_parser.add_argument("--namespace")
     watch_parser.set_defaults(func=print_watch_command)
+
+    patch_plan_parser = sub.add_parser("patch-plan", help="compute status patch commands without executing them")
+    patch_plan_parser.add_argument("file", help="OperationCapsule JSON object/list file, or - for stdin")
+    patch_plan_parser.add_argument("--format", choices=["json", "commands"], default="json")
+    patch_plan_parser.add_argument("--kubectl", default="kubectl")
+    patch_plan_parser.set_defaults(func=patch_plan)
 
     health_parser = sub.add_parser("health", help="emit liveness payload for future /healthz wiring")
     health_parser.add_argument("--started-at", type=int)

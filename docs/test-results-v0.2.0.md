@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (52 checks)
-Ran 82 tests
+verification: passed (53 checks)
+Ran 84 tests
 OK
 ```
 
@@ -56,6 +56,8 @@ Coverage included:
   leader-election Lease configuration;
 - controller Deployment seed with local `serve` runtime, probes, resource
   limits, and hardened security defaults;
+- controller status patch planner with status-only patch bodies and disabled
+  write execution;
 - controller resource budget contract and `kubectl top` measurement parser;
 - lightweight cluster smoke plan for kind, minikube, MicroK8s, and k3s;
 - Helm chart seed for CRD packaging and optional controller RBAC;
@@ -114,6 +116,7 @@ python3 -B scripts/verify_controller_contract.py
 python3 -B scripts/verify_controller_rbac.py
 python3 -B scripts/verify_controller_runtime_contract.py
 python3 -B scripts/verify_controller_deployment.py
+python3 -B scripts/verify_controller_patch_plan.py
 python3 -B scripts/verify_controller_resource_budget.py
 python3 -B scripts/verify_lightweight_cluster_smoke.py
 python3 -B scripts/verify_helm_chart.py
@@ -164,6 +167,7 @@ Result:
 - controller RBAC check prints `controller-rbac: passed`;
 - controller runtime check prints `controller-runtime: passed`;
 - controller deployment check prints `controller-deployment: passed`;
+- controller patch plan check prints `controller-patch-plan: passed`;
 - controller resource budget check prints `controller-resource-budget: passed`;
 - lightweight cluster smoke check prints `lightweight-cluster-smoke: passed`;
 - Helm chart check prints `helm-chart: passed`;

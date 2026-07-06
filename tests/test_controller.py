@@ -180,6 +180,33 @@ class ControllerReconcileTests(unittest.TestCase):
         self.assertEqual(payload["watchResource"], "operationcapsules.ops.kubeactuary.dev")
         self.assertEqual(payload["paths"], ["/healthz", "/readyz", "/metrics"])
 
+    def test_patch_plan_handles_operationcapsule_list_without_execution(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        path = Path(tmpdir.name) / "operationcapsules.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "items": [
+                        self.capsule(
+                            [{"id": "intent", "ok": True, "summary": "reviewed", "actor": "reviewer", "attachedAt": "now"}]
+                        )
+                    ]
+                }
+            )
+        )
+        with tmpdir:
+            result = self.run_controller("patch-plan", str(path))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        plan = json.loads(result.stdout)
+        self.assertEqual(plan["writeExecution"], "disabled")
+        self.assertEqual(plan["count"], 1)
+        patch = plan["patches"][0]
+        self.assertEqual(set(patch["patch"]), {"status"})
+        self.assertIn("--subresource", patch["command"])
+        self.assertIn("status", patch["command"])
+        self.assertNotIn("apply", patch["command"])
+
 
 if __name__ == "__main__":
     unittest.main()

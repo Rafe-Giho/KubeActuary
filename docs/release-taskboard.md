@@ -32,6 +32,7 @@ Status legend:
 | Controller RBAC | DONE | namespace and cluster mode manifests plus offline RBAC verifier |
 | Controller runtime contract | DONE | health, readiness, metrics, and Lease config verifier |
 | Controller deployment seed | DONE | `scripts/verify_controller_deployment.py` verifies optional Deployment runtime defaults |
+| Controller status patch plan | DONE | `scripts/verify_controller_patch_plan.py` verifies status-only patch plans without executing writes |
 | Controller resource budget | VERIFY | offline budget verifier added; live kind/minikube/k3s measurements still needed |
 | Lightweight cluster smoke | VERIFY | offline smoke plan verifier added; live matrix evidence still needed |
 | Helm chart | VERIFY | chart seed and offline verifier added; live `helm template` not run because Helm is not installed |
@@ -48,7 +49,7 @@ Status legend:
 | Adapter contract | DONE | common fields and normalized severity verifier |
 | Live validation readiness | DONE | `scripts/verify_live_validation_readiness.py` inventories external gates without running them |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
-| Controller | DOING | Optional `serve` runtime and Deployment seed exist; live watch/status patch loop remains |
+| Controller | DOING | Optional `serve` runtime, Deployment seed, and status patch plan exist; live watch/apply loop remains |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
 | Admission/audit | TODO | Contract docs only |
@@ -57,7 +58,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (52 checks)
+verification: passed (53 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -103,6 +104,7 @@ patches status. It must not scan the cluster or execute writes.
 | 0.4.1 | Minimal RBAC, namespace-scoped and cluster-scoped modes | DONE | `scripts/verify_controller_rbac.py`; live cluster smoke remains v0.4.4 |
 | 0.4.2 | Health, readiness, metrics, leader election | DONE | `scripts/verify_controller_runtime_contract.py`; live pod lifecycle smoke remains v0.4.4 |
 | 0.4.2 | Optional controller Deployment seed | DONE | `scripts/verify_controller_deployment.py`; live image/pod smoke remains v0.4.4 |
+| 0.4.2 | Status patch plan for watched capsules | DONE | `scripts/verify_controller_patch_plan.py`; live patch execution remains v0.4.4 |
 | 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | VERIFY | `scripts/verify_controller_resource_budget.py`; live kind/minikube/k3s measurement still required |
 | 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | VERIFY | `scripts/verify_lightweight_cluster_smoke.py`; live matrix evidence still required |
 

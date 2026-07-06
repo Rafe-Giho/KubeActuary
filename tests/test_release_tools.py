@@ -17,6 +17,7 @@ CONTROLLER_CONTRACT = ROOT / "scripts" / "verify_controller_contract.py"
 CONTROLLER_RBAC = ROOT / "scripts" / "verify_controller_rbac.py"
 CONTROLLER_RUNTIME = ROOT / "scripts" / "verify_controller_runtime_contract.py"
 CONTROLLER_DEPLOYMENT = ROOT / "scripts" / "verify_controller_deployment.py"
+CONTROLLER_PATCH_PLAN = ROOT / "scripts" / "verify_controller_patch_plan.py"
 CONTROLLER_RESOURCE_BUDGET = ROOT / "scripts" / "verify_controller_resource_budget.py"
 LIGHTWEIGHT_CLUSTER_SMOKE = ROOT / "scripts" / "verify_lightweight_cluster_smoke.py"
 HELM_CHART = ROOT / "scripts" / "verify_helm_chart.py"
@@ -217,6 +218,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("controller-deployment: passed", result.stdout)
         self.assertIn("runtime: serve", result.stdout)
+
+    def test_verify_controller_patch_plan(self):
+        result = subprocess.run(
+            [sys.executable, str(CONTROLLER_PATCH_PLAN)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("controller-patch-plan: passed", result.stdout)
+        self.assertIn("write-execution: disabled", result.stdout)
 
     def test_verify_controller_resource_budget(self):
         result = subprocess.run(
