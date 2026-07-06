@@ -220,6 +220,16 @@ def main() -> int:
         blocked = run_script(INSPECTOR, str(blocked_dir), "--format", "json")
         blocked_text = run_script(INSPECTOR, str(blocked_dir))
 
+        stale_dir = tmpdir / "stale"
+        stale_prepared = run_script(PREPARE, str(stale_dir))
+        stale_next_task_path = stale_dir / ".kubeactuary" / "next-version-task.json"
+        if stale_next_task_path.is_file():
+            stale_next_task_payload = json.loads(stale_next_task_path.read_text())
+            stale_next_task_payload.setdefault("selected", {})["captureStatus"] = "missing-tools"
+            write_payload(stale_next_task_path, stale_next_task_payload)
+        stale = run_script(INSPECTOR, str(stale_dir), "--format", "json")
+        stale_text = run_script(INSPECTOR, str(stale_dir))
+
         full_dir = tmpdir / "full"
         full_dir.mkdir()
         write_full_matrix(full_dir)
@@ -267,6 +277,13 @@ def main() -> int:
         blocked_payload = {}
     else:
         blocked_payload = json.loads(blocked.stdout)
+    if stale_prepared.returncode != 0:
+        errors.append(f"stale evidence prepare failed: {stale_prepared.stderr.strip() or stale_prepared.stdout.strip()}")
+    if stale.returncode != 0:
+        errors.append(f"stale evidence status failed: {stale.stderr.strip() or stale.stdout.strip()}")
+        stale_payload = {}
+    else:
+        stale_payload = json.loads(stale.stdout)
     if complete.returncode != 0:
         errors.append(f"complete status failed: {complete.stderr.strip() or complete.stdout.strip()}")
         complete_payload = {}
@@ -335,6 +352,8 @@ def main() -> int:
         errors.append("partial status must preserve next-task queue source")
     if next_task.get("queueSourceOrigin") != "explicit-source-worklist":
         errors.append("partial status must report explicit next-task queue source origin")
+    if next_task.get("queueConsistency", {}).get("status") != "matched":
+        errors.append("partial status must report matched next-task queue consistency")
     next_task_summary = next_task.get("summary", {})
     if next_task_summary.get("files") != 3:
         errors.append("partial status must summarize three selected next-task file references")
@@ -395,6 +414,8 @@ def main() -> int:
         errors.append("partial text status must print next-task queue source")
     if "next-task-queue-source-origin: explicit-source-worklist" not in partial_text.stdout:
         errors.append("partial text status must print next-task queue source origin")
+    if "next-task-queue-consistency: matched" not in partial_text.stdout:
+        errors.append("partial text status must print matched next-task queue consistency")
     if "next-task-run: failed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run status")
     if "next-task-run-queue-source: prepared-live-validation-queue" not in partial_text.stdout:
@@ -475,6 +496,17 @@ def main() -> int:
             errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
+
+    stale_next_task = stale_payload.get("nextTask") or {}
+    stale_consistency = stale_next_task.get("queueConsistency") or {}
+    if stale_consistency.get("status") != "mismatched":
+        errors.append("stale evidence status must report mismatched next-task queue consistency")
+    if "captureStatus" not in stale_consistency.get("mismatches", []):
+        errors.append("stale evidence status must identify captureStatus mismatch")
+    if "next-task-queue-consistency: mismatched" not in stale_text.stdout:
+        errors.append("stale text status must print mismatched next-task queue consistency")
+    if "next-task-queue-mismatches: captureStatus" not in stale_text.stdout:
+        errors.append("stale text status must print next-task queue mismatch fields")
 
     if complete_payload.get("summary", {}).get("status") != "complete":
         errors.append("full evidence directory must report complete")

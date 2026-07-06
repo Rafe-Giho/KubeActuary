@@ -345,6 +345,11 @@ def render_markdown(progress: dict[str, Any]) -> str:
                 lines.append(f"- next-task-queue-source: `{next_task.get('queueSource')}`")
             if next_task.get("queueSourceOrigin"):
                 lines.append(f"- next-task-queue-source-origin: `{next_task.get('queueSourceOrigin')}`")
+            consistency = next_task.get("queueConsistency") or {}
+            if consistency.get("status"):
+                lines.append(f"- next-task-queue-consistency: `{consistency.get('status')}`")
+                if consistency.get("mismatches"):
+                    lines.append(f"- next-task-queue-mismatches: `{', '.join(consistency.get('mismatches', []))}`")
             file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
             if file_summary:
                 lines.append(f"- next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")

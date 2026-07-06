@@ -201,6 +201,8 @@ def main() -> int:
             "next-task: `01-controller-resource-budget`",
             "next-task-queue-source: `prepared-live-validation-queue`",
             "next-task-queue-source-origin: `inferred-live-validation-queue`",
+            "next-task-queue-consistency: `mismatched`",
+            "next-task-queue-mismatches: `captureStatus, resolvedCommands`",
             "next-task-run: `failed`",
             "next-task-run-queue-source: `prepared-live-validation-queue`",
             "next-task-run-queue-source-origin: `inferred-live-validation-queue`",
@@ -266,6 +268,11 @@ def main() -> int:
         errors.append("evidence progress must preserve next-task queue source")
     if (evidence_status.get("nextTask") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":
         errors.append("evidence progress must preserve next-task queue source origin")
+    next_task_consistency = (evidence_status.get("nextTask") or {}).get("queueConsistency") or {}
+    if next_task_consistency.get("status") != "mismatched":
+        errors.append("evidence progress must preserve next-task queue consistency")
+    if next_task_consistency.get("mismatches") != ["captureStatus", "resolvedCommands"]:
+        errors.append("evidence progress must preserve next-task queue mismatch fields")
     if (evidence_status.get("nextTaskRun") or {}).get("queueSource") != "prepared-live-validation-queue":
         errors.append("evidence progress must preserve next-task-run queue source")
     if (evidence_status.get("nextTaskRun") or {}).get("queueSourceOrigin") != "inferred-live-validation-queue":

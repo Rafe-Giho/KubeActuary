@@ -250,7 +250,10 @@ when present. For older prepared evidence directories whose records do not yet
 carry explicit queue-source fields, the inspector infers
 `prepared-live-validation-queue` from `.kubeactuary/live-validation-queue.json`
 and reports the queue-source origin so explicit and inferred status metadata
-remain distinguishable.
+remain distinguishable. It also compares the persisted selected next-task
+artifact with the live validation queue and reports whether the id, status,
+kind, and resolved commands still match, making stale next-task artifacts
+visible before another capture attempt.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.

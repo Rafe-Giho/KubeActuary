@@ -315,6 +315,50 @@ def queue_items_by_id(live_queue: dict[str, Any] | None) -> dict[str, dict[str, 
     }
 
 
+def next_task_queue_consistency(next_task: dict[str, Any] | None, live_queue: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(next_task, dict):
+        return None
+    selected = next_task.get("selected") or {}
+    selected_id = selected.get("id")
+    if not isinstance(live_queue, dict):
+        return {
+            "status": "not-checked",
+            "reason": "live validation queue not found",
+            "selected": selected_id,
+        }
+    if not selected_id:
+        return {
+            "status": "not-checked",
+            "reason": "selected next-task id missing",
+            "selected": None,
+        }
+    item = queue_items_by_id(live_queue).get(str(selected_id))
+    if not item:
+        return {
+            "status": "missing",
+            "reason": "selected next-task id not found in live validation queue",
+            "selected": selected_id,
+        }
+    mismatches: list[str] = []
+    comparisons = (
+        ("kind", selected.get("kind"), item.get("kind")),
+        ("version", selected.get("version"), item.get("version")),
+        ("captureStatus", selected.get("captureStatus"), item.get("status")),
+        ("commands", selected.get("commands", []), item.get("commands", [])),
+        ("resolvedCommands", selected.get("resolvedCommands", []), item.get("resolvedCommands", [])),
+    )
+    for field, selected_value, queue_value in comparisons:
+        if selected_value != queue_value:
+            mismatches.append(field)
+    return {
+        "status": "matched" if not mismatches else "mismatched",
+        "selected": selected_id,
+        "queueItemStatus": item.get("status"),
+        "selectedStatus": selected.get("captureStatus"),
+        "mismatches": mismatches,
+    }
+
+
 def queue_resolved_commands(
     gates: list[dict[str, Any]],
     live_queue: dict[str, Any] | None,
@@ -397,6 +441,8 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     live_queue = load_live_validation_queue(evidence_dir)
     fallback_queue_source, fallback_queue_source_origin = default_queue_source(live_queue)
     next_task = load_next_task(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
+    if next_task is not None:
+        next_task["queueConsistency"] = next_task_queue_consistency(next_task, live_queue)
     next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir)
@@ -479,6 +525,11 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"next-task-queue-source: {next_task.get('queueSource')}")
         if next_task.get("queueSourceOrigin"):
             lines.append(f"next-task-queue-source-origin: {next_task.get('queueSourceOrigin')}")
+        consistency = next_task.get("queueConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"next-task-queue-consistency: {consistency.get('status')}")
+            if consistency.get("mismatches"):
+                lines.append(f"next-task-queue-mismatches: {', '.join(consistency.get('mismatches', []))}")
         lines.append(f"next-task-status: {selected.get('captureStatus')}")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
@@ -556,6 +607,11 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- queue source: `{next_task.get('queueSource')}`")
         if next_task.get("queueSourceOrigin"):
             lines.append(f"- queue source origin: `{next_task.get('queueSourceOrigin')}`")
+        consistency = next_task.get("queueConsistency") or {}
+        if consistency.get("status"):
+            lines.append(f"- queue consistency: `{consistency.get('status')}`")
+            if consistency.get("mismatches"):
+                lines.append(f"- queue mismatches: `{', '.join(consistency.get('mismatches', []))}`")
         file_summary = next_task.get("summary", {}) if isinstance(next_task, dict) else {}
         if file_summary:
             lines.append(f"- files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}")
