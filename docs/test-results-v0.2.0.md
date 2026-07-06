@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (30 checks)
-Ran 59 tests
+verification: passed (31 checks)
+Ran 60 tests
 OK
 ```
 
@@ -61,6 +61,7 @@ Coverage included:
 - Krew manifest generator with archive digest validation;
 - SBOM and provenance generation with archive digest verification;
 - air-gapped artifact manifest and offline checklist verification;
+- Kyverno policy adapter pass/fail fixture verification;
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - digest stability across status evidence changes;
@@ -97,6 +98,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_kyverno_adapter.py
 python3 -B bin/kube-actuary help
 python3 -B bin/kube-actuary help workflow
 python3 -B bin/kube-actuary help safety
@@ -125,6 +127,7 @@ Result:
 - Krew manifest check prints `krew-manifest: passed`;
 - supply-chain check prints `supply-chain: passed`;
 - airgap bundle check prints `airgap-bundle: passed`;
+- Kyverno adapter check prints `kyverno-adapter: passed`;
 - collect help lists `auth`, `dry-run`, `diff`, `rollback`, and `health-plan`;
 - `help` output includes `USAGE`, `CORE COMMANDS`, `COLLECTOR COMMANDS`,
   `HELP TOPICS`, examples, and `SAFETY MODEL`;

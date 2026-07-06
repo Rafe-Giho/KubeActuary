@@ -33,6 +33,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/generate_release_notes.py --version "$(cat VERSION)" --output -
 git diff --check
 ```
@@ -58,6 +59,7 @@ Expected:
 - Krew manifest generation verifies platform entries and archive digests;
 - SBOM and provenance generation verify archive digests;
 - air-gapped manifest verifies required release and repository artifacts;
+- Kyverno adapter verifies pass and fail fixtures;
 - no whitespace errors;
 - no `__pycache__` directories remain.
 
@@ -84,6 +86,7 @@ Expected:
       available.
 - [ ] SBOM and provenance checks pass.
 - [ ] air-gapped bundle manifest check passes.
+- [ ] Kyverno adapter fixture check passes.
 - [ ] example capsules validate and gate as expected.
 - [ ] generated release notes include verification and rollback notes.
 

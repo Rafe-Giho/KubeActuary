@@ -39,6 +39,7 @@ Status legend:
 | Krew manifest | VERIFY | manifest generator and offline verifier added; real Krew install validation not run because Krew is not installed |
 | SBOM and provenance | DONE | deterministic SBOM/provenance generators and archive digest verifier |
 | Air-gapped install | DONE | offline artifact manifest generator and verifier |
+| Kyverno adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
 | Controller | TODO | No live controller deployment yet |
 | Packaging | DOING | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
 | MCP server | TODO | Contract docs only |
@@ -48,7 +49,7 @@ Last local verification:
 
 ```text
 2026-07-06: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (30 checks)
+verification: passed (31 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -116,7 +117,7 @@ replacing them.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.6.0 | Kyverno CLI evidence adapter | TODO | fixture policy pass/fail tests |
+| 0.6.0 | Kyverno CLI evidence adapter | DONE | `scripts/verify_kyverno_adapter.py` validates pass/fail fixtures |
 | 0.6.0 | OPA/Rego evidence adapter | TODO | fixture policy pass/fail tests |
 | 0.6.1 | kube-linter and kube-score evidence adapters | TODO | fixture output tests |
 | 0.6.2 | Pluto deprecated API evidence adapter | TODO | fixture output tests |

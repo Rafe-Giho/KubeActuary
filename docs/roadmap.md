@@ -121,7 +121,8 @@ Make KubeActuary installable as a Kubernetes tool:
 
 Add optional adapters:
 
-- Kyverno CLI
+- Kyverno CLI. Adapter available for captured JSON output with pass/fail
+  fixtures.
 - OPA/Rego
 - kube-linter
 - kube-score

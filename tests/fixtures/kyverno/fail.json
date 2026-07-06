@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "policy": "require-labels",
+      "resources": [
+        {
+          "resource": "ConfigMap/default/demo",
+          "rules": [
+            {
+              "message": "app label is missing",
+              "result": "fail",
+              "rule": "app-label-required"
+            },
+            {
+              "message": "owner label is present",
+              "result": "pass",
+              "rule": "owner-label-required"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

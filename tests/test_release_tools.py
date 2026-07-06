@@ -21,6 +21,7 @@ RELEASE_ARCHIVES = ROOT / "scripts" / "verify_release_archives.py"
 KREW_MANIFEST = ROOT / "scripts" / "verify_krew_manifest.py"
 SUPPLY_CHAIN = ROOT / "scripts" / "verify_supply_chain.py"
 AIRGAP_BUNDLE = ROOT / "scripts" / "verify_airgap_bundle.py"
+KYVERNO_ADAPTER = ROOT / "scripts" / "verify_kyverno_adapter.py"
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -255,6 +256,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("airgap-bundle: passed", result.stdout)
         self.assertIn("offline-checklist: present", result.stdout)
+
+    def test_verify_kyverno_adapter(self):
+        result = subprocess.run(
+            [sys.executable, str(KYVERNO_ADAPTER)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("kyverno-adapter: passed", result.stdout)
+        self.assertIn("fail-fixture: policy-fail", result.stdout)
 
 
 if __name__ == "__main__":

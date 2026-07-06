@@ -315,6 +315,7 @@ docs/
   supply-chain.md              SBOM and provenance generation
   air-gapped-install.md        offline install artifact checklist
   krew.md                      Krew manifest generation and verification
+  policy-adapters.md           policy evidence adapter contracts
   kustomize.md                 Kustomize install and verification runbook
   lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
   kubernetes-compatibility.md  Kubernetes와 managed-service 호환성
@@ -358,6 +359,8 @@ scripts/
   verify_supply_chain.py      SBOM/provenance verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
+  adapt_kyverno_evidence.py   Kyverno output to evidence adapter
+  verify_kyverno_adapter.py   Kyverno adapter fixture verifier
   verify_release.py            반복 release verification suite
 assets/brand/
   kubeactuary-symbol.png       선택된 프로젝트 심볼
@@ -388,6 +391,7 @@ python3 -B scripts/verify_release_archives.py
 python3 -B scripts/verify_krew_manifest.py
 python3 -B scripts/verify_supply_chain.py
 python3 -B scripts/verify_airgap_bundle.py
+python3 -B scripts/verify_kyverno_adapter.py
 python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 

@@ -164,6 +164,11 @@ COMMON_CHECKS = (
         contains=("airgap-bundle: passed", "release-artifacts: verified", "offline-checklist: present"),
     ),
     Check(
+        "kyverno adapter",
+        ("python3", "-B", "scripts/verify_kyverno_adapter.py"),
+        contains=("kyverno-adapter: passed", "pass-fixture: policy-pass", "fail-fixture: policy-fail"),
+    ),
+    Check(
         "digest",
         ("python3", "-B", "bin/kube-actuary", "digest", "examples/apply-configmap.preflight.capsule.json"),
         contains=("sha256:",),
