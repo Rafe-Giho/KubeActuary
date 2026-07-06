@@ -22,6 +22,7 @@ from scripts.evaluate_external_gate_evidence import evaluate, load_supplemental 
 
 SCHEMA_VERSION = "kube-actuary.release-evidence-status.v1"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
+NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 NEXT_TASK_FILE_FLAGS = {
     "--sample": "sample",
     "--source": "source",
@@ -88,6 +89,33 @@ def load_next_task(evidence_dir: Path) -> dict[str, Any] | None:
     }
 
 
+def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "next-version-task-run.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != NEXT_TASK_RUN_SCHEMA:
+        raise ValueError(f"{path}: unsupported next-task-run schemaVersion: {payload.get('schemaVersion')!r}")
+    next_task = payload.get("nextTask") or {}
+    selected = next_task.get("selected") or {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "mode": payload.get("mode"),
+        "status": payload.get("status"),
+        "clusterWrites": payload.get("clusterWrites"),
+        "ranAt": payload.get("ranAt"),
+        "summary": payload.get("summary", {}),
+        "selected": {
+            "id": selected.get("id"),
+            "version": selected.get("version"),
+            "item": selected.get("item"),
+            "kind": selected.get("kind"),
+            "captureStatus": selected.get("captureStatus"),
+        },
+    }
+
+
 def unique_commands(gates: list[dict[str, Any]]) -> list[str]:
     commands: list[str] = []
     seen: set[str] = set()
@@ -113,6 +141,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
     coverage_errors = check_coverage(manifest)
     supplemental = [load_supplemental(path) for path in supplemental_paths]
     next_task = load_next_task(evidence_dir)
+    next_task_run = load_next_task_run(evidence_dir)
     uncovered = [gate for gate in evaluation.get("gates", []) if gate.get("covered") is not True]
     summary = evaluation.get("summary", {})
     complete = summary.get("uncovered") == 0 and not coverage_errors
@@ -130,6 +159,7 @@ def inspect_directory(evidence_dir: Path, output_dir: Path) -> dict[str, Any]:
             "coverageErrors": len(coverage_errors),
         },
         "nextTask": next_task,
+        "nextTaskRun": next_task_run,
         "liveReports": manifest.get("reports", []),
         "supplementalEvidence": [
             {
@@ -178,10 +208,17 @@ def render_text(status: dict[str, Any]) -> str:
                 f"next-task-files: {file_summary.get('existingFiles', 0)}/{file_summary.get('files', 0)}"
             )
         for item in selected.get("files", [])[:4]:
-            status = "present" if item.get("exists") else "missing"
-            lines.append(f"next-task-file: {status} {item.get('role')} {item.get('path')}")
+            file_status = "present" if item.get("exists") else "missing"
+            lines.append(f"next-task-file: {file_status} {item.get('role')} {item.get('path')}")
         for command in selected.get("resolvedCommands", [])[:2]:
             lines.append(f"next-task-command: {command}")
+    next_task_run = status.get("nextTaskRun")
+    if isinstance(next_task_run, dict):
+        lines.append(f"next-task-run: {next_task_run.get('status')}")
+        lines.append(f"next-task-run-mode: {next_task_run.get('mode')}")
+        run_summary = next_task_run.get("summary", {})
+        if run_summary:
+            lines.append(f"next-task-run-ran: {run_summary.get('ran', 0)}")
     return "\n".join(lines) + "\n"
 
 

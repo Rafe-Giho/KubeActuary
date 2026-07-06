@@ -25,6 +25,7 @@ from scripts.verify_live_evidence_schema import sample  # noqa: E402
 
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
+NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
 LIGHTWEIGHT_PROVIDERS = ("kind", "minikube", "microk8s", "k3s")
 MANAGED_PROVIDERS = ("eks", "gke", "aks")
 SINGLE_REPORT_SCHEMAS = (
@@ -47,6 +48,36 @@ def run_script(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 def write_payload(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload))
+
+
+def write_next_task_run(evidence_dir: Path) -> None:
+    write_payload(
+        evidence_dir / ".kubeactuary" / "next-version-task-run.json",
+        {
+            "schemaVersion": NEXT_TASK_RUN_SCHEMA,
+            "mode": "run",
+            "status": "passed",
+            "clusterWrites": "disabled-or-server-side-dry-run-only",
+            "ranAt": "2026-07-06T00:00:00+00:00",
+            "nextTask": {
+                "schemaVersion": NEXT_TASK_SCHEMA,
+                "selected": {
+                    "id": "01-controller-resource-budget",
+                    "version": "Current Baseline",
+                    "item": "Controller resource budget",
+                    "kind": "controller-resource-budget",
+                    "captureStatus": "tool-ready",
+                },
+            },
+            "summary": {
+                "commands": 2,
+                "validCommands": 2,
+                "ran": 2,
+                "failed": 0,
+                "validationErrors": 0,
+            },
+        },
+    )
 
 
 def write_full_matrix(evidence_dir: Path) -> None:
@@ -96,6 +127,7 @@ def main() -> int:
         (partial_dir / "raw" / "01-controller-resource-budget-kubectl-top.txt").write_text(
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
         )
+        write_next_task_run(partial_dir)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
         next_task_build = run_script(NEXT_TASK_BUILDER, str(partial_dir), "--format", "json")
@@ -172,6 +204,13 @@ def main() -> int:
         errors.append("partial status must report next-task file readiness")
     if selected.get("id") != "01-controller-resource-budget":
         errors.append("partial status must preserve selected next task")
+    next_task_run = partial_payload.get("nextTaskRun") or {}
+    if next_task_run.get("schemaVersion") != NEXT_TASK_RUN_SCHEMA:
+        errors.append("partial status must include next-task-run schema")
+    if next_task_run.get("status") != "passed" or next_task_run.get("mode") != "run":
+        errors.append("partial status must preserve next-task-run status")
+    if next_task_run.get("summary", {}).get("ran") != 2:
+        errors.append("partial status must summarize next-task-run command count")
     resolved_next = "\n".join(selected.get("resolvedCommands", []))
     if "raw/01-controller-resource-budget-kubectl-top.txt" not in resolved_next:
         errors.append("partial status must preserve resolved next-task raw path")
@@ -188,6 +227,8 @@ def main() -> int:
         errors.append("partial text status must print the selected next task")
     if "next-task-files: 2/3" not in partial_text.stdout:
         errors.append("partial text status must print next-task file readiness")
+    if "next-task-run: passed" not in partial_text.stdout or "next-task-run-ran: 2" not in partial_text.stdout:
+        errors.append("partial text status must print next-task-run status")
 
     if next_task_build_payload.get("schemaVersion") != NEXT_TASK_BUILD_SCHEMA:
         errors.append("next-task evidence build schemaVersion mismatch")
@@ -234,6 +275,7 @@ def main() -> int:
         "kube-actuary.release-evidence-status.v1",
         NEXT_TASK_SCHEMA,
         NEXT_TASK_BUILD_SCHEMA,
+        NEXT_TASK_RUN_SCHEMA,
     ):
         if snippet not in README.read_text():
             errors.append(f"README missing release evidence status detail: {snippet}")
@@ -249,6 +291,7 @@ def main() -> int:
     print("release-evidence-status: passed")
     print("partial: ok")
     print("complete: ok")
+    print("next-task-run: ok")
     return 0
 
 

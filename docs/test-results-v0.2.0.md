@@ -259,7 +259,7 @@ Result:
 - release evidence directory check prints `release-evidence-directory: passed`;
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence
-  build, and idempotent output-exists handling;
+  build, next-task-run status, and idempotent output-exists handling;
 - next version task runner check prints `next-version-task-runner: passed`
   and verifies `.kubeactuary/next-version-task-run.{json,md}` recording;
 - version iteration advance check prints `version-iteration-advance: passed`

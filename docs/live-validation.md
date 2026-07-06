@@ -202,7 +202,9 @@ reports covered and uncovered external gates, prints next evidence commands,
 and includes the persisted `kube-actuary.next-version-task.v1` artifact when
 the evidence directory was prepared by the scaffold. It does not require
 complete release closure. For resolved next-task file paths, it reports whether
-the raw input and supplemental output files are present or still missing.
+the raw input and supplemental output files are present or still missing. When
+present, it also reports the latest `kube-actuary.next-version-task-run.v1`
+runner status from `.kubeactuary/next-version-task-run.json`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records.
