@@ -357,11 +357,11 @@ def render_markdown(worklist: dict[str, Any]) -> str:
     environment_next_steps = blockers.get("environmentNextSteps") or []
     if missing_tool_blockers or environment_blockers:
         lines.extend(["## Blockers", ""])
-        for item in missing_tool_blockers[:5]:
+        for item in missing_tool_blockers:
             lines.append(f"- missing-tool-blocker: `{item['tool']}` ({item['items']} items)")
-        for item in environment_blockers[:5]:
+        for item in environment_blockers:
             lines.append(f"- environment-blocker: `{item['status']}` ({item['items']} items)")
-        for item in environment_next_steps[:3]:
+        for item in environment_next_steps:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['items']} items)")
         lines.append("")
     lines.extend(["## Versions", ""])
@@ -375,10 +375,10 @@ def render_markdown(worklist: dict[str, Any]) -> str:
         version_missing = version_blockers.get("missingTools") or []
         version_environment = version_blockers.get("environment") or []
         if version_missing:
-            tools = ", ".join(f"{item['tool']}:{item['items']}" for item in version_missing[:5])
+            tools = ", ".join(f"{item['tool']}:{item['items']}" for item in version_missing)
             lines.append(f"  blockers: tools=`{tools}`")
         if version_environment:
-            statuses = ", ".join(f"{item['status']}:{item['items']}" for item in version_environment[:3])
+            statuses = ", ".join(f"{item['status']}:{item['items']}" for item in version_environment)
             lines.append(f"  blockers: environment=`{statuses}`")
         for item in version["openItems"]:
             lines.append(f"  - `{item['captureStatus']}` {item['item']}")

@@ -146,8 +146,8 @@ Expected:
   every action blocker plus filtered worklist commands and persisted
   queue-source status, without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
-- version worklist check prints `version-worklist: passed` and covers blocker
-  summaries, blocker-focused filters, and next-task selection;
+- version worklist check prints `version-worklist: passed` and covers complete
+  blocker summaries, blocker-focused filters, and next-task selection;
 - evidence-aware worklist output resolves commands and summarizes file
   readiness for every open external task when `--evidence-dir` is used;
 - evidence-aware worklist and next-task selection use a prepared live

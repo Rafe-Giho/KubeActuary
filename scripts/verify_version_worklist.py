@@ -520,6 +520,17 @@ def main() -> int:
     filtered_missing_status = parse_worklist("capture-status filtered worklist", filtered_missing_status_result, errors)
     filtered_kind = parse_worklist("missing-tool filtered worklist", filtered_kind_result, errors)
     probe_worklist = parse_worklist("probe worklist", probe_result, errors)
+    if markdown_result.returncode != 0:
+        errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
+    else:
+        for snippet in (
+            "missing-tool-blocker: `minikube`",
+            "missing-tool-blocker: `az`",
+            "missing-tool-blocker: `gcloud`",
+            "blockers: tools=`helm:2, kind:2, kubectl-krew:2, az:1, gcloud:1, k3s:1, microk8s:1, minikube:1`",
+        ):
+            if snippet not in markdown_result.stdout:
+                errors.append(f"markdown worklist must include all blocker summaries: {snippet}")
     if prepared_queue.returncode != 0:
         errors.append(f"prepared live queue failed: {prepared_queue.stderr.strip() or prepared_queue.stdout.strip()}")
         prepared_queue_worklist = {}
