@@ -82,7 +82,7 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "verify: 16", "checks: 73"),
+        contains=("release-progress: passed", "verify: 16", "checks: 74"),
     ),
     Check(
         "external gate plan",
@@ -277,6 +277,11 @@ COMMON_CHECKS = (
         "live validation queue safety",
         ("python3", "-B", "scripts/verify_live_validation_queue_safety.py"),
         contains=("live-validation-queue-safety: passed", "writes: disabled"),
+    ),
+    Check(
+        "live evidence directory scaffold",
+        ("python3", "-B", "scripts/verify_live_evidence_directory_scaffold.py"),
+        contains=("live-evidence-directory-scaffold: passed", "cluster-writes: disabled"),
     ),
     Check(
         "live evidence schema",

@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (73 checks)
-Ran 107 tests
+verification: passed (74 checks)
+Ran 108 tests
 OK
 ```
 
@@ -81,6 +81,7 @@ Coverage included:
 - live validation queue generation for ordered evidence commands;
 - live validation queue command safety verification for placeholder and
   resolved evidence commands;
+- live evidence directory scaffold generation for repeated evidence capture;
 - external gate command safety verification for generated dry-run, read-only,
   and local evidence-only commands;
 - live evidence schema validation for captured smoke reports;
@@ -178,6 +179,7 @@ python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
+python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -251,6 +253,8 @@ Result:
 - live validation readiness check prints `live-validation-readiness: passed`;
 - live validation queue check prints `live-validation-queue: passed`;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
+- live evidence directory scaffold check prints
+  `live-evidence-directory-scaffold: passed`;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;

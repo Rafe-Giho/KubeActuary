@@ -414,6 +414,8 @@ scripts/
   verify_live_validation_queue.py live validation queue verifier
   verify_live_validation_queue_safety.py live validation queue command safety verifier
   kube-actuary.live-validation-queue.v1 live validation queue schema
+  prepare_live_evidence_directory.py live evidence directory scaffold generator
+  verify_live_evidence_directory_scaffold.py live evidence directory scaffold verifier
   validate_live_evidence.py   captured live evidence JSON validator
   verify_live_evidence_schema.py live evidence schema verifier
   build_live_evidence_manifest.py captured evidence manifest builder
@@ -501,6 +503,7 @@ python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
+python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py

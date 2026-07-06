@@ -27,7 +27,8 @@ Expected:
   release archives, Krew manifest generation, SBOM/provenance
   generation, security docs, API freeze compatibility gate, documentation
   freeze and public examples audit, live validation readiness inventory with
-  gate-level tool readiness, live validation queue generation and queue command safety,
+  gate-level tool readiness, live validation queue generation, queue command safety,
+  and live evidence directory scaffold generation,
   live evidence schema validation, live evidence manifest generation, live
   evidence coverage validation, project governance, air-gapped manifest generation, agent help schema
   compatibility, local CI and Codex agent runbooks, Kyverno adapter fixtures,
@@ -93,6 +94,7 @@ python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
+python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -164,6 +166,8 @@ Expected:
 - live validation readiness check prints `live-validation-readiness: passed`;
 - live validation queue check prints `live-validation-queue: passed`;
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
+- live evidence directory scaffold check prints
+  `live-evidence-directory-scaffold: passed`;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
 - live evidence coverage check prints `live-evidence-coverage: passed`;
@@ -300,6 +304,8 @@ Confirm from code and tests:
   tool-ready or missing-tool status for each external gate;
 - live validation queue safety verifier checks placeholder and resolved queue
   commands stay dry-run, read-only, or local evidence-only;
+- live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,
+  `supplemental/`, and `.kubeactuary/` directories plus queue snapshots;
 - live evidence schema verifier validates all supported smoke report schemas;
 - live evidence manifest verifier maps captured reports to release gates and
   records report SHA-256 digests without contacting clusters;
@@ -366,7 +372,7 @@ Expected:
   controller runtime, controller deployment, controller patch plan, controller
   sync, controller status apply, controller loop, controller resource budget, lightweight cluster smoke, digest, CRD render,
   managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
-  security docs, API freeze, docs freeze, live validation readiness, live validation queue, live validation queue safety, live
+  security docs, API freeze, docs freeze, live validation readiness, live validation queue, live validation queue safety, live evidence directory scaffold, live
   evidence schema, live evidence manifest, live evidence coverage, project governance, air-gapped bundle, agent help contract, agent examples, Kyverno
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, MCP docs, disabled-execute check, admission webhook,

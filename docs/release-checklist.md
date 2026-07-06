@@ -56,6 +56,7 @@ python3 -B scripts/verify_docs_freeze.py
 python3 -B scripts/verify_live_validation_readiness.py
 python3 -B scripts/verify_live_validation_queue.py
 python3 -B scripts/verify_live_validation_queue_safety.py
+python3 -B scripts/verify_live_evidence_directory_scaffold.py
 python3 -B scripts/verify_live_evidence_schema.py
 python3 -B scripts/verify_live_evidence_manifest.py
 python3 -B scripts/verify_live_evidence_coverage.py
@@ -144,6 +145,8 @@ Expected:
   with ordered tool-ready and missing-tool evidence commands;
 - live validation queue safety verifies placeholder and resolved queue commands
   remain dry-run, read-only, or local evidence-only;
+- live evidence directory scaffold verifies the local reports/raw/supplemental
+  directory layout and generated queue snapshots;
 - live evidence schema validates captured smoke reports before they count as
   release evidence;
 - live evidence manifest maps captured reports to release gates and records
@@ -220,6 +223,7 @@ Expected:
 - [ ] live validation readiness check passes.
 - [ ] live validation queue check passes.
 - [ ] live validation queue safety check passes.
+- [ ] live evidence directory scaffold check passes.
 - [ ] captured live evidence schema check passes.
 - [ ] captured live evidence manifest check passes.
 - [ ] captured live evidence coverage check passes.
