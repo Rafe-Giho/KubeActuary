@@ -67,9 +67,11 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         evidence_dir = Path(tmp) / "evidence"
         probe_dir = Path(tmp) / "probe-evidence"
+        filtered_dir = Path(tmp) / "filtered-evidence"
         first = run_prepare(evidence_dir)
         second = run_prepare(evidence_dir)
         probe = run_prepare(probe_dir, "--probe-environment", env=fake_tool_env(Path(tmp) / "tools", cluster_ok=False))
+        filtered = run_prepare(filtered_dir, "--missing-tool", "kind")
         queue_json = evidence_dir / ".kubeactuary" / "live-validation-queue.json"
         queue_md = evidence_dir / ".kubeactuary" / "live-validation-queue.md"
         next_task_json = evidence_dir / ".kubeactuary" / "next-version-task.json"
@@ -95,10 +97,12 @@ def main() -> int:
         probe_next_task_path = probe_dir / ".kubeactuary" / "next-version-task.json"
         probe_report_path = probe_dir / ".kubeactuary" / "environment-probe.json"
         probe_blockers_path = probe_dir / ".kubeactuary" / "environment-blockers.json"
+        filtered_next_task_path = filtered_dir / ".kubeactuary" / "next-version-task.json"
         probe_queue = json.loads(probe_queue_path.read_text()) if probe_queue_path.is_file() else {}
         probe_next_task = json.loads(probe_next_task_path.read_text()) if probe_next_task_path.is_file() else {}
         probe_report_payload = json.loads(probe_report_path.read_text()) if probe_report_path.is_file() else {}
         probe_blockers = json.loads(probe_blockers_path.read_text()) if probe_blockers_path.is_file() else {}
+        filtered_next_task = json.loads(filtered_next_task_path.read_text()) if filtered_next_task_path.is_file() else {}
 
         for name, result in (("first", first), ("second", second)):
             if result.returncode != 0:
@@ -111,6 +115,8 @@ def main() -> int:
             errors.append(f"probe scaffold failed: {probe.stderr.strip() or probe.stdout.strip()}")
         if "probe-environment: true" not in probe.stdout or "cluster-access: unavailable" not in probe.stdout:
             errors.append("probe scaffold must report unavailable cluster access")
+        if filtered.returncode != 0:
+            errors.append(f"filtered scaffold failed: {filtered.stderr.strip() or filtered.stdout.strip()}")
         if advanced.returncode != 0:
             errors.append(f"advanced scaffold failed: {advanced.stderr.strip() or advanced.stdout.strip()}")
         if "skip-complete-evidence: true" not in advanced.stdout:
@@ -171,6 +177,13 @@ def main() -> int:
         probe_selected = probe_next_task.get("selected") or {}
         if probe_selected.get("captureStatus") != "tool-ready" or probe_selected.get("kind") != "krew":
             errors.append("probe scaffold should select a non-cluster Krew task when cluster is unavailable")
+        filtered_selected = filtered_next_task.get("selected") or {}
+        if filtered_next_task.get("filters", {}).get("missingTools") != ["kind"]:
+            errors.append("filtered scaffold must persist missing-tool filters")
+        if filtered_selected.get("id") != "02-lightweight-cluster-smoke":
+            errors.append("filtered scaffold should select the first kind-blocked task")
+        if filtered_selected.get("captureStatus") != "missing-tools":
+            errors.append("filtered scaffold should preserve missing-tools capture status")
         if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
             errors.append("scaffold next task schemaVersion mismatch")
         if next_task.get("evidenceDir") != str(evidence_dir):
@@ -210,6 +223,7 @@ def main() -> int:
             ENVIRONMENT_PROBE_SCHEMA,
             ENVIRONMENT_BLOCKERS_SCHEMA,
             "--skip-complete-evidence",
+            "--missing-tool",
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing scaffold detail: {snippet}")

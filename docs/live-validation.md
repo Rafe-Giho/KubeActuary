@@ -84,8 +84,9 @@ It also summarizes repeated missing-tool and environment blockers across the
 whole worklist and per version, so repeated validation can focus on the shared
 blocker before re-running evidence commands. Use `--capture-status`,
 `--missing-tool`, and `--environment-status` on worklist, next-task,
-iteration-pack, and iteration-history commands to keep a local loop focused on
-one blocker class.
+iteration-pack, iteration-history, live-evidence scaffold, and
+version-iteration advance commands to keep a local loop focused on one blocker
+class.
 Version iteration packs preserve the same queue source in their index and
 per-version files. Version iteration history records and status output keep
 that source so run-to-run comparisons remain traceable. Persisted next-task
@@ -120,6 +121,7 @@ does not run cluster, cloud, or workload write commands.
 ```sh
 python3 -B scripts/build_next_task_evidence.py evidence/live
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 ```
 
 ## Open Live Gates
@@ -311,12 +313,16 @@ same queue source used by the selected next-task artifact:
 
 ```sh
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir>
+python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --missing-tool kind
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --run
 python3 -B scripts/advance_version_iteration.py <evidence-dir> <history-dir> --probe-environment
 ```
 
 `prepare_live_evidence_directory.py` and `advance_version_iteration.py` both
-accept `--probe-environment --kubectl <path>`. The probe runs only read-only
+accept `--capture-status`, `--missing-tool`, and `--environment-status`, so the
+prepared next-task and before/after history records can stay focused on the
+same blocker class. They also accept `--probe-environment --kubectl <path>`.
+The probe runs only read-only
 `kubectl version --client=true` and `kubectl cluster-info` checks. When cluster
 access is unavailable, the prepared next-task artifacts record
 `blocked-by-environment` instead of pretending the live evidence can be

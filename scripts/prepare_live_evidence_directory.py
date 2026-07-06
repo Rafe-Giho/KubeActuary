@@ -206,6 +206,9 @@ def prepare_directory(
     skip_complete_evidence: bool = False,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Path | dict]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     for subdir in SUBDIRS:
@@ -227,6 +230,9 @@ def prepare_directory(
         kubectl=kubectl,
         evidence_dir=evidence_dir,
         skip_complete_evidence=skip_complete_evidence,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD
@@ -268,6 +274,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
     args = parser.parse_args(argv)
 
     evidence_dir = Path(args.evidence_dir)
@@ -277,6 +286,9 @@ def main(argv: list[str] | None = None) -> int:
             skip_complete_evidence=args.skip_complete_evidence,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            capture_status_filters=args.capture_status,
+            missing_tool_filters=args.missing_tool,
+            environment_status_filters=args.environment_status,
         )
     except (OSError, ValueError) as exc:
         print("live-evidence-directory: failed")

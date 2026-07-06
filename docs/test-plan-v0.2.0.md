@@ -153,8 +153,9 @@ Expected:
 - prepared-queue worklist and next-task Markdown output show the queue source;
 - prepared-queue worklist Markdown shows blocker summaries, missing tools, and
   next steps;
-- worklist, next-task, iteration-pack, and iteration-history commands preserve
-  capture-status, missing-tool, and environment-status filters;
+- worklist, next-task, iteration-pack, iteration-history, live scaffold, and
+  advance commands preserve capture-status, missing-tool, and
+  environment-status filters;
 - prepared-queue version iteration packs preserve the queue source;
 - prepared-queue version iteration history records and status preserve the queue source;
 - prepared-queue scaffold, next-task runner, and advance reports preserve the queue source;
@@ -213,8 +214,9 @@ Expected:
 - live validation queue safety check prints `live-validation-queue-safety: passed`;
 - live evidence directory scaffold check prints
   `live-evidence-directory-scaffold: passed` and verifies
-  `--skip-complete-evidence` next-task advancement plus optional environment
-  probe persistence plus `kube-actuary.environment-probe.v1` and
+  `--skip-complete-evidence` next-task advancement, blocker-focused next-task
+  filters, optional environment probe persistence, plus
+  `kube-actuary.environment-probe.v1` and
   `kube-actuary.environment-blockers.v1` output;
 - live evidence schema check prints `live-evidence-schema: passed`;
 - live evidence manifest check prints `live-evidence-manifest: passed`;
@@ -386,8 +388,8 @@ Confirm from code and tests:
   commands stay dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifier checks prepared `reports/`, `raw/`,
   `supplemental/`, and `.kubeactuary/` directories plus queue snapshots and
-  next-task artifacts, then advances past completed evidence file sets when
-  `--skip-complete-evidence` is used;
+  next-task artifacts, preserves blocker-focused filters, then advances past
+  completed evidence file sets when `--skip-complete-evidence` is used;
 - live evidence schema verifier validates all supported smoke report schemas;
 - live evidence manifest verifier maps captured reports to release gates and
   records report SHA-256 digests without contacting clusters;

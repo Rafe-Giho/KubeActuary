@@ -104,6 +104,8 @@ Expected:
   summarizes repeated missing-tool and environment blockers,
   filters worklists, next-task selection, iteration packs, and history records
   by capture status, missing tool, or environment status,
+  carries those blocker filters through live evidence scaffold and advance
+  workflows,
   resolves evidence paths and file readiness for the full local worklist,
   writes local iteration packs with schema `kube-actuary.version-iteration.v1`
   while preserving evidence readiness when `--evidence-dir` is used,
@@ -175,13 +177,15 @@ Expected:
   remain dry-run, read-only, or local evidence-only;
 - live evidence directory scaffold verifies the local reports/raw/supplemental
   directory layout, generated queue snapshots, next-task artifacts, and
-  `--skip-complete-evidence` artifact advancement, with optional environment
-  probe status plus `kube-actuary.environment-probe.v1` and
+  `--skip-complete-evidence` artifact advancement, blocker-focused next-task
+  filters, optional environment probe status, plus
+  `kube-actuary.environment-probe.v1` and
   `kube-actuary.environment-blockers.v1` reports;
 - next-version task runner verifies selected evidence commands in plan mode and
   fake-run mode before live use;
 - version iteration advance verifies selected-task execution or environment
-  blocking with before/after evidence-aware history recording and
+  blocking with blocker-focused filters, before/after evidence-aware history
+  recording, and
   `.kubeactuary/next-version-task-run.json` runner status plus
   `.kubeactuary/version-iteration-advance.json` workflow status output;
 - live evidence schema validates captured smoke reports before they count as

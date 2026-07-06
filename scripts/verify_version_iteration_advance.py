@@ -67,12 +67,34 @@ def main() -> int:
         blocked_history_dir = tmpdir / "blocked-history"
 
         plan = run_script(ADVANCE, str(evidence_dir), str(history_dir))
+        filtered_plan = run_script(
+            ADVANCE,
+            str(tmpdir / "filtered-plan-evidence"),
+            str(tmpdir / "filtered-plan-history"),
+            "--missing-tool",
+            "kind",
+            "--format",
+            "json",
+        )
         if plan.returncode != 0:
             errors.append(f"advance plan failed: {plan.stderr.strip() or plan.stdout.strip()}")
         if "version-iteration-advance: plan" not in plan.stdout:
             errors.append("advance plan must report plan status")
         if evidence_dir.exists() or history_dir.exists():
             errors.append("advance plan must not create evidence or history directories")
+        if filtered_plan.returncode != 0:
+            errors.append(f"filtered advance plan failed: {filtered_plan.stderr.strip() or filtered_plan.stdout.strip()}")
+            filtered_plan_payload = {}
+        else:
+            filtered_plan_payload = json.loads(filtered_plan.stdout)
+        if filtered_plan_payload.get("filters", {}).get("missingTools") != ["kind"]:
+            errors.append("filtered advance plan must persist missing-tool filters")
+        if filtered_plan_payload.get("selected", {}).get("id") != "02-lightweight-cluster-smoke":
+            errors.append("filtered advance plan should select the first kind-blocked task")
+        if filtered_plan_payload.get("selected", {}).get("captureStatus") != "missing-tools":
+            errors.append("filtered advance plan should preserve missing-tools capture status")
+        if (tmpdir / "filtered-plan-evidence").exists() or (tmpdir / "filtered-plan-history").exists():
+            errors.append("filtered advance plan must not create evidence or history directories")
 
         run_env = fake_tool_env(tmpdir / "tools")
         run = run_script(
@@ -184,6 +206,8 @@ def main() -> int:
             "--probe-environment",
             "--kubectl",
             blocked_kubectl,
+            "--capture-status",
+            "blocked-by-environment",
             "--run-id",
             "blocked-advance",
             "--created-at",
@@ -199,6 +223,10 @@ def main() -> int:
             blocked_payload = json.loads(blocked.stdout)
         if blocked_payload.get("status") != "blocked-by-environment":
             errors.append("probe advance must report blocked-by-environment without running evidence commands")
+        if blocked_payload.get("filters", {}).get("captureStatuses") != ["blocked-by-environment"]:
+            errors.append("probe-blocked advance must persist capture-status filters")
+        if blocked_payload.get("nextTask", {}).get("captureStatus") != "blocked-by-environment":
+            errors.append("probe-blocked advance next-task must preserve filtered capture status")
         if blocked_payload.get("after", {}).get("runId") != "blocked-advance-blocked":
             errors.append("probe-blocked advance must record a blocked follow-up history snapshot")
         blocked_diff = blocked_payload.get("after", {}).get("diffSummary", {})
@@ -246,6 +274,7 @@ def main() -> int:
             "kube-actuary.version-iteration-advance.v1",
             "next-version-task-run.json",
             "version-iteration-advance.json",
+            "--missing-tool",
         ):
             if snippet not in text:
                 errors.append(f"{path.relative_to(ROOT)} missing advance workflow detail: {snippet}")

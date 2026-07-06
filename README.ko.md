@@ -517,11 +517,13 @@ python3 -B scripts/select_next_version_task.py --version 0.4.3
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
+python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
 python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
 python3 -B scripts/run_next_version_task.py evidence/live
 python3 -B scripts/run_next_version_task.py evidence/live --run
 python3 -B scripts/run_next_version_task.py evidence/live --run --record
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
+python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
 python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
 python3 -B scripts/verify_external_gate_plan.py

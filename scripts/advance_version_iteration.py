@@ -38,6 +38,9 @@ def planned_result(
     history_dir: Path,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     selection = build_selection(
         version_filters=[],
@@ -46,6 +49,9 @@ def planned_result(
         kubectl=kubectl,
         evidence_dir=evidence_dir,
         skip_complete_evidence=True,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     selected = selection.get("selected") or {}
     queue_source = str(selection.get("sourceWorklistQueueSource") or "generated")
@@ -59,6 +65,7 @@ def planned_result(
         "historyDir": history_dir.as_posix(),
         "probeEnvironment": probe_environment,
         "kubectl": kubectl,
+        "filters": selection.get("filters", {}),
         "environmentProbe": selection.get("environmentProbe"),
         "selected": {
             "id": selected.get("id"),
@@ -127,12 +134,18 @@ def run_advance(
     created_at: str,
     probe_environment: bool = False,
     kubectl: str = "kubectl",
+    capture_status_filters: list[str] | None = None,
+    missing_tool_filters: list[str] | None = None,
+    environment_status_filters: list[str] | None = None,
 ) -> dict[str, Any]:
     prepared = prepare_directory(
         evidence_dir,
         skip_complete_evidence=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     prepared_next_task = prepared.get("nextTask") or {}
     queue_source = str(prepared_next_task.get("sourceWorklistQueueSource") or "generated")
@@ -145,6 +158,9 @@ def run_advance(
         probe_environment=probe_environment,
         kubectl=kubectl,
         evidence_dir=evidence_dir,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     selected = prepared_next_task.get("selected") or {}
     if probe_environment and selected.get("captureStatus") != "tool-ready":
@@ -159,6 +175,9 @@ def run_advance(
             probe_environment=probe_environment,
             kubectl=kubectl,
             evidence_dir=evidence_dir,
+            capture_status_filters=capture_status_filters,
+            missing_tool_filters=missing_tool_filters,
+            environment_status_filters=environment_status_filters,
         )
         history = inspect_history(history_dir)
         return {
@@ -171,6 +190,7 @@ def run_advance(
             "historyDir": history_dir.as_posix(),
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
+            "filters": prepared_next_task.get("filters", {}),
             "environmentProbe": (prepared.get("queue") or {}).get("environmentProbe"),
             "runId": run_id,
             "createdAt": created_at,
@@ -205,6 +225,9 @@ def run_advance(
         skip_complete_evidence=True,
         probe_environment=probe_environment,
         kubectl=kubectl,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     after = record_iteration(
         history_dir,
@@ -215,6 +238,9 @@ def run_advance(
         probe_environment=probe_environment,
         kubectl=kubectl,
         evidence_dir=evidence_dir,
+        capture_status_filters=capture_status_filters,
+        missing_tool_filters=missing_tool_filters,
+        environment_status_filters=environment_status_filters,
     )
     history = inspect_history(history_dir)
     status = "passed" if runner.get("status") == "passed" and history.get("valid") is True else "failed"
@@ -229,6 +255,7 @@ def run_advance(
         "historyDir": history_dir.as_posix(),
         "probeEnvironment": probe_environment,
         "kubectl": kubectl,
+        "filters": prepared_next_task.get("filters", {}),
         "environmentProbe": (prepared.get("queue") or {}).get("environmentProbe"),
         "runId": run_id,
         "createdAt": created_at,
@@ -344,6 +371,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--created-at", help="stable timestamp for tests")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
+    parser.add_argument("--capture-status", action="append", default=[], help="filter next-task selection by capture status; repeatable")
+    parser.add_argument("--missing-tool", action="append", default=[], help="filter next-task selection by missing tool; repeatable")
+    parser.add_argument("--environment-status", action="append", default=[], help="filter next-task selection by environment status; repeatable")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", "-o", default="-", help="status output path, or '-' for stdout")
     args = parser.parse_args(argv)
@@ -361,6 +391,9 @@ def main(argv: list[str] | None = None) -> int:
                 created_at=created_at,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
+                capture_status_filters=args.capture_status,
+                missing_tool_filters=args.missing_tool,
+                environment_status_filters=args.environment_status,
             )
             record_advance_result(evidence_dir, result)
         else:
@@ -369,6 +402,9 @@ def main(argv: list[str] | None = None) -> int:
                 history_dir,
                 probe_environment=args.probe_environment,
                 kubectl=args.kubectl,
+                capture_status_filters=args.capture_status,
+                missing_tool_filters=args.missing_tool,
+                environment_status_filters=args.environment_status,
             )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print("version-iteration-advance: failed")
