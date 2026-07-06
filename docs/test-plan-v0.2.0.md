@@ -301,7 +301,7 @@ Confirm from code and tests:
 - next version task runner verifier validates selected commands, stays
   plan-by-default, and with fake kubectl produces raw and supplemental evidence
   for the selected task, while reporting a prepare command for unprepared
-  evidence directories;
+  evidence directories and preserving failed-run summaries;
 - version iteration advance verifier wraps the selected-task runner with
   probe-aware before/after evidence-aware history recording and validates the
   resulting diff or environment blocker;

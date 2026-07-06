@@ -243,6 +243,8 @@ python3 -B scripts/run_next_version_task.py <evidence-dir> --run --record
 If the selected next-task artifact is missing, both
 `run_next_version_task.py` and `build_next_task_evidence.py` fail with the
 `prepare_live_evidence_directory.py` command needed to initialize the directory.
+Failed runner reports include a `failure` summary and preserve the first
+actionable command error in text, JSON, and recorded Markdown output.
 
 The iteration advance helper wraps that runner with before/after version
 history recording and reports schema

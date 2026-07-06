@@ -50,12 +50,28 @@ def fake_tool_env(path: Path) -> dict[str, str]:
     return env
 
 
+def fake_failing_tool_env(path: Path) -> dict[str, str]:
+    path.mkdir(parents=True, exist_ok=True)
+    kubectl = path / "kubectl"
+    kubectl.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "print('Unable to connect to the server: test cluster unavailable', file=sys.stderr)\n"
+        "raise SystemExit(1)\n"
+    )
+    kubectl.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{path}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
 def main() -> int:
     errors: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         evidence_dir = tmpdir / "evidence"
         recorded_dir = tmpdir / "recorded"
+        failing_dir = tmpdir / "failing"
         unprepared_dir = tmpdir / "unprepared"
         unprepared = run_script(RUNNER, str(unprepared_dir))
         if unprepared.returncode == 0:
@@ -77,6 +93,7 @@ def main() -> int:
             errors.append("runner plan must not write evidence files")
 
         run_env = fake_tool_env(tmpdir / "tools")
+        failing_env = fake_failing_tool_env(tmpdir / "failing-tools")
         run = run_script(RUNNER, str(evidence_dir), "--run", "--format", "json", env=run_env)
         if run.returncode != 0:
             errors.append(f"runner execution failed: {run.stderr.strip() or run.stdout.strip()}")
@@ -100,6 +117,35 @@ def main() -> int:
             supplemental_payload = json.loads(supplemental.read_text())
             if supplemental_payload.get("kind") != "controller-resource-budget" or supplemental_payload.get("ok") is not True:
                 errors.append("runner supplemental evidence must be passing controller-resource-budget evidence")
+
+        failing_prepared = run_script(PREPARE, str(failing_dir))
+        failing = run_script(RUNNER, str(failing_dir), "--run", "--format", "json", env=failing_env)
+        failing_text = run_script(RUNNER, str(failing_dir), "--run", env=failing_env)
+        failing_record = run_script(RUNNER, str(failing_dir), "--run", "--record", "--format", "json", env=failing_env)
+        failing_record_json = failing_dir / ".kubeactuary" / "next-version-task-run.json"
+        failing_record_md = failing_dir / ".kubeactuary" / "next-version-task-run.md"
+        if failing_prepared.returncode != 0:
+            errors.append(f"failing evidence dir prepare failed: {failing_prepared.stderr.strip() or failing_prepared.stdout.strip()}")
+        if failing.returncode == 0:
+            errors.append("runner failure scenario must return non-zero")
+            failing_payload = {}
+        else:
+            failing_payload = json.loads(failing.stdout)
+        failure = failing_payload.get("failure") or {}
+        if failing_payload.get("status") != "failed" or failure.get("message") != "error: Unable to connect to the server: test cluster unavailable":
+            errors.append("runner failure summary must preserve the command failure message")
+        if "failure: error: Unable to connect to the server: test cluster unavailable" not in failing_text.stdout:
+            errors.append("runner text output must print the failure summary")
+        if failing_record.returncode == 0:
+            errors.append("runner recorded failure scenario must return non-zero")
+        if not failing_record_json.is_file() or not failing_record_md.is_file():
+            errors.append("runner --record must persist failed run reports")
+        else:
+            failing_record_payload = json.loads(failing_record_json.read_text())
+            if (failing_record_payload.get("failure") or {}).get("message") != failure.get("message"):
+                errors.append("runner recorded failure JSON must preserve the failure summary")
+            if "Unable to connect to the server: test cluster unavailable" not in failing_record_md.read_text():
+                errors.append("runner recorded failure Markdown must preserve the failure summary")
 
         advanced = run_script(PREPARE, str(evidence_dir), "--skip-complete-evidence")
         next_task_path = evidence_dir / ".kubeactuary" / "next-version-task.json"

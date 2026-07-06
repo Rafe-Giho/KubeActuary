@@ -112,6 +112,38 @@ def run_command(command: str) -> dict[str, Any]:
     return record
 
 
+def failure_message(record: dict[str, Any]) -> str | None:
+    lines: list[str] = []
+    for key in ("stderr", "stdout"):
+        value = record.get(key)
+        if isinstance(value, str):
+            lines.extend(line.strip() for line in value.splitlines() if line.strip())
+    for line in lines:
+        if line.lower().startswith("error:"):
+            return line
+    return lines[-1] if lines else None
+
+
+def failure_summary(records: list[dict[str, Any]], validations: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for index, record in enumerate(records, start=1):
+        if record.get("ok") is False:
+            return {
+                "index": index,
+                "command": record.get("command"),
+                "exitCode": record.get("exitCode"),
+                "message": failure_message(record),
+            }
+    for record in validations:
+        if record.get("errors"):
+            return {
+                "index": record.get("index"),
+                "command": record.get("command"),
+                "exitCode": None,
+                "message": str(record.get("errors", ["validation failed"])[0]),
+            }
+    return None
+
+
 def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     task = load_next_task(evidence_dir)
     selected = task["selected"]
@@ -130,6 +162,7 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
     status = "failed" if any(record.get("ok") is False for record in records) or validation_errors else "passed"
     if not run:
         status = "plan" if not validation_errors else "failed"
+    failure = failure_summary(records, validations)
     return {
         "schemaVersion": SCHEMA_VERSION,
         "mode": "run" if run else "plan",
@@ -157,6 +190,7 @@ def build_result(evidence_dir: Path, run: bool = False) -> dict[str, Any]:
         },
         "validations": validations,
         "records": records,
+        "failure": failure,
     }
 
 
@@ -180,6 +214,9 @@ def render_text(result: dict[str, Any]) -> str:
     for record in result["records"]:
         status = "PASS" if record.get("ok") else "FAIL"
         lines.append(f"{status} {record['command']}")
+    failure = result.get("failure")
+    if isinstance(failure, dict) and failure.get("message"):
+        lines.append(f"failure: {failure.get('message')}")
     return "\n".join(lines) + "\n"
 
 
@@ -226,6 +263,9 @@ def render_markdown(result: dict[str, Any]) -> str:
                 lines.append(f"  stdout: `{record['stdoutPath']}`")
             if record.get("exitCode") is not None:
                 lines.append(f"  exit code: {record['exitCode']}")
+    failure = result.get("failure")
+    if isinstance(failure, dict) and failure.get("message"):
+        lines.extend(["", "## Failure", "", f"- `{failure.get('message')}`"])
     return "\n".join(lines) + "\n"
 
 

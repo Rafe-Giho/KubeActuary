@@ -143,7 +143,7 @@ def load_next_task_run(evidence_dir: Path) -> dict[str, Any] | None:
         "clusterWrites": payload.get("clusterWrites"),
         "ranAt": payload.get("ranAt"),
         "summary": payload.get("summary", {}),
-        "failure": next_task_run_failure(payload),
+        "failure": payload.get("failure") if isinstance(payload.get("failure"), dict) else next_task_run_failure(payload),
         "selected": {
             "id": selected.get("id"),
             "version": selected.get("version"),

@@ -142,6 +142,8 @@ Coverage included:
   unprepared-directory guidance, with runner failure summaries;
 - next-task evidence build from prepared raw files plus idempotent
   output-exists handling;
+- next-version task runner success, failed-run summary, and recorded report
+  verification;
 - clean generated-artifact verification for Python cache directories,
   bytecode files, and ignored local evidence state;
 - digest stability across status evidence changes;

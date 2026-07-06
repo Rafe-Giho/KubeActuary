@@ -54,6 +54,8 @@ Evidence collector release:
   execution;
 - report actionable prepare commands when selected next-task artifacts are
   missing from an evidence directory;
+- add selected next-version task runner failure summaries to text, JSON, and
+  recorded Markdown output;
 - add opt-in next-version task runner recording under prepared evidence
   directories;
 - add version iteration advance workflow for selected-task execution plus
