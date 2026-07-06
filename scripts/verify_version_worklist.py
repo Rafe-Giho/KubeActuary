@@ -154,6 +154,7 @@ def main() -> int:
     next_task_markdown = run_select("--format", "markdown")
     next_task_version = run_select("--format", "json", "--version", "0.4.3")
     next_task_missing = run_select("--format", "json", "--version", "0.4.4")
+    next_task_paths = run_select("--format", "json", "--evidence-dir", "evidence/live")
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
         output = tmpdir / "worklist.json"
@@ -248,6 +249,7 @@ def main() -> int:
     next_task = parse_worklist("next task", next_task_result, errors)
     next_task_filtered = parse_worklist("filtered next task", next_task_version, errors)
     next_task_tool_blocked = parse_worklist("tool-blocked next task", next_task_missing, errors)
+    next_task_with_paths = parse_worklist("path-resolved next task", next_task_paths, errors)
     probe_next_task_payload = parse_worklist("probe next task", probe_next_task, errors)
     if markdown_result.returncode != 0:
         errors.append(f"markdown worklist failed: {markdown_result.stderr.strip() or markdown_result.stdout.strip()}")
@@ -402,6 +404,7 @@ def main() -> int:
         errors.append("probe worklist must mark affected versions blocked-by-environment")
 
     next_selected = next_task.get("selected") or {}
+    path_selected = next_task_with_paths.get("selected") or {}
     if next_task.get("schemaVersion") != NEXT_TASK_SCHEMA:
         errors.append("next task schemaVersion mismatch")
     if next_task.get("sourceWorklistSchema") != SCHEMA:
@@ -412,6 +415,24 @@ def main() -> int:
         errors.append("next task should select the first baseline tool-ready item")
     if next_selected.get("captureStatus") != "tool-ready":
         errors.append("next task default selection should be tool-ready")
+    if next_task_with_paths.get("evidenceDir") != "evidence/live":
+        errors.append("path-resolved next task should record the evidence directory")
+    resolved_commands = "\n".join(path_selected.get("resolvedCommands", []))
+    if not resolved_commands:
+        errors.append("path-resolved next task should include resolved commands")
+    for placeholder in ("<kubectl-top-output.txt>", "<external-evidence.json>", "<path>"):
+        if placeholder in resolved_commands:
+            errors.append(f"path-resolved next task must not keep placeholder: {placeholder}")
+    for snippet in (
+        "evidence/live/raw/01-controller-resource-budget-kubectl-top.txt",
+        "evidence/live/supplemental/01-controller-resource-budget-external-2.json",
+    ):
+        if snippet not in resolved_commands:
+            errors.append(f"path-resolved next task missing path: {snippet}")
+    if "scripts/build_release_evidence_directory.py evidence/live" not in "\n".join(
+        next_task_with_paths.get("resolvedClosureCommands", [])
+    ):
+        errors.append("path-resolved next task should include resolved closure commands")
     filtered_selected = next_task_filtered.get("selected") or {}
     if filtered_selected.get("version") != "0.4.3" or filtered_selected.get("captureStatus") != "tool-ready":
         errors.append("filtered next task should select the 0.4.3 tool-ready item")

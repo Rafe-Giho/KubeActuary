@@ -13,6 +13,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from scripts.generate_live_validation_queue import materialize_command, resolved_closure_commands  # noqa: E402
 from scripts.generate_version_worklist import build_worklist  # noqa: E402
 
 
@@ -48,6 +49,7 @@ def build_selection(
     include_complete: bool,
     probe_environment: bool,
     kubectl: str,
+    evidence_dir: Path | None = None,
     priority: tuple[str, ...] = DEFAULT_STATUS_PRIORITY,
 ) -> dict[str, Any]:
     worklist = build_worklist(
@@ -58,6 +60,15 @@ def build_selection(
     )
     items = candidates(worklist)
     selected = select_candidate(items, priority)
+    if selected is not None and evidence_dir is not None:
+        selected = {
+            **selected,
+            "evidenceDir": evidence_dir.as_posix(),
+            "resolvedCommands": [
+                materialize_command(selected, command, evidence_dir, index + 1)
+                for index, command in enumerate(selected.get("commands", []))
+            ],
+        }
     selection = {
         "schemaVersion": SCHEMA_VERSION,
         "sourceWorklistSchema": worklist.get("schemaVersion"),
@@ -68,6 +79,7 @@ def build_selection(
             "includeComplete": include_complete,
             "probeEnvironment": probe_environment,
             "kubectl": kubectl,
+            "evidenceDir": evidence_dir.as_posix() if evidence_dir else None,
         },
         "statusPriority": list(priority),
         "summary": {
@@ -81,6 +93,9 @@ def build_selection(
     }
     if worklist.get("environmentProbe"):
         selection["environmentProbe"] = worklist["environmentProbe"]
+    if evidence_dir is not None:
+        selection["evidenceDir"] = evidence_dir.as_posix()
+        selection["resolvedClosureCommands"] = resolved_closure_commands(evidence_dir)
     return selection
 
 
@@ -111,6 +126,8 @@ def render_text(selection: dict[str, Any]) -> str:
         lines.append(f"next-step: {selected['nextStep']}")
     for command in selected.get("commands", []):
         lines.append(f"command: {command}")
+    for command in selected.get("resolvedCommands", []):
+        lines.append(f"resolved-command: {command}")
     return "\n".join(lines) + "\n"
 
 
@@ -144,6 +161,12 @@ def render_markdown(selection: dict[str, Any]) -> str:
             lines.append(f"  - next: {selected['nextStep']}")
         for command in selected.get("commands", []):
             lines.append(f"  - `{command}`")
+        for command in selected.get("resolvedCommands", []):
+            lines.append(f"  - resolved: `{command}`")
+    if selection.get("resolvedClosureCommands"):
+        lines.extend(["", "## Resolved Closure", ""])
+        for command in selection["resolvedClosureCommands"]:
+            lines.append(f"- `{command}`")
     return "\n".join(lines) + "\n"
 
 
@@ -153,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", default="-", help="output path, or '-' for stdout")
     parser.add_argument("--version", action="append", default=[], help="filter to a release version; repeatable")
     parser.add_argument("--include-complete", action="store_true", help="include complete versions in the search scope")
+    parser.add_argument("--evidence-dir", help="optional evidence directory for deterministic command paths")
     parser.add_argument("--probe-environment", action="store_true", help="run read-only kubectl checks for cluster availability")
     parser.add_argument("--kubectl", default="kubectl", help="kubectl executable for --probe-environment")
     args = parser.parse_args(argv)
@@ -163,6 +187,7 @@ def main(argv: list[str] | None = None) -> int:
             include_complete=args.include_complete,
             probe_environment=args.probe_environment,
             kubectl=args.kubectl,
+            evidence_dir=Path(args.evidence_dir) if args.evidence_dir else None,
         )
     except ValueError as exc:
         print("next-version-task: failed", file=sys.stderr)

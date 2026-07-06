@@ -250,8 +250,9 @@ Confirm from code and tests:
   readiness, tool-ready next actions, and optional evidence directory status;
 - version worklist verifier checks version-grouped open work, local iteration
   pack generation, iteration pack diffs, iteration history recording,
-  history status inspection, next-task selection, capture-ready items,
-  tool-blocked items, version/open-only filters, and optional environment blockers;
+  history status inspection, next-task selection, evidence-directory command
+  resolution, capture-ready items, tool-blocked items, version/open-only
+  filters, and optional environment blockers;
 - external gate plan verifier maps remaining VERIFY rows to local evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
