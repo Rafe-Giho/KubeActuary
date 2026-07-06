@@ -177,6 +177,10 @@ def main() -> int:
         probe_selected = probe_next_task.get("selected") or {}
         if probe_selected.get("captureStatus") != "tool-ready" or probe_selected.get("kind") != "krew":
             errors.append("probe scaffold should select a non-cluster Krew task when cluster is unavailable")
+        if probe_next_task.get("sourceWorklistQueueSource") != "prepared-live-validation-queue":
+            errors.append("probe scaffold next task must use the prepared live validation queue")
+        if probe_next_task.get("filters", {}).get("probeEnvironment") is not True:
+            errors.append("probe scaffold next task must preserve probe-environment filters")
         filtered_selected = filtered_next_task.get("selected") or {}
         if filtered_next_task.get("filters", {}).get("missingTools") != ["kind"]:
             errors.append("filtered scaffold must persist missing-tool filters")

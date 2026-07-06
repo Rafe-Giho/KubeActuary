@@ -233,6 +233,7 @@ def prepare_directory(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=True,
     )
     next_task_json = metadata_dir / NEXT_TASK_JSON
     next_task_md = metadata_dir / NEXT_TASK_MD

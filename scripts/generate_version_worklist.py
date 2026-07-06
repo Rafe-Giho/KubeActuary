@@ -43,8 +43,13 @@ def load_prepared_queue(evidence_dir: Path) -> dict[str, Any] | None:
     return payload
 
 
-def worklist_queue(evidence_dir: Path | None, probe_environment: bool, kubectl: str) -> tuple[dict[str, Any], str]:
-    if evidence_dir is not None and not probe_environment:
+def worklist_queue(
+    evidence_dir: Path | None,
+    probe_environment: bool,
+    kubectl: str,
+    prefer_prepared_queue: bool = False,
+) -> tuple[dict[str, Any], str]:
+    if evidence_dir is not None and (not probe_environment or prefer_prepared_queue):
         prepared = load_prepared_queue(evidence_dir)
         if prepared is not None:
             return prepared, "prepared-live-validation-queue"
@@ -220,9 +225,10 @@ def build_worklist(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     progress = build_progress()
-    queue, queue_source = worklist_queue(evidence_dir, probe_environment, kubectl)
+    queue, queue_source = worklist_queue(evidence_dir, probe_environment, kubectl, prefer_prepared_queue)
     queue_by_key = queue_lookup(queue)
     capture_statuses = set(capture_status_filters or [])
     missing_tools = set(missing_tool_filters or [])

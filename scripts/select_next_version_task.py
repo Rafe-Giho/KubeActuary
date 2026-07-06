@@ -105,6 +105,7 @@ def build_selection(
     capture_status_filters: list[str] | None = None,
     missing_tool_filters: list[str] | None = None,
     environment_status_filters: list[str] | None = None,
+    prefer_prepared_queue: bool = False,
 ) -> dict[str, Any]:
     if skip_complete_evidence and evidence_dir is None:
         raise ValueError("--skip-complete-evidence requires --evidence-dir")
@@ -117,6 +118,7 @@ def build_selection(
         capture_status_filters=capture_status_filters,
         missing_tool_filters=missing_tool_filters,
         environment_status_filters=environment_status_filters,
+        prefer_prepared_queue=prefer_prepared_queue,
     )
     items = candidates(worklist)
     selectable_items = [materialize_item(item, evidence_dir) for item in items] if evidence_dir is not None else items
