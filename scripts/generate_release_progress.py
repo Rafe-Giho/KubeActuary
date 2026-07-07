@@ -953,6 +953,16 @@ def render_markdown(progress: dict[str, Any]) -> str:
             selected_blocker = environment_blockers.get("selected") or {}
             if selected_blocker.get("nextStep"):
                 lines.append(f"- environment-next: {selected_blocker.get('nextStep')}")
+        deferred_commands = evidence_status.get("deferredCommands", [])
+        if deferred_commands:
+            lines.append(f"- deferred-commands: {len(deferred_commands)}")
+            for item in deferred_commands:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"- deferred: `{item.get('kind')}` retry after "
+                    f"`{item.get('retryAfter')}`: `{item.get('command')}`"
+                )
         advance = evidence_status.get("versionIterationAdvance")
         if isinstance(advance, dict):
             lines.append(f"- version-iteration-advance: `{advance.get('status')}`")
@@ -1148,6 +1158,16 @@ def render_text(progress: dict[str, Any]) -> str:
             selected_blocker = environment_blockers.get("selected") or {}
             if selected_blocker.get("nextStep"):
                 lines.append(f"evidence-environment-next: {selected_blocker.get('nextStep')}")
+        deferred_commands = evidence_status.get("deferredCommands", [])
+        if deferred_commands:
+            lines.append(f"evidence-deferred-commands: {len(deferred_commands)}")
+            for item in deferred_commands:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"evidence-deferred: {item.get('kind')} "
+                    f"retry-after={item.get('retryAfter')} command={item.get('command')}"
+                )
         advance = evidence_status.get("versionIterationAdvance")
         if isinstance(advance, dict):
             lines.append(f"version-iteration-advance: {advance.get('status')}")

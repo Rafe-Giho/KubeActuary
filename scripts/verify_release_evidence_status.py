@@ -687,6 +687,17 @@ def main() -> int:
         errors.append("partial status must explain when next-unblock retry is useful")
     if partial_unblock_retry.get("command") != expected_unblock_retry:
         errors.append("partial status must preserve the selected next-unblock retry command")
+    partial_deferred = partial_payload.get("deferredCommands") or []
+    if partial_deferred != [
+        {
+            "kind": "next-unblock",
+            "command": expected_unblock_retry,
+            "retryAfter": "required local tools are installed",
+            "reason": "last-run-blocked",
+            "nextStep": "install the missing tool or run the evidence capture on a host that already has it",
+        }
+    ]:
+        errors.append("partial status must expose blocked next-unblock retry as a deferred command")
     for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
         if any(placeholder in command for command in partial_payload.get("nextCommands", [])):
             errors.append(f"partial status must not keep prepared queue placeholder in next commands: {placeholder}")
@@ -849,6 +860,10 @@ def main() -> int:
         errors.append("partial text status must print next-unblock retry condition")
     if f"next-unblock-retry-command: {expected_unblock_retry}" not in partial_text.stdout:
         errors.append("partial text status must print selected next-unblock retry command")
+    if "deferred-commands: 1" not in partial_text.stdout:
+        errors.append("partial text status must count deferred commands")
+    if f"deferred: next-unblock retry-after=required local tools are installed command={expected_unblock_retry}" not in partial_text.stdout:
+        errors.append("partial text status must print deferred next-unblock command")
     if "missing-tool-worklist: python3 -B scripts/generate_version_worklist.py" not in partial_text.stdout:
         errors.append("partial text status must print missing-tool worklist drilldowns")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
@@ -964,6 +979,17 @@ def main() -> int:
         errors.append("blocked evidence status must explain when environment probe retry is useful")
     if blocked_probe_retry.get("command") != expected_blocked_probe_command:
         errors.append("blocked evidence status must preserve the deferred environment probe command")
+    blocked_deferred = blocked_payload.get("deferredCommands") or []
+    if blocked_deferred != [
+        {
+            "kind": "environment-probe",
+            "command": expected_blocked_probe_command,
+            "retryAfter": "cluster access is available",
+            "reason": "last-probe-unavailable",
+            "nextStep": "start or select a disposable cluster, then rerun the probe",
+        }
+    ]:
+        errors.append("blocked evidence status must expose failed probe rerun as a deferred command")
     expected_blocked_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {blocked_dir} --run --record"
     if expected_blocked_unblock_retry not in blocked_payload.get("nextCommands", []):
         errors.append("blocked evidence status must recommend the selected next-unblock verifier retry")
@@ -997,6 +1023,10 @@ def main() -> int:
         errors.append("blocked text status must print selected environment next step")
     if f"environment-probe-retry-command: {expected_blocked_probe_command}" not in blocked_text.stdout:
         errors.append("blocked text status must print deferred environment probe retry command")
+    if "deferred-commands: 1" not in blocked_text.stdout:
+        errors.append("blocked text status must count deferred commands")
+    if f"deferred: environment-probe retry-after=cluster access is available command={expected_blocked_probe_command}" not in blocked_text.stdout:
+        errors.append("blocked text status must print deferred environment probe command")
     if f"next: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
         errors.append("blocked text status must print selected next-unblock retry command")
     if f"next-unblock-retry-command: {expected_blocked_unblock_retry}" not in blocked_text.stdout:

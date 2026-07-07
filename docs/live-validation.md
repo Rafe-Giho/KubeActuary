@@ -377,7 +377,9 @@ recheck the blocker after the missing tool or environment condition changes.
 If an environment probe has not run yet, `nextCommands` can recommend the
 read-only probe first. If the probe already failed, the status report preserves
 the exact probe command in `environmentProbeRetry` and marks it deferred until
-cluster access is available.
+cluster access is available. Status and progress output also include
+`deferredCommands`, a separate local task list for retry commands that should be
+held until their `retryAfter` condition is true.
 When `generate_release_progress.py` receives both `--evidence-dir` and an empty
 `--history-dir`, the version-history section also prints the initial
 `record_version_iteration.py <history-dir> --evidence-dir <evidence-dir>`

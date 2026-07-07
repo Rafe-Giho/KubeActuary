@@ -522,6 +522,14 @@ def main() -> int:
                 f"python3 -B scripts/next_command_{index}.py"
                 for index in range(1, 5)
             ],
+            "deferredCommands": [
+                {
+                    "kind": "environment-probe",
+                    "command": "python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment",
+                    "retryAfter": "cluster access is available",
+                    "reason": "last-probe-unavailable",
+                }
+            ],
         }
         synthetic_markdown = render_markdown(synthetic_progress)
         synthetic_text = render_text(synthetic_progress)
@@ -532,6 +540,7 @@ def main() -> int:
             "next-task-environment-reason: `connection-refused`",
             "next-task-next-step: start or select a disposable cluster, then rerun the probe",
             "next: `python3 -B scripts/next_command_4.py`",
+            "deferred: `environment-probe` retry after `cluster access is available`",
         ):
             if snippet not in synthetic_markdown:
                 errors.append(f"markdown progress must include all runnable entries: {snippet}")
@@ -542,6 +551,8 @@ def main() -> int:
             "next-task-environment-reason: connection-refused",
             "next-task-next-step: start or select a disposable cluster, then rerun the probe",
             "next: python3 -B scripts/next_command_4.py",
+            "evidence-deferred-commands: 1",
+            "evidence-deferred: environment-probe retry-after=cluster access is available",
         ):
             if snippet not in synthetic_text:
                 errors.append(f"text progress must include all runnable entries: {snippet}")

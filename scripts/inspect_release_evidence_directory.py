@@ -971,6 +971,31 @@ def next_unblock_retry_status(
     }
 
 
+def deferred_command_entries(*retries: tuple[str, dict[str, Any] | None]) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for kind, retry in retries:
+        if not isinstance(retry, dict) or retry.get("recommended") is not False:
+            continue
+        command = retry.get("command")
+        retry_after = retry.get("retryAfter")
+        if not isinstance(command, str) or not retry_after:
+            continue
+        if command in seen:
+            continue
+        seen.add(command)
+        entry = {
+            "kind": kind,
+            "command": command,
+            "retryAfter": retry_after,
+            "reason": retry.get("reason"),
+        }
+        if retry.get("nextStep"):
+            entry["nextStep"] = retry.get("nextStep")
+        entries.append(entry)
+    return entries
+
+
 def inspect_directory(
     evidence_dir: Path,
     output_dir: Path,
@@ -1038,6 +1063,19 @@ def inspect_directory(
         "uncovered": len(scoped_gates) - covered_count,
     }
     complete = summary["uncovered"] == 0 and not scoped_coverage_errors
+    next_unblock_retry = next_unblock_retry_status(
+        evidence_dir,
+        next_unblock_action,
+        next_unblock_action_run,
+        version_filters=version_filters,
+    )
+    environment_probe_retry = environment_probe_retry_status(
+        evidence_dir,
+        environment_probe,
+        environment_blockers,
+        next_task_run,
+        version_filters=version_filters,
+    )
     return {
         "schemaVersion": SCHEMA_VERSION,
         "evidenceDir": str(evidence_dir),
@@ -1058,21 +1096,10 @@ def inspect_directory(
         "nextTaskRun": next_task_run,
         "nextUnblockAction": next_unblock_action,
         "nextUnblockActionRun": next_unblock_action_run,
-        "nextUnblockRetry": next_unblock_retry_status(
-            evidence_dir,
-            next_unblock_action,
-            next_unblock_action_run,
-            version_filters=version_filters,
-        ),
+        "nextUnblockRetry": next_unblock_retry,
         "nextTaskEvidenceBuild": next_task_evidence_build,
         "environmentProbe": environment_probe,
-        "environmentProbeRetry": environment_probe_retry_status(
-            evidence_dir,
-            environment_probe,
-            environment_blockers,
-            next_task_run,
-            version_filters=version_filters,
-        ),
+        "environmentProbeRetry": environment_probe_retry,
         "environmentBlockers": environment_blockers,
         "versionIterationAdvance": version_iteration_advance,
         "blockers": blockers,
@@ -1109,6 +1136,10 @@ def inspect_directory(
             next_unblock_action_run,
             version_filters=version_filters,
         ),
+        "deferredCommands": deferred_command_entries(
+            ("next-unblock", next_unblock_retry),
+            ("environment-probe", environment_probe_retry),
+        ),
     }
 
 
@@ -1121,6 +1152,7 @@ def render_text(status: dict[str, Any]) -> str:
         f"covered: {summary['coveredGates']}/{summary['totalGates']}",
         f"coverage-errors: {summary['coverageErrors']}",
         f"next-commands: {len(status['nextCommands'])}",
+        f"deferred-commands: {len(status.get('deferredCommands', []))}",
     ]
     filters = status.get("filters", {})
     if isinstance(filters, dict):
@@ -1128,6 +1160,13 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"filter-version: {version}")
     for command in status["nextCommands"]:
         lines.append(f"next: {command}")
+    for item in status.get("deferredCommands", []):
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"deferred: {item.get('kind')} retry-after={item.get('retryAfter')} "
+            f"command={item.get('command')}"
+        )
     next_task = status.get("nextTask")
     selected = next_task.get("selected", {}) if isinstance(next_task, dict) else {}
     if selected:
@@ -1487,6 +1526,16 @@ def render_markdown(status: dict[str, Any]) -> str:
         lines.extend(["", "## Next Commands", ""])
         for command in status["nextCommands"]:
             lines.append(f"- `{command}`")
+    deferred_commands = status.get("deferredCommands", [])
+    if deferred_commands:
+        lines.extend(["", "## Deferred Commands", ""])
+        for item in deferred_commands:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                f"- `{item.get('kind')}` retry after `{item.get('retryAfter')}`: "
+                f"`{item.get('command')}`"
+            )
     return "\n".join(lines) + "\n"
 
 
