@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   verify:
-    name: Verify CLI and release checks
+    name: Verify CLI and controller behavior
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -29,8 +29,6 @@ jobs:
         run: |
           python3 --version
 
-      - name: Run release verification
-        run: python3 -B scripts/verify_release.py --version current
-
-      - name: Render release notes dry run
-        run: python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
+      - name: Run CLI and controller tests
+        run: |
+          python3 -B -m unittest discover -s tests

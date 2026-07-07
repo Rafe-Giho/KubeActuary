@@ -1,6 +1,6 @@
 # Contributing
 
-KubeActuary is an alpha, local-first evidence workflow for Kubernetes
+KubeActuary is a pre-GA, local-first evidence workflow for Kubernetes
 operations. Contributions should keep the safety boundary explicit.
 
 ## Safety Boundary
@@ -17,12 +17,11 @@ Run the local verification suite before proposing changes:
 
 ```sh
 python3 -B -m unittest discover -s tests
-python3 -B scripts/verify_release.py --version current
 git diff --check
 ```
 
-For focused changes, also run the relevant `scripts/verify_*.py` checker and
-update `docs/release-taskboard.md` when task status changes.
+For focused changes, also run the relevant targeted tests or examples for the
+files you touched.
 
 ## Documentation
 
@@ -30,7 +29,7 @@ Public behavior changes should update:
 
 - README and README.ko when the public interface changes;
 - docs under `docs/` for workflow, safety, or release gates;
-- tests or verifiers that prove the new contract.
+- tests or examples that prove the new contract.
 
 Do not mark live Kubernetes, Helm, Krew, or managed-provider validation as done
 without captured run evidence.

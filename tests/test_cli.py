@@ -847,7 +847,7 @@ class KubeActuaryCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["name"], "kube-actuary")
-        self.assertEqual(payload["version"], "0.2.0")
+        self.assertEqual(payload["version"], "0.9.5")
         self.assertEqual(payload["selectedTopic"], "agents")
         self.assertIn("commands", payload)
         self.assertIn("agentContract", payload)
@@ -893,10 +893,10 @@ class KubeActuaryCliTests(unittest.TestCase):
         self.assertIn("schema version: kube-actuary.help.v1", result.stdout)
         self.assertIn("compatibility.requiredCommandFields", result.stdout)
 
-    def test_version_reports_v020(self):
+    def test_version_reports_v095(self):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("kube-actuary 0.2.0", result.stdout)
+        self.assertIn("kube-actuary 0.9.5", result.stdout)
 
     def test_render_crd_outputs_operationcapsule_yaml(self):
         result = self.run_cli(

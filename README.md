@@ -1,128 +1,124 @@
 # KubeActuary
 
-<p align="center">
-  <img src="assets/brand/kubeactuary-symbol.png" alt="KubeActuary symbol" width="180">
-</p>
-
 > Evidence-carrying operations for AI-assisted Kubernetes.
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.9.5-blue)](VERSION)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.x-3776AB)](bin/kube-actuary)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-CRD%20seed-326CE5)](deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml)
+[![Python](https://img.shields.io/badge/python-3.12-3776AB)](bin/kube-actuary)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-OperationCapsule-326CE5)](deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml)
 
 English | [한국어](README.ko.md)
 
-KubeActuary is a model-free CLI and Kubernetes-native specification for making
-AI-originated Kubernetes operations carry evidence before they can be considered
-for execution.
+KubeActuary is a local-first CLI for turning a proposed Kubernetes operation
+into an auditable `OperationCapsule`. A capsule records the operation intent,
+target, proposed command or manifest, risk, required evidence, collected
+evidence, rollback basis, post-change check plan, and gate decision.
 
-It is not another Kubernetes chatbot. It is the execution boundary beneath one:
-small local files, deterministic checks, explicit rollback evidence, and gates
-that remain closed when proof is missing.
+The tool is designed for AI-assisted Kubernetes workflows, but it does not trust
+an AI agent just because it can produce a `kubectl` command. KubeActuary keeps
+proposal, evidence, approval, and execution separate. The default CLI path
+collects and verifies evidence; it does not execute direct cluster writes.
 
-```text
-AI / human intent
-  -> OperationCapsule
-  -> evidence collection
-  -> gate decision
-  -> human, CI, GitOps, or future bounded execution
-```
+## Why It Exists
 
-## Current State
+AI and automation tools can already generate Kubernetes actions. The missing
+piece is a small, portable contract for deciding whether a proposed action has
+enough proof before anything changes.
 
-KubeActuary is currently published as a v0.2.0 local-first evidence collector.
-The local roadmap implementation is verified through v0.9.5, with the remaining
-1.0.0 work intentionally limited to external live evidence capture on approved
-Kubernetes, Helm, Krew, and managed-provider environments.
+KubeActuary provides that contract:
 
-Local verification:
+- capture operation intent in a structured file;
+- identify target scope and basic risk;
+- collect safe evidence such as authorization, server dry-run, diff, rollback,
+  and health-plan records;
+- keep a deterministic digest of the operation spec;
+- open the gate only when required evidence is present and successful;
+- render the same local capsule as a Kubernetes `OperationCapsule` resource.
 
-```sh
-python3 -B scripts/verify_release.py --version 0.2.0
-python3 -B scripts/verify_milestone_completion.py
-python3 -B scripts/generate_release_progress.py --format text --evidence-dir evidence/live
-```
+## Current Release
 
-Expected local posture:
+v0.9.5 is a pre-GA, local-complete release. It reflects the current repository
+scope: the CLI, capsule schema, CRD seed, low-overhead controller contract,
+optional packaging assets, policy evidence adapters, safe agent integration
+surfaces, and admission prototype are present in the tree.
 
-```text
-release checks: 85
-milestone completion: local-complete-with-accepted-external-blockers
-taskboard: no TODO, DOING, or VERIFY rows
-cluster writes: disabled by default
-```
+This is still not a 1.0.0 production claim. The remaining 1.0.0 work is live
+evidence capture on approved Kubernetes and provider environments, including
+cluster smoke runs, Helm/Krew install proof, managed-provider checks, and
+resource-budget evidence. Those checks are intentionally blocked in environments
+without the required tools or network access.
 
-What is still blocked for 1.0.0 is not hidden: live smoke evidence remains
-blocked by missing local tools or `network-not-permitted` until it is captured
-on a suitable host.
+What is included:
 
-## The Problem
+- local CLI and `kubectl` plugin entrypoint;
+- JSON `OperationCapsule` format and schema;
+- Kubernetes CRD seed for `OperationCapsule`;
+- manifest preflight collectors for server-side dry-run and diff;
+- explicit rollback and health-plan evidence;
+- deterministic digest output;
+- offline validation, verification, and gate decisions;
+- low-overhead controller reconcile model with status-only boundaries;
+- optional Helm, Kustomize, Krew, SBOM, provenance, and air-gap packaging
+  assets;
+- policy evidence adapter support for common Kubernetes policy tools;
+- safe MCP/agent integration surfaces;
+- optional admission prototype assets;
+- agent-readable help for safer tool integration.
 
-Modern AI tools can already talk to Kubernetes:
-
-- `kubectl-ai` can translate natural language into Kubernetes actions.
-- `k8sgpt` can analyze cluster symptoms.
-- MCP servers can expose cluster tools to agents.
-- Kyverno, OPA, kube-linter, kube-score, Polaris, and Trivy can evaluate policy,
-  readiness, and security.
-- GitOps can reconcile desired state.
-
-What is still missing is a small shared contract for this question:
-
-> Before an AI-originated Kubernetes action changes anything, what evidence must
-> it carry?
-
-KubeActuary answers that with an `OperationCapsule`.
-
-## The Primitive: OperationCapsule
-
-An `OperationCapsule` is a portable operation record:
-
-| Field | Purpose |
-| --- | --- |
-| Intent | Why the operation exists |
-| Proposed action | Command or manifest path |
-| Target | Resource, namespace, scope, and verb |
-| Risk | Basic blast-radius estimate |
-| Required evidence | Auth, dry-run, diff, rollback, approval, post-checks |
-| Status evidence | Attached proof records |
-| Gate | Open only when required evidence passes |
-
-The capsule can be created by an AI, reviewed by a human, checked in to Git,
-verified in CI, rendered as a CRD object, or consumed by a future controller.
-
-## What Works in v0.2.0
-
-- Draft local operation capsules from `kubectl` commands or manifest paths.
-- Inspect target, risk, state, and evidence.
-- Validate capsule JSON structure without contacting the cluster.
-- Check local runtime and `kubectl` client diagnostics.
-- Attach manual evidence.
-- Collect `kubectl auth can-i` evidence.
-- Collect server-side dry-run evidence for manifest-based operations.
-- Collect `kubectl diff` evidence for manifest-based operations.
-- Attach explicit rollback command or manifest evidence.
-- Attach declared post-change health-plan evidence.
-- Print a deterministic spec digest for audit references.
-- Verify missing or failed evidence.
-- Open or close an execution gate.
-- Render a local capsule as a Kubernetes `OperationCapsule` CRD object.
-- Render CRD status fields and condition mappings for local capsule state.
-- Use the CLI as a `kubectl` plugin.
-- Validate against a JSON Schema and CRD seed.
-
-Non-goals for v0.2.0:
+What is intentionally not included in the default path:
 
 - no direct cluster write execution;
 - no in-cluster LLM;
-- no controller requirement;
-- no admission webhook;
+- no cluster-wide scan;
+- no required controller;
+- no required admission webhook;
 - no external Python package dependency.
+
+Release boundary:
+
+- `0.9.5`: local implementation and offline contracts are present.
+- `1.0.0`: requires external live evidence and green public CI before a GA
+  claim.
+
+## Installation
+
+Clone the repository and run the CLI with Python:
+
+```sh
+git clone https://github.com/Rafe-Giho/KubeActuary.git
+cd KubeActuary
+python3 bin/kube-actuary --version
+```
+
+Use it as a `kubectl` plugin by putting `bin/` on `PATH`:
+
+```sh
+export PATH="$PWD/bin:$PATH"
+kubectl actuary --version
+```
+
+No Python package installation is required for the current CLI.
 
 ## Quick Start
 
-Create a high-risk draft:
+Verify and gate an included read-only example:
+
+```sh
+python3 bin/kube-actuary verify examples/read-pods.verified.capsule.json
+python3 bin/kube-actuary gate examples/read-pods.verified.capsule.json
+```
+
+Expected gate result:
+
+```text
+gate: open
+id: opcap-example-read-pods
+risk: low
+command: kubectl get pods -n default
+```
+
+Draft a higher-risk proposal. This command records the proposed operation; it
+does not run the embedded `kubectl scale` command.
 
 ```sh
 python3 bin/kube-actuary draft \
@@ -132,34 +128,14 @@ python3 bin/kube-actuary draft \
   --out /tmp/scale.capsule.json
 ```
 
-Inspect it:
+Inspect and validate the capsule:
 
 ```sh
 python3 bin/kube-actuary inspect /tmp/scale.capsule.json
-```
-
-Validate the capsule structure:
-
-```sh
 python3 bin/kube-actuary validate /tmp/scale.capsule.json
 ```
 
-`validate` checks the local capsule contract. Evidence completeness is checked
-by `verify` and `gate`.
-
-Check local prerequisites:
-
-```sh
-python3 bin/kube-actuary doctor
-```
-
-The gate is closed because this is only a proposal:
-
-```sh
-python3 bin/kube-actuary gate /tmp/scale.capsule.json
-```
-
-Attach approval evidence:
+Attach human approval evidence:
 
 ```sh
 python3 bin/kube-actuary attach-evidence /tmp/scale.capsule.json \
@@ -169,17 +145,33 @@ python3 bin/kube-actuary attach-evidence /tmp/scale.capsule.json \
   --out /tmp/scale.with-approval.json
 ```
 
-Collect live authorization evidence without running the proposed write:
+Collect authorization evidence without running the proposed write:
 
 ```sh
 python3 bin/kube-actuary collect auth /tmp/scale.with-approval.json \
   --out /tmp/scale.with-auth.json
 ```
 
-For manifest-based changes, collect preflight evidence without persisting a
-cluster write:
+Verify the evidence set and print the gate decision:
 
 ```sh
+python3 bin/kube-actuary verify /tmp/scale.with-auth.json
+python3 bin/kube-actuary gate /tmp/scale.with-auth.json
+```
+
+## Manifest Preflight
+
+For manifest-based operations, KubeActuary can collect Kubernetes preflight
+evidence. These collectors may contact the configured cluster, but they are
+evidence-only operations.
+
+```sh
+python3 bin/kube-actuary draft \
+  --intent "apply demo config map" \
+  --manifest examples/configmap-demo.yaml \
+  --actor "ai-agent" \
+  --out /tmp/apply.capsule.json
+
 python3 bin/kube-actuary collect dry-run /tmp/apply.capsule.json \
   --manifest examples/configmap-demo.yaml \
   --out /tmp/apply.with-dry-run.json
@@ -187,20 +179,77 @@ python3 bin/kube-actuary collect dry-run /tmp/apply.capsule.json \
 python3 bin/kube-actuary collect diff /tmp/apply.with-dry-run.json \
   --manifest examples/configmap-demo.yaml \
   --out /tmp/apply.with-diff.json
-```
 
-Attach rollback and post-change health-plan evidence:
-
-```sh
 python3 bin/kube-actuary collect rollback /tmp/apply.with-diff.json \
   --manifest examples/configmap-demo.rollback.yaml \
   --out /tmp/apply.with-rollback.json
 
 python3 bin/kube-actuary collect health-plan /tmp/apply.with-rollback.json \
-  --out /tmp/apply.with-health.json
+  --out /tmp/apply.ready.json
 ```
 
-Render a local capsule as a Kubernetes resource:
+`collect dry-run` uses `kubectl apply --dry-run=server`. `collect diff` uses
+`kubectl diff`. Both attach evidence to the capsule instead of applying a
+change.
+
+## OperationCapsule
+
+An `OperationCapsule` is the core record KubeActuary works with.
+
+| Section | Purpose |
+| --- | --- |
+| `metadata` | Capsule id, creation time, and actor information |
+| `spec.intent` | Why the operation exists |
+| `spec.proposedCommand` or `spec.manifest` | What is being proposed |
+| `spec.target` | Kubernetes verb, resource, namespace, and scope |
+| `spec.risk` | Basic risk and blast-radius classification |
+| `spec.requiredEvidence` | Evidence required before the gate can open |
+| `status.evidence` | Attached evidence records and collector results |
+| `status.gate` | Open or closed decision with reasons |
+
+The digest command hashes the operation spec while excluding status evidence, so
+the same operation intent keeps the same digest even as evidence is attached:
+
+```sh
+python3 bin/kube-actuary digest examples/apply-configmap.preflight.capsule.json
+```
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `draft` | Create an operation capsule from intent plus command or manifest |
+| `inspect` | Summarize target, risk, state, and evidence |
+| `validate` | Validate capsule JSON structure |
+| `doctor` | Check local runtime and `kubectl` client diagnostics |
+| `attach-evidence` | Attach manual evidence |
+| `collect auth` | Collect `kubectl auth can-i` evidence |
+| `collect dry-run` | Attach server-side dry-run evidence |
+| `collect diff` | Attach `kubectl diff` evidence |
+| `collect rollback` | Attach explicit rollback command or manifest evidence |
+| `collect health-plan` | Attach a declared post-change check plan |
+| `digest` | Print a deterministic capsule spec digest |
+| `verify` | Check required evidence |
+| `gate` | Print the open or closed gate decision |
+| `render-crd` | Render a local capsule as a Kubernetes resource |
+| `demo` | Print a sample high-risk capsule |
+| `help` | Show workflow, safety, evidence, or agent guidance |
+
+Agent-readable help is available for integrations:
+
+```sh
+python3 bin/kube-actuary help agents --format json
+```
+
+## Kubernetes-Native Path
+
+The repository includes a CRD seed and examples for teams that want to store
+capsules in Kubernetes:
+
+- [deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml](deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml)
+- [examples/operationcapsule-scale.yaml](examples/operationcapsule-scale.yaml)
+
+Render a local capsule as a Kubernetes object:
 
 ```sh
 python3 bin/kube-actuary render-crd examples/read-pods.verified.capsule.json \
@@ -208,539 +257,63 @@ python3 bin/kube-actuary render-crd examples/read-pods.verified.capsule.json \
   --namespace default
 ```
 
-Verify the included read-only example:
-
-```sh
-python3 bin/kube-actuary verify examples/read-pods.verified.capsule.json
-python3 bin/kube-actuary gate examples/read-pods.verified.capsule.json
-```
-
-Expected:
-
-```text
-gate: open
-id: opcap-example-read-pods
-risk: low
-command: kubectl get pods -n default
-```
-
-## CLI
-
-```text
-draft              Create an OperationCapsule draft
-inspect            Summarize target, risk, state, and evidence
-validate           Validate capsule JSON structure
-doctor             Check local runtime and kubectl diagnostics
-attach-evidence    Attach manual evidence
-collect auth       Collect kubectl auth can-i evidence
-collect dry-run    Collect server-side dry-run evidence
-collect diff       Collect kubectl diff evidence
-collect rollback   Attach rollback command or manifest evidence
-collect health-plan Attach declared post-change checks
-digest             Print deterministic capsule spec digest
-help               Show workflow, safety, evidence, or agent guidance
-verify             Check required evidence
-gate               Print open/closed execution decision
-render-crd         Render a capsule as a Kubernetes CRD object
-demo               Print a sample high-risk capsule
-```
-
-Version:
-
-```sh
-python3 bin/kube-actuary --version
-```
-
-Human-readable help:
-
-```sh
-python3 bin/kube-actuary help
-python3 bin/kube-actuary help workflow
-python3 bin/kube-actuary help safety
-```
-
-Agent-readable help:
-
-```sh
-python3 bin/kube-actuary help agents --format json
-```
-
-The JSON help describes command safety, cluster access, evidence ids, stable
-exit-code meanings, operations the CLI never executes, and a versioned
-`schemaVersion`/`compatibility` contract for agent integrations.
-
-## Kubectl Plugin
-
-Kubernetes discovers plugins as executables named `kubectl-*` on `PATH`.
-This repository includes `bin/kubectl-actuary`.
-
-```sh
-export PATH="$PWD/bin:$PATH"
-kubectl actuary draft \
-  --intent "inspect pods" \
-  --command "kubectl get pods -n default"
-```
-
-## Kubernetes-Native Path
-
-KubeActuary includes a lightweight CRD seed:
-
-- [deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml](deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml)
-- [examples/operationcapsule-scale.yaml](examples/operationcapsule-scale.yaml)
-
-Design constraints:
-
-- one namespaced `OperationCapsule` resource;
-- embedded evidence first, no separate `Evidence` CRD yet;
-- controller should watch only KubeActuary resources;
-- no cluster-wide scans;
-- no in-cluster LLM;
-- no write execution in the first controller version.
+The CRD path is intentionally low overhead: one namespaced
+`OperationCapsule` resource, embedded evidence, status-friendly fields, and no
+cluster-wide scan requirement.
 
 ## Safety Model
 
-KubeActuary separates proposal, evidence, approval, and execution.
+KubeActuary separates responsibilities instead of collapsing them into one
+agent action.
 
 | Responsibility | Typical actor |
 | --- | --- |
 | Proposal | AI agent, human, CI |
 | Evidence collection | CLI, CI, policy tools |
-| Approval | human/platform owner |
-| Execution | human, GitOps, future bounded executor |
+| Approval | Human owner or platform reviewer |
+| Gate decision | KubeActuary verification |
+| Execution | Human, GitOps, or a future bounded executor |
 
-A high-risk AI proposal can exist without being allowed to mutate the cluster.
-That separation is the product.
+The gate is a decision boundary. A closed gate means the operation should not
+proceed because required evidence is missing or failed.
 
-## Repository Layout
+## Project Layout
 
 ```text
-bin/
-  kube-actuary                 CLI
-  kube-actuary-controller      dry-run controller reconcile helper
-  kubectl-actuary              kubectl plugin entrypoint
-CONTRIBUTING.md                contribution and safety boundary guide
-controller/
-  reconcile.py                 pure OperationCapsule status reconcile model
-.github/workflows/
-  ci.yml                       GitHub Actions verification workflow
-SECURITY.md                    security policy and disclosure process
-NOTICE                         project notice and attribution status
-charts/
-  kubeactuary/                 Helm chart seed
-deploy/crds/
-  operationcapsules...yaml     CRD seed
-  fixtures/                    CRD upgrade and rollback fixtures
-deploy/controller/
-  *-rbac.yaml                  optional controller RBAC manifests
-  deployment.yaml              optional controller runtime Deployment seed
-deploy/admission/
-  validatingwebhookconfiguration.yaml optional admission webhook prototype
-deploy/kustomize/
-  base/                        CRD-only Kustomize base
-  overlays/                    optional controller RBAC overlays
-docs/
-  admission.md                optional admission prototype and safety defaults
-  admission-kind-smoke.md     optional kind admission smoke runbook
-  admission-incident-runbook.md admission audit incident runbook
-  api-freeze.md               additive API freeze and compatibility gate
-  conformance.md              upstream N/N-1/N-2 conformance suite
-  docs-freeze.md              release-candidate public docs checklist
-  threat-model.md             project threat model
-  collectors.md                evidence collector contract
-  landscape.md                 ecosystem research
-  paradigm.md                  operating model
-  project-assessment.md        maturity assessment
-  release-checklist.md         release gate checklist
-  release-taskboard.md         local v1.0 taskboard
-  release-archives.md          release archive build and verification
-  supply-chain.md              SBOM and provenance generation
-  air-gapped-install.md        offline install artifact checklist
-  krew.md                      Krew manifest generation and verification
-  helm-smoke.md                Helm template and dry-run install smoke runbook
-  live-validation.md           external live validation evidence ledger
-  managed-kubernetes-smoke.md  EKS/GKE/AKS smoke runbook
-  mcp.md                       MCP client config and safe-tool guide
-  policy-adapters.md           policy evidence adapter contracts
-  kustomize.md                 Kustomize install and verification runbook
-  lightweight-cluster-smoke.md kind/minikube/MicroK8s/k3s smoke runbook
-  kubernetes-compatibility.md  Kubernetes and managed-service compatibility
-  crd-upgrade-rollback.md      CRD fixture upgrade and rollback runbook
-  controller.md                low-overhead controller design and contract
-  kubectl-explain.md           kubectl explain quality runbook
-  roadmap.md                   development plan
-  v0.1.0.md                    alpha release goal
-  test-plan-v0.2.0.md          v0.2.0 release test plan
-  test-results-v0.2.0.md       latest verification result
-  test-plan-v0.1.0.md          release test plan
-  test-results-v0.1.0.md       v0.1.0 verification result
-  crd-design.md                Kubernetes-native design
-  interoperability.md          CLI, MCP, GitOps, admission contracts
-  novelty-check.md             novelty boundary
-examples/
-  *.capsule.json               local capsule examples
-  operationcapsule-scale.yaml  CRD example
-  mcp-client-config.json       safe MCP client config example
-  agent-local-ci.runbook.md    local CI agent workflow runbook
-  agent-codex-workflow.runbook.md Codex agent workflow runbook
-schemas/
-  operation-capsule...json     JSON Schema
-  api-freeze.v0.9.2.json       frozen public API compatibility contract
-scripts/
-  generate_release_notes.py    release notes dry-run generator
-  verify_release_taskboard.py  local release taskboard audit
-  generate_release_progress.py versioned release progress report generator with blocker/history summary
-  verify_release_progress.py   release progress verifier
-  kube-actuary.release-progress.v1 release progress schema
-  generate_version_worklist.py version-grouped task worklist generator with filters, blockers, and evidence readiness
-  prepare_version_iteration.py local version iteration pack generator with evidence readiness
-  compare_version_iterations.py local version iteration diff generator
-  record_version_iteration.py local version iteration history recorder with evidence readiness
-  inspect_version_history.py local version iteration history inspector with evidence status, blocker streaks, and blocker actions
-  select_next_version_task.py local next version task selector with evidence skip support
-  verify_version_worklist.py version worklist verifier
-  record_version_blockers.py local version blocker ledger recorder with prepared queue reuse
-  verify_version_blockers.py version blocker ledger verifier
-  generate_version_unblock_plan.py local unblock action plan generator for blocker resolution
-  verify_version_unblock_plan.py version unblock plan verifier
-  select_next_unblock_action.py local next unblock action selector
-  verify_next_unblock_action.py next unblock action verifier
-  run_next_unblock_action.py selected next-unblock verifier runner
-  verify_next_unblock_action_runner.py next unblock action runner verifier
-  kube-actuary.version-worklist.v1 version worklist schema
-  kube-actuary.version-iteration.v1 version iteration schema
-  kube-actuary.version-iteration-diff.v1 version iteration diff schema
-  kube-actuary.version-iteration-history.v1 version iteration history schema
-  kube-actuary.version-iteration-history-status.v1 version iteration history status schema
-  kube-actuary.next-version-task.v1 next version task schema
-  kube-actuary.version-blockers.v1 version blocker ledger schema
-  version-blockers.json persisted local blocker ledger report
-  kube-actuary.version-unblock-plan.v1 version unblock plan schema
-  version-unblock-plan.json persisted local unblock plan report
-  kube-actuary.next-unblock-action.v1 next unblock action schema
-  next-unblock-action.json persisted next unblock action report
-  kube-actuary.next-unblock-action-run.v1 selected next-unblock runner schema
-  next-unblock-action-run.json persisted selected unblock verifier status report
-  generate_external_gate_plan.py external verification gate plan generator
-  verify_external_gate_plan.py external verification gate plan verifier
-  verify_external_gate_command_safety.py external gate command safety verifier
-  evaluate_external_gate_evidence.py external gate evidence evaluator
-  verify_external_gate_evidence.py external gate evidence verifier
-  build_external_evidence.py supplemental external evidence builder
-  verify_external_evidence_builder.py supplemental evidence builder verifier
-  kube-actuary.external-evidence.v1 supplemental evidence schema
-  build_external_evidence_bundle.py external evidence bundle builder
-  verify_external_evidence_bundle.py external evidence bundle verifier
-  kube-actuary.external-evidence-bundle.v1 external evidence bundle schema
-  build_release_evidence_directory.py release evidence directory builder
-  verify_release_evidence_directory.py release evidence directory verifier
-  inspect_release_evidence_directory.py text/json/Markdown release evidence, next-task, evidence-build, runner, environment, and advance status inspector/recorder
-  build_next_task_evidence.py text/json/Markdown local next-task supplemental evidence builder/recorder
-  verify_release_evidence_status.py release evidence status verifier
-  kube-actuary.release-evidence-status.v1 release evidence status schema
-  release-evidence-status.json persisted release evidence status report
-  kube-actuary.next-task-evidence-build.v1 next task evidence build schema
-  next-task-evidence-build.json persisted next task evidence build status report
-  verify_clean_artifacts.py generated Python cache artifact verifier
-  verify_crd_compatibility.py  offline CRD compatibility smoke check
-  verify_crd_explain_quality.py offline kubectl explain quality check
-  verify_crd_upgrade_fixtures.py offline CRD upgrade fixture check
-  verify_controller_contract.py offline controller contract check
-  verify_controller_rbac.py    offline controller RBAC check
-  verify_controller_runtime_contract.py offline controller runtime check
-  verify_controller_deployment.py optional controller Deployment seed check
-  verify_controller_patch_plan.py status patch plan verifier
-  verify_controller_sync.py       read-only controller sync verifier
-  verify_controller_status_apply.py status patch dry-run verifier
-  verify_controller_loop.py   controller loop dry-run verifier
-  verify_controller_resource_budget.py offline controller resource budget check
-  measure_controller_resources.py kubectl top budget measurement helper with text/JSON output
-  capture_controller_resource_budget.py read-only kubectl top evidence capture helper (`controller-resource-capture`)
-  verify_controller_resource_capture.py controller resource evidence capture verifier
-  run_lightweight_cluster_smoke.py lightweight cluster smoke harness with JSON evidence output
-  verify_lightweight_cluster_smoke.py offline smoke harness check
-  verify_conformance_suite.py upstream N/N-1/N-2 conformance verifier
-  run_managed_kubernetes_smoke.py EKS/GKE/AKS smoke harness
-  verify_managed_kubernetes_smoke.py offline managed smoke verifier
-  run_helm_smoke.py           Helm template and dry-run install smoke harness
-  verify_helm_chart.py        offline Helm chart contract check
-  verify_kustomize.py         Kustomize render check
-  package_release_archives.py release archive generator
-  verify_release_archives.py  archive checksum and install smoke
-  generate_krew_manifest.py   Krew manifest generator
-  run_krew_smoke.py           Krew install smoke harness with isolated KREW_ROOT
-  verify_krew_manifest.py     offline Krew manifest check
-  generate_sbom.py            CycloneDX SBOM generator
-  generate_provenance.py      release archive provenance generator
-  verify_supply_chain.py      SBOM/provenance verifier
-  verify_security_docs.py     security policy and threat model verifier
-  verify_api_freeze.py        additive API freeze verifier
-  verify_docs_freeze.py       public docs and examples verifier
-  verify_live_validation_readiness.py external validation readiness inventory and optional environment probe
-  generate_live_validation_queue.py live validation queue generator with optional environment probe
-  verify_live_validation_queue.py live validation queue verifier
-  verify_live_validation_queue_safety.py live validation queue command safety verifier
-  kube-actuary.live-validation-queue.v1 live validation queue schema
-  prepare_live_evidence_directory.py live evidence directory scaffold generator with probe-aware next-task advancement
-  kube-actuary.environment-probe.v1 environment probe report schema
-  kube-actuary.environment-blockers.v1 environment blocker report schema
-  run_next_version_task.py text/json/Markdown selected next-task plan/run/record helper
-  verify_next_version_task_runner.py selected next-task runner verifier
-  kube-actuary.next-version-task-run.v1 selected next-task runner schema
-  next-version-task-run.json persisted selected runner status report
-  advance_version_iteration.py text/json/Markdown selected next-task runner plus before/after history, runner status, blocker streak, and blocker ledger recorder
-  verify_version_iteration_advance.py version iteration advance verifier
-  kube-actuary.version-iteration-advance.v1 version iteration advance schema
-  version-iteration-advance.json persisted advance workflow status report
-  verify_live_evidence_directory_scaffold.py live evidence directory scaffold verifier
-  validate_live_evidence.py   captured live evidence JSON validator
-  verify_live_evidence_schema.py live evidence schema verifier
-  build_live_evidence_manifest.py captured evidence manifest builder
-  verify_live_evidence_manifest.py live evidence manifest verifier
-  check_live_evidence_coverage.py live evidence release-gate coverage checker
-  verify_live_evidence_coverage.py live evidence coverage verifier
-  verify_project_governance.py contribution, notice, and license verifier
-  verify_ga_readiness.py     local v1.0.0 GA release-gate verifier
-  verify_milestone_completion.py local v0.9.5 completion verifier
-  generate_airgap_manifest.py air-gapped artifact manifest generator
-  verify_airgap_bundle.py     offline bundle verifier
-  verify_agent_help_contract.py agent help schema contract verifier
-  verify_agent_examples.py    local CI/Codex runbook verifier
-  adapt_kyverno_evidence.py   Kyverno output to evidence adapter
-  verify_kyverno_adapter.py   Kyverno adapter fixture verifier
-  adapt_opa_evidence.py       OPA output to evidence adapter
-  verify_opa_adapter.py       OPA adapter fixture verifier
-  adapt_kube_linter_evidence.py kube-linter output to evidence adapter
-  verify_kube_linter_adapter.py kube-linter adapter fixture verifier
-  adapt_kube_score_evidence.py kube-score output to evidence adapter
-  verify_kube_score_adapter.py kube-score adapter fixture verifier
-  adapt_pluto_evidence.py     Pluto output to evidence adapter
-  verify_pluto_adapter.py     Pluto adapter fixture verifier
-  verify_adapter_contract.py  common adapter contract verifier
-  kube_actuary_mcp_server.py  safe MCP/JSON-RPC stdio wrapper
-  verify_mcp_contract.py      MCP safe-tool contract verifier
-  verify_mcp_docs.py          MCP docs and client config verifier
-  verify_execute_disabled.py  disabled execute surface verifier
-  verify_admission_webhook.py optional admission prototype verifier
-  evaluate_admission_review.py offline admission policy evaluator
-  verify_admission_policy.py AI identity/annotation admission verifier
-  verify_admission_digest_gate.py admission digest/gate tamper verifier
-  verify_admission_audit.py  admission audit fixture verifier
-  verify_admission_response.py AdmissionReview response verifier
-  verify_admission_server.py local admission HTTP server verifier
-  run_admission_kind_smoke.py optional kind admission smoke harness
-  verify_release.py            repeatable release verification suite
-assets/brand/
-  kubeactuary-symbol.png       selected transparent project symbol
-tests/
-  test_cli.py                  CLI tests
+bin/                  CLI and kubectl plugin entrypoints
+charts/               Helm chart seed
+controller/           Low-overhead controller reconcile model
+deploy/               CRD, optional controller, admission, and Kustomize assets
+docs/                 Design notes, runbooks, compatibility, and roadmap
+examples/             Capsule, manifest, CRD, and agent integration examples
+schemas/              JSON Schema and API freeze contract
+tests/                CLI and behavior tests
 ```
+
+## Documentation
+
+- [Collectors](docs/collectors.md)
+- [CRD design](docs/crd-design.md)
+- [Kubernetes compatibility](docs/kubernetes-compatibility.md)
+- [Controller design](docs/controller.md)
+- [Interoperability](docs/interoperability.md)
+- [Policy adapters](docs/policy-adapters.md)
+- [Security policy](SECURITY.md)
+- [Threat model](docs/threat-model.md)
+- [Roadmap](docs/roadmap.md)
 
 ## Development
 
-No dependency install is required for the current CLI.
+Run the unit test suite:
 
 ```sh
 python3 -B -m unittest discover -s tests
-python3 -B scripts/verify_release.py --version 0.2.0
-python3 -B scripts/verify_release_taskboard.py
-python3 -B scripts/verify_release_progress.py
-python3 -B scripts/generate_release_progress.py --format text --version 0.4.3
-python3 -B scripts/generate_release_progress.py --format markdown --probe-environment
-python3 -B scripts/generate_release_progress.py --format markdown --version 0.4.3
-python3 -B scripts/generate_release_progress.py --format markdown --evidence-dir evidence/live
-python3 -B scripts/generate_release_progress.py --format markdown --history-dir evidence/version-history
-python3 -B scripts/verify_version_worklist.py
-python3 -B scripts/verify_version_blockers.py
-python3 -B scripts/verify_version_unblock_plan.py
-python3 -B scripts/verify_next_unblock_action.py
-python3 -B scripts/verify_next_unblock_action_runner.py
-python3 -B scripts/generate_version_worklist.py --format text --open-only
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only --missing-tool kind
-python3 -B scripts/record_version_blockers.py --format markdown --evidence-dir evidence/live
-python3 -B scripts/record_version_blockers.py --evidence-dir evidence/live --record
-python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence-dir evidence/live
-python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
-python3 -B scripts/select_next_unblock_action.py --format markdown --evidence-dir evidence/live
-python3 -B scripts/select_next_unblock_action.py --evidence-dir evidence/live --record
-python3 -B scripts/run_next_unblock_action.py evidence/live
-python3 -B scripts/run_next_unblock_action.py evidence/live --run --record
-python3 -B scripts/select_next_version_task.py --missing-tool kind
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment --environment-reason connection-refused
-python3 -B scripts/generate_version_worklist.py --format markdown --open-only --history-dir /tmp/kubeactuary-version-history
-python3 -B scripts/generate_version_worklist.py --format json --version 0.4.3
-python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --version 0.4.3
-python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-kind-iteration --open-only --missing-tool kind
-python3 -B scripts/prepare_version_iteration.py /tmp/kubeactuary-version-iteration --open-only --evidence-dir evidence/live
-python3 -B scripts/compare_version_iterations.py /tmp/kubeactuary-before /tmp/kubeactuary-after --format markdown
-python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --probe-environment
-python3 -B scripts/record_version_iteration.py /tmp/kubeactuary-version-history --open-only --evidence-dir evidence/live
-python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history
-python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history --format markdown
-python3 -B scripts/inspect_version_history.py /tmp/kubeactuary-version-history --record
-python3 -B scripts/select_next_version_task.py --version 0.4.3
-python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
-python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
-python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --runnable-only
-python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --blocked-only
-python3 -B scripts/select_next_version_task.py --history-dir /tmp/kubeactuary-version-history --version 0.4.3
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --skip-complete-evidence
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --version 0.4.3
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --missing-tool kind
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --runnable-only
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --blocked-only
-python3 -B scripts/prepare_live_evidence_directory.py evidence/live --probe-environment
-python3 -B scripts/build_next_task_evidence.py evidence/live --format markdown --record
-python3 -B scripts/inspect_release_evidence_directory.py evidence/live --version 0.4.3
-python3 -B scripts/run_next_version_task.py evidence/live
-python3 -B scripts/run_next_version_task.py evidence/live --format markdown
-python3 -B scripts/run_next_version_task.py evidence/live --run
-python3 -B scripts/run_next_version_task.py evidence/live --run --record
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --format markdown
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --version 0.4.3
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --missing-tool kind
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --runnable-only
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --blocked-only
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --run
-python3 -B scripts/advance_version_iteration.py evidence/live /tmp/kubeactuary-version-history --probe-environment
-python3 -B scripts/verify_external_gate_plan.py
-python3 -B scripts/verify_external_gate_command_safety.py
-python3 -B scripts/verify_external_gate_evidence.py
-python3 -B scripts/verify_external_evidence_builder.py
-python3 -B scripts/verify_external_evidence_bundle.py
-python3 -B scripts/verify_release_evidence_directory.py
-python3 -B scripts/verify_release_evidence_status.py
-python3 -B scripts/verify_clean_artifacts.py
-python3 -B bin/kube-actuary doctor
-python3 -B scripts/verify_crd_compatibility.py
-python3 -B scripts/verify_crd_explain_quality.py
-python3 -B scripts/verify_conformance_suite.py
-python3 -B scripts/verify_crd_upgrade_fixtures.py
-python3 -B scripts/verify_controller_contract.py
-python3 -B scripts/verify_controller_rbac.py
-python3 -B scripts/verify_controller_runtime_contract.py
-python3 -B scripts/verify_controller_deployment.py
-python3 -B scripts/verify_controller_patch_plan.py
-python3 -B scripts/verify_controller_sync.py
-python3 -B scripts/verify_controller_status_apply.py
-python3 -B scripts/verify_controller_loop.py
-python3 -B scripts/verify_controller_resource_budget.py
-python3 -B scripts/verify_lightweight_cluster_smoke.py
-python3 -B scripts/verify_managed_kubernetes_smoke.py
-python3 -B scripts/run_helm_smoke.py
-python3 -B scripts/verify_helm_chart.py
-python3 -B scripts/verify_kustomize.py
-python3 -B scripts/verify_release_archives.py
-python3 -B scripts/run_krew_smoke.py
-python3 -B scripts/verify_krew_manifest.py
-python3 -B scripts/verify_supply_chain.py
-python3 -B scripts/verify_security_docs.py
-python3 -B scripts/verify_api_freeze.py
-python3 -B scripts/verify_docs_freeze.py
-python3 -B scripts/verify_live_validation_readiness.py
-python3 -B scripts/verify_live_validation_readiness.py --probe-environment
-python3 -B scripts/generate_live_validation_queue.py --format markdown --probe-environment
-python3 -B scripts/verify_live_validation_queue.py
-python3 -B scripts/verify_live_validation_queue_safety.py
-python3 -B scripts/verify_live_evidence_directory_scaffold.py
-python3 -B scripts/verify_live_evidence_schema.py
-python3 -B scripts/verify_live_evidence_manifest.py
-python3 -B scripts/verify_live_evidence_coverage.py
-python3 -B scripts/verify_project_governance.py
-python3 -B scripts/verify_airgap_bundle.py
-python3 -B scripts/verify_agent_help_contract.py
-python3 -B scripts/verify_agent_examples.py
-python3 -B scripts/verify_kyverno_adapter.py
-python3 -B scripts/verify_opa_adapter.py
-python3 -B scripts/verify_kube_linter_adapter.py
-python3 -B scripts/verify_kube_score_adapter.py
-python3 -B scripts/verify_pluto_adapter.py
-python3 -B scripts/verify_adapter_contract.py
-python3 -B scripts/verify_mcp_contract.py
-python3 -B scripts/verify_mcp_docs.py
-python3 -B scripts/verify_execute_disabled.py
-python3 -B scripts/verify_admission_webhook.py
-python3 -B scripts/verify_admission_policy.py
-python3 -B scripts/verify_admission_digest_gate.py
-python3 -B scripts/verify_admission_audit.py
-python3 -B scripts/verify_admission_response.py
-python3 -B scripts/verify_admission_server.py
-python3 -B scripts/run_admission_kind_smoke.py
-python3 -B scripts/generate_release_notes.py --version 0.2.0 --output -
 ```
 
-The selected next-task runner records `blocked-by-environment` or
-`missing-tools` as a zero-run status when the prepared task is not `tool-ready`;
-the selector artifact also marks those selected tasks as `runnable: false` and
-prints blocker drilldowns instead of presenting their commands as runnable.
-It does not reattempt live capture commands until the evidence directory is
-refreshed. Release evidence status recommends only `tool-ready` next commands;
-blocked or missing-tool actions stay in blocker summaries with local worklist
-drilldowns. Release progress
-can run the same read-only environment probe without requiring a prepared
-evidence directory and can narrow the report with `--version`. It uses the same rule for JSON `nextActions` runnable commands, prints every
-tool-ready action, selected next-task file/command/worklist detail, and
-evidence next command in Markdown, and links blocker summaries to filtered
-local worklist commands.
-`prepare_live_evidence_directory.py --version <version>` applies the same
-version scope to the persisted `.kubeactuary/next-version-task.*` artifacts
-while keeping cluster writes disabled.
-`advance_version_iteration.py --version <version>` carries that same scope
-through live evidence directory preparation, selected-task execution, and
-before/after history snapshots, then refreshes the local
-`.kubeactuary/version-blockers.*` blocker ledger.
-
-Validate examples:
-
-```sh
-python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.json
-python3 -B -m json.tool examples/read-pods.verified.capsule.json
-python3 -B -m json.tool examples/apply-configmap.preflight.capsule.json
-python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
-ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml
-```
-
-## Brand
-
-The project uses one final transparent symbol:
-[assets/brand/kubeactuary-symbol.png](assets/brand/kubeactuary-symbol.png).
-Earlier exploration images were removed from the repository so public docs only
-show the selected mark.
-
-## Release Maturity
-
-KubeActuary is useful today as a local-first evidence collector and auditable
-operation contract. The repository also contains offline-verified seeds for the
-CRD, controller, packaging, MCP, policy adapters, and optional admission paths.
-
-1.0.0 is not blocked on a new abstraction. It is blocked on approved external
-evidence:
-
-- disposable lightweight clusters for kind, minikube, MicroK8s, and k3s;
-- Helm and Krew install smoke evidence;
-- controller resource-budget capture;
-- admission kind smoke evidence;
-- managed Kubernetes smoke evidence for EKS, GKE, and AKS.
-
-Those checks stay `BLOCKED` until captured on a suitable host. KubeActuary does
-not mark live Kubernetes, Helm, Krew, or managed-provider validation as done
-from local-only evidence.
-
-See [docs/roadmap.md](docs/roadmap.md),
-[docs/release-taskboard.md](docs/release-taskboard.md), and
-[docs/completion-audit.md](docs/completion-audit.md).
-
-## Status
-
-Current CLI release line: v0.2.0 alpha. Local logical implementation is verified
-through v0.9.5. Production claims wait for the external 1.0.0 evidence gates.
+Contribution rules and safety expectations are documented in
+[CONTRIBUTING.md](CONTRIBUTING.md). Security reporting is documented in
+[SECURITY.md](SECURITY.md).
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules and
-[NOTICE](NOTICE) for attribution status.

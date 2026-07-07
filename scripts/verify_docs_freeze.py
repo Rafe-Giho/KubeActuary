@@ -32,8 +32,9 @@ REQUIRED_DOCS = (
 )
 REQUIRED_README_SNIPPETS = (
     "Evidence-carrying operations for AI-assisted Kubernetes.",
-    "python3 -B scripts/verify_release.py --version 0.2.0",
-    "verify_docs_freeze.py",
+    "KubeActuary is a local-first CLI",
+    "OperationCapsule",
+    "Manifest Preflight",
     "no direct cluster write execution;",
 )
 REQUIRED_EXAMPLES = (
