@@ -17,7 +17,9 @@ KubeActuary is a model-free CLI and Kubernetes-native specification for making
 AI-originated Kubernetes operations carry evidence before they can be considered
 for execution.
 
-It is not another Kubernetes chatbot. It is the execution boundary beneath one.
+It is not another Kubernetes chatbot. It is the execution boundary beneath one:
+small local files, deterministic checks, explicit rollback evidence, and gates
+that remain closed when proof is missing.
 
 ```text
 AI / human intent
@@ -26,6 +28,34 @@ AI / human intent
   -> gate decision
   -> human, CI, GitOps, or future bounded execution
 ```
+
+## Current State
+
+KubeActuary is currently published as a v0.2.0 local-first evidence collector.
+The local roadmap implementation is verified through v0.9.5, with the remaining
+1.0.0 work intentionally limited to external live evidence capture on approved
+Kubernetes, Helm, Krew, and managed-provider environments.
+
+Local verification:
+
+```sh
+python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B scripts/verify_milestone_completion.py
+python3 -B scripts/generate_release_progress.py --format text --evidence-dir evidence/live
+```
+
+Expected local posture:
+
+```text
+release checks: 85
+milestone completion: local-complete-with-accepted-external-blockers
+taskboard: no TODO, DOING, or VERIFY rows
+cluster writes: disabled by default
+```
+
+What is still blocked for 1.0.0 is not hidden: live smoke evidence remains
+blocked by missing local tools or `network-not-permitted` until it is captured
+on a suitable host.
 
 ## The Problem
 
@@ -500,8 +530,7 @@ scripts/
   run_admission_kind_smoke.py optional kind admission smoke harness
   verify_release.py            repeatable release verification suite
 assets/brand/
-  kubeactuary-symbol.png       selected project symbol
-  symbol-option-*.svg          earlier symbol candidates
+  kubeactuary-symbol.png       selected transparent project symbol
 tests/
   test_cli.py                  CLI tests
 ```
@@ -674,51 +703,40 @@ python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
 ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml
 ```
 
-## Brand Proposals
+## Brand
 
-Symbol candidates are in [docs/brand-options.md](docs/brand-options.md).
+The project uses one final transparent symbol:
+[assets/brand/kubeactuary-symbol.png](assets/brand/kubeactuary-symbol.png).
+Earlier exploration images were removed from the repository so public docs only
+show the selected mark.
 
-The recommended direction is a restrained cloud-native mark: a Kubernetes-like
-operation ring, a proof check, and an actuarial/risk signal. Pick one before the
-final logo is locked into the README header.
+## Release Maturity
 
-## Roadmap
+KubeActuary is useful today as a local-first evidence collector and auditable
+operation contract. The repository also contains offline-verified seeds for the
+CRD, controller, packaging, MCP, policy adapters, and optional admission paths.
 
-Current v0.2.0:
+1.0.0 is not blocked on a new abstraction. It is blocked on approved external
+evidence:
 
-- evidence collectors for auth, dry-run, diff, rollback, and health plans;
-- local capsule structure validation;
-- local runtime and kubectl client diagnostics;
-- GitHub Actions CI and release notes dry-run tooling;
-- versioned agent help compatibility contract;
-- deterministic capsule spec digest;
-- richer CRD rendering for local evidence workflows.
-- CRD status condition mapping for local fixtures and future controller
-  compatibility.
-- offline CRD compatibility smoke for upstream Kubernetes N/N-1/N-2 and
-  managed-service support notes.
-- CRD upgrade and rollback fixtures with offline verification.
-- kubectl explain descriptions and offline quality checks.
-- pure low-overhead controller reconcile model, watch boundary, and read-only
-  sync plan contract.
-- Helm, Kustomize, release archive, and Krew manifest verification paths.
+- disposable lightweight clusters for kind, minikube, MicroK8s, and k3s;
+- Helm and Krew install smoke evidence;
+- controller resource-budget capture;
+- admission kind smoke evidence;
+- managed Kubernetes smoke evidence for EKS, GKE, and AKS.
 
-Later:
+Those checks stay `BLOCKED` until captured on a suitable host. KubeActuary does
+not mark live Kubernetes, Helm, Krew, or managed-provider validation as done
+from local-only evidence.
 
-- minimal low-overhead controller;
-- CRD status condition mapping;
-- agent workflow examples;
-- real Krew install validation;
-- optional admission webhook for AI-originated writes;
-- agent help contract versioning.
-
-See [docs/roadmap.md](docs/roadmap.md).
+See [docs/roadmap.md](docs/roadmap.md),
+[docs/release-taskboard.md](docs/release-taskboard.md), and
+[docs/completion-audit.md](docs/completion-audit.md).
 
 ## Status
 
-v0.2.0 alpha. Useful as a local-first evidence collector workflow and
-specification seed.
-Not a production controller yet.
+Current CLI release line: v0.2.0 alpha. Local logical implementation is verified
+through v0.9.5. Production claims wait for the external 1.0.0 evidence gates.
 
 ## License
 

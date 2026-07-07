@@ -27,7 +27,36 @@ AI / 사람의 의도
 ```
 
 KubeActuary는 또 다른 Kubernetes 챗봇이 아닙니다. 챗봇 아래에 있어야 하는
-실행 경계입니다.
+실행 경계입니다. 작은 로컬 파일, deterministic check, 명시적인 rollback
+근거, 그리고 증거가 부족할 때 닫힌 상태를 유지하는 gate가 핵심입니다.
+
+## 현재 상태
+
+현재 공개 CLI 버전은 v0.2.0 local-first evidence collector입니다. 로컬에서
+논리적으로 검증 가능한 구현은 v0.9.5까지 완료되어 있고, 1.0.0까지 남은 일은
+승인된 Kubernetes, Helm, Krew, managed-provider 환경에서 external live
+evidence를 수집하는 것입니다.
+
+로컬 검증:
+
+```sh
+python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B scripts/verify_milestone_completion.py
+python3 -B scripts/generate_release_progress.py --format text --evidence-dir evidence/live
+```
+
+현재 로컬 기준:
+
+```text
+release checks: 85
+milestone completion: local-complete-with-accepted-external-blockers
+taskboard: TODO, DOING, VERIFY row 없음
+cluster writes: 기본 비활성화
+```
+
+1.0.0까지 남은 live smoke evidence는 숨기지 않습니다. 현재 환경에서는 missing
+local tools 또는 `network-not-permitted` 때문에 BLOCKED로 남아 있으며, 적절한
+host에서 evidence를 캡처해야 DONE으로 전환됩니다.
 
 ## 문제
 
@@ -502,8 +531,7 @@ scripts/
   run_admission_kind_smoke.py optional kind admission smoke harness
   verify_release.py            반복 release verification suite
 assets/brand/
-  kubeactuary-symbol.png       선택된 프로젝트 심볼
-  symbol-option-*.svg          이전 심볼 후보
+  kubeactuary-symbol.png       선택된 투명 배경 프로젝트 심볼
 tests/
   test_cli.py                  CLI tests
 ```
@@ -675,49 +703,40 @@ python3 -B -m json.tool schemas/operation-capsule.v0alpha1.schema.json
 ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml charts/kubeactuary/Chart.yaml charts/kubeactuary/values.yaml deploy/kustomize/base/kustomization.yaml deploy/kustomize/overlays/controller-namespace/kustomization.yaml deploy/kustomize/overlays/controller-cluster/kustomization.yaml deploy/crds/operationcapsules.ops.kubeactuary.dev.yaml deploy/controller/namespace-scoped-rbac.yaml deploy/controller/cluster-scoped-rbac.yaml deploy/admission/validatingwebhookconfiguration.yaml
 ```
 
-## 브랜드 후보
+## 브랜드
 
-심볼 후보는 [docs/brand-options.md](docs/brand-options.md)에 있습니다.
+프로젝트는 최종 투명 배경 심볼 하나만 사용합니다:
+[assets/brand/kubeactuary-symbol.png](assets/brand/kubeactuary-symbol.png).
+이전 탐색 후보 이미지는 제거해서 공개 문서에는 확정된 마크만 남겼습니다.
 
-추천 방향은 cloud-native 느낌을 유지하되, Kubernetes operation ring, proof
-check, risk signal을 함께 담은 절제된 마크입니다. 최종 로고를 README 헤더에
-고정하기 전에 하나를 선택하면 됩니다.
+## 릴리스 성숙도
 
-## 로드맵
+KubeActuary는 현재 local-first evidence collector와 감사 가능한 operation
+contract로 사용할 수 있습니다. 저장소에는 CRD, controller, packaging, MCP,
+policy adapter, optional admission 경로의 offline-verified seed도 포함되어
+있습니다.
 
-현재 v0.2.0:
+1.0.0은 새 추상화가 아니라 승인된 external evidence 수집이 남은 상태입니다.
 
-- auth, dry-run, diff, rollback, health-plan evidence collector
-- 로컬 capsule 구조 검증
-- 로컬 runtime과 kubectl client 진단
-- GitHub Actions CI와 release notes dry-run 도구
-- versioned agent help compatibility 계약
-- deterministic capsule spec digest
-- 로컬 evidence workflow를 위한 CRD 렌더링 개선
-- 로컬 fixture와 향후 controller 호환성을 위한 CRD status condition mapping
-- upstream Kubernetes N/N-1/N-2와 managed-service support note를 위한
-  offline CRD compatibility smoke
-- offline verification이 포함된 CRD upgrade/rollback fixture
-- kubectl explain description과 offline quality check
-- 순수 저부하 controller reconcile 모델, watch boundary, read-only sync plan
-  계약
-- Helm, Kustomize, release archive, Krew manifest 검증 경로
+- kind, minikube, MicroK8s, k3s disposable lightweight cluster evidence
+- Helm/Krew install smoke evidence
+- controller resource-budget capture
+- admission kind smoke evidence
+- EKS, GKE, AKS managed Kubernetes smoke evidence
 
-이후:
+이 항목들은 적절한 host에서 캡처되기 전까지 `BLOCKED`로 남깁니다.
+KubeActuary는 live Kubernetes, Helm, Krew, managed-provider validation을
+local-only evidence만으로 DONE 처리하지 않습니다.
 
-- 저부하 controller
-- CRD status condition mapping
-- agent workflow examples
-- real Krew install validation
-- AI-originated write용 optional admission webhook
-- agent help contract versioning
-
-자세한 내용은 [docs/roadmap.md](docs/roadmap.md)를 참고하세요.
+자세한 내용은 [docs/roadmap.md](docs/roadmap.md),
+[docs/release-taskboard.md](docs/release-taskboard.md),
+[docs/completion-audit.md](docs/completion-audit.md)를 참고하세요.
 
 ## 상태
 
-v0.2.0 alpha. local-first evidence collector workflow와 specification seed로는
-사용할 수 있지만, 아직 production controller는 아닙니다.
+현재 CLI release line은 v0.2.0 alpha입니다. 로컬 논리 구현은 v0.9.5까지
+검증되어 있습니다. Production claim은 external 1.0.0 evidence gate가
+닫힌 뒤에만 가능합니다.
 
 ## 라이선스
 
