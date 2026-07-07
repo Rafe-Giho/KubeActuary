@@ -24,6 +24,7 @@ python3 -B scripts/verify_crd_explain_quality.py
 python3 -B scripts/verify_conformance_suite.py
 python3 -B scripts/verify_release_taskboard.py
 python3 -B scripts/verify_release_progress.py
+python3 -B scripts/verify_milestone_completion.py
 python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
@@ -106,6 +107,9 @@ Expected:
   commands, selected next-task file/command details are visible in Markdown,
   advance run/history metadata is visible in Markdown, and evidence next
   commands are not truncated;
+- milestone completion verifies versioned work from v0.2.0 through v0.9.5 has
+  no TODO, DOING, or VERIFY rows and that accepted BLOCKED rows keep local
+  verifier commands plus explicit environment or missing-tool reasons;
 - version worklist verifies schema `kube-actuary.version-worklist.v1`,
   groups open work by release version with capture-ready/tool-blocked status,
   renders text output for terminal-first local task loops,
@@ -271,6 +275,7 @@ Expected:
 - [ ] controller dry-run contract check passes.
 - [ ] release taskboard audit check passes.
 - [ ] release progress check passes.
+- [ ] milestone completion check passes.
 - [ ] version worklist check passes.
 - [ ] version blocker ledger check passes.
 - [ ] version unblock plan check passes.

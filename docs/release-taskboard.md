@@ -86,7 +86,7 @@ Last local verification:
 
 ```text
 2026-07-07: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (84 checks)
+verification: passed (85 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
@@ -120,7 +120,7 @@ API surface across upstream-supported Kubernetes versions and managed services.
 | 0.3.1 | Add CRD validation smoke for Kubernetes upstream N/N-1/N-2 | BLOCKED | offline `scripts/verify_crd_compatibility.py`; blocked by missing kind/minikube/MicroK8s/k3s tools and `network-not-permitted` |
 | 0.3.1 | Add managed-service notes for EKS, GKE, AKS support windows | DONE | `docs/kubernetes-compatibility.md` source snapshot and smoke check |
 | 0.3.2 | Add CRD upgrade/rollback fixtures | DONE | offline rollback fixture verifier; live disposable-cluster apply still recommended before public CRD release |
-| 0.3.3 | Add `kubectl explain` quality checks and examples | BLOCKED | offline explain-quality verifier and runbook; current live evidence is blocked by `network-not-permitted` |
+| 0.3.3 | Add `kubectl explain` quality checks and examples | BLOCKED | offline `scripts/verify_crd_explain_quality.py` and runbook; current live evidence is blocked by `network-not-permitted` |
 
 ## v0.4.x: Low-Overhead Controller
 

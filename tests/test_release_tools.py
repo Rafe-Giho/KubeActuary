@@ -13,6 +13,7 @@ RELEASE_NOTES = ROOT / "scripts" / "generate_release_notes.py"
 RELEASE_TASKBOARD = ROOT / "scripts" / "verify_release_taskboard.py"
 RELEASE_PROGRESS = ROOT / "scripts" / "verify_release_progress.py"
 GA_READINESS = ROOT / "scripts" / "verify_ga_readiness.py"
+MILESTONE_COMPLETION = ROOT / "scripts" / "verify_milestone_completion.py"
 VERSION_WORKLIST = ROOT / "scripts" / "verify_version_worklist.py"
 VERSION_BLOCKERS = ROOT / "scripts" / "verify_version_blockers.py"
 VERSION_UNBLOCK_PLAN = ROOT / "scripts" / "verify_version_unblock_plan.py"
@@ -136,7 +137,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 84", result.stdout)
+        self.assertIn("checks: 85", result.stdout)
 
     def test_verify_ga_readiness(self):
         result = subprocess.run(
@@ -153,6 +154,22 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertIn("blocked: 16", result.stdout)
         self.assertIn("ga-gates: 6", result.stdout)
         self.assertIn("cluster-writes: disabled", result.stdout)
+
+    def test_verify_milestone_completion(self):
+        result = subprocess.run(
+            [sys.executable, str(MILESTONE_COMPLETION)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("milestone-completion: passed", result.stdout)
+        self.assertIn("through-version: 0.9.5", result.stdout)
+        self.assertIn("verify: 0", result.stdout)
+        self.assertIn("completion-status: local-complete-with-accepted-external-blockers", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(

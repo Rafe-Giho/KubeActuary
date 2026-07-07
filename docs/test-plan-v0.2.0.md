@@ -519,6 +519,9 @@ Confirm from code and tests:
 - GA readiness verifier requires the v1.0.0 release gates, local no-write
   safety boundaries, support matrix, governance files, and release-suite
   coverage to remain present without probing external systems;
+- milestone completion verifier requires all versioned task rows from v0.2.0
+  through v0.9.5 to be DONE or accepted BLOCKED work, with no TODO, DOING, or
+  VERIFY rows and with local verifier commands for each accepted blocker;
 - admission webhook prototype verifier requires `failurePolicy: Ignore`,
   opt-in namespace selection, and bounded timeout;
 - admission policy verifier allows non-AI identities, requires capsule and
@@ -555,7 +558,7 @@ Expected:
   sync, controller status apply, controller loop, controller resource budget, controller resource capture, lightweight cluster smoke, digest, CRD render,
   managed Kubernetes smoke, Helm chart, Kustomize, release archives, Krew manifest, supply chain,
   security docs, API freeze, docs freeze, live validation readiness, live validation queue, live validation queue safety, live evidence directory scaffold, live
-  evidence schema, live evidence manifest, live evidence coverage, project governance, GA readiness, air-gapped bundle, agent help contract, agent examples, Kyverno
+  evidence schema, live evidence manifest, live evidence coverage, project governance, GA readiness, milestone completion, air-gapped bundle, agent help contract, agent examples, Kyverno
   adapter, OPA adapter, kube-linter adapter, kube-score adapter, Pluto adapter, adapter
   contract, MCP contract, MCP docs, disabled-execute check, admission webhook,
   admission policy, admission digest/gate, admission audit, admission response,

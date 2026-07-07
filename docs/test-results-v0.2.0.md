@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (84 checks)
-Ran 118 tests
+verification: passed (85 checks)
+Ran 119 tests
 OK
 ```
 
@@ -124,6 +124,8 @@ Coverage included:
 - release taskboard status and check-count audit;
 - GA readiness gate verification for the local v1.0.0 safety, support,
   governance, and release-suite contract;
+- v0.9.5 milestone completion verification for versioned task rows and
+  accepted external blockers;
 - release progress report generation for versioned task tracking,
   text output, tool-ready next actions, selected evidence-directory runtime
   status, runner failure reason, optional version-history status, latest

@@ -83,12 +83,21 @@ COMMON_CHECKS = (
     Check(
         "release progress",
         ("python3", "-B", "scripts/verify_release_progress.py"),
-        contains=("release-progress: passed", "blocked: 16", "checks: 84"),
+        contains=("release-progress: passed", "blocked: 16", "checks: 85"),
     ),
     Check(
         "ga readiness",
         ("python3", "-B", "scripts/verify_ga_readiness.py"),
         contains=("ga-readiness: passed", "blocked: 16", "ga-gates: 6", "cluster-writes: disabled"),
+    ),
+    Check(
+        "milestone completion",
+        ("python3", "-B", "scripts/verify_milestone_completion.py"),
+        contains=(
+            "milestone-completion: passed",
+            "through-version: 0.9.5",
+            "completion-status: local-complete-with-accepted-external-blockers",
+        ),
     ),
     Check(
         "version worklist",

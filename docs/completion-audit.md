@@ -1,5 +1,44 @@
 # Completion Audit
 
+## v0.9.5 Local Completion Snapshot
+
+Snapshot date: 2026-07-07.
+
+Scope: local, logical, and repeatable verification through v0.9.5. Live
+cluster, cloud-provider, Helm, Krew, and kind smoke evidence remains external
+and is tracked as accepted `BLOCKED` work when the current environment lacks the
+required tool or returns `network-not-permitted`.
+
+Authoritative local task list:
+
+- `docs/release-taskboard.md`
+- `python3 -B scripts/generate_release_progress.py --format text --evidence-dir evidence/live`
+- `python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live`
+
+Completion verifier:
+
+```sh
+python3 -B scripts/verify_milestone_completion.py
+```
+
+Expected:
+
+```text
+milestone-completion: passed
+through-version: 0.9.5
+completion-status: local-complete-with-accepted-external-blockers
+```
+
+Evidence:
+
+| Requirement | Evidence |
+| --- | --- |
+| Local task list exists for remaining work | `docs/release-taskboard.md` is the source of truth and version worklist tooling renders filtered local loops. |
+| Versioned work through v0.9.5 is not left in `TODO`, `DOING`, or `VERIFY` | `scripts/verify_milestone_completion.py` parses versioned rows from v0.2.0 through v0.9.5. |
+| Accepted blockers are explicit environment/tool blockers | The same verifier requires `BLOCKED` rows to keep a local verifier command and an accepted blocker reason such as missing tools or `network-not-permitted`. |
+| Repeated local verification is wired into the release suite | `scripts/verify_release.py --version 0.2.0` includes `milestone completion`. |
+| Actual environment tests are not claimed | Live external gates remain `BLOCKED` until approved evidence is captured on a suitable host. |
+
 Snapshot date: 2026-07-01.
 
 ## Requested Outcome
