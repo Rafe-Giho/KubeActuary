@@ -16,6 +16,7 @@ VERSION_WORKLIST = ROOT / "scripts" / "verify_version_worklist.py"
 VERSION_BLOCKERS = ROOT / "scripts" / "verify_version_blockers.py"
 VERSION_UNBLOCK_PLAN = ROOT / "scripts" / "verify_version_unblock_plan.py"
 NEXT_UNBLOCK_ACTION = ROOT / "scripts" / "verify_next_unblock_action.py"
+NEXT_UNBLOCK_ACTION_RUNNER = ROOT / "scripts" / "verify_next_unblock_action_runner.py"
 EXTERNAL_GATE_PLAN = ROOT / "scripts" / "verify_external_gate_plan.py"
 EXTERNAL_GATE_COMMAND_SAFETY = ROOT / "scripts" / "verify_external_gate_command_safety.py"
 EXTERNAL_GATE_EVIDENCE = ROOT / "scripts" / "verify_external_gate_evidence.py"
@@ -134,7 +135,7 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("release-progress: passed", result.stdout)
-        self.assertIn("checks: 82", result.stdout)
+        self.assertIn("checks: 83", result.stdout)
 
     def test_verify_version_worklist(self):
         result = subprocess.run(
@@ -192,6 +193,20 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("next-unblock-action: passed", result.stdout)
         self.assertIn("target: kind", result.stdout)
+
+    def test_verify_next_unblock_action_runner(self):
+        result = subprocess.run(
+            [sys.executable, str(NEXT_UNBLOCK_ACTION_RUNNER)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("next-unblock-action-runner: passed", result.stdout)
+        self.assertIn("mode: plan,run", result.stdout)
 
     def test_verify_external_gate_plan(self):
         result = subprocess.run(

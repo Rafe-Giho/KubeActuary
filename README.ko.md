@@ -376,6 +376,8 @@ scripts/
   verify_version_unblock_plan.py version unblock plan verifier
   select_next_unblock_action.py local next unblock action selector
   verify_next_unblock_action.py next unblock action verifier
+  run_next_unblock_action.py selected next-unblock verifier runner
+  verify_next_unblock_action_runner.py next unblock action runner verifier
   kube-actuary.version-worklist.v1 version worklist schema
   kube-actuary.version-iteration.v1 version iteration schema
   kube-actuary.version-iteration-diff.v1 version iteration diff schema
@@ -388,6 +390,8 @@ scripts/
   version-unblock-plan.json persisted local unblock plan report
   kube-actuary.next-unblock-action.v1 next unblock action schema
   next-unblock-action.json persisted next unblock action report
+  kube-actuary.next-unblock-action-run.v1 selected next-unblock runner schema
+  next-unblock-action-run.json persisted selected unblock verifier status report
   generate_external_gate_plan.py external verification gate plan generator
   verify_external_gate_plan.py external verification gate plan verifier
   verify_external_gate_command_safety.py external gate command safety verifier
@@ -520,6 +524,7 @@ python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
 python3 -B scripts/verify_next_unblock_action.py
+python3 -B scripts/verify_next_unblock_action_runner.py
 python3 -B scripts/generate_version_worklist.py --format text --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --evidence-dir evidence/live
@@ -530,6 +535,8 @@ python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence
 python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_unblock_action.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/select_next_unblock_action.py --evidence-dir evidence/live --record
+python3 -B scripts/run_next_unblock_action.py evidence/live
+python3 -B scripts/run_next_unblock_action.py evidence/live --run --record
 python3 -B scripts/select_next_version_task.py --missing-tool kind
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment
 python3 -B scripts/generate_version_worklist.py --format markdown --open-only --probe-environment --environment-reason connection-refused

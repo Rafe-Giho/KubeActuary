@@ -24,6 +24,8 @@ python3 -B scripts/generate_version_unblock_plan.py --format markdown --evidence
 python3 -B scripts/generate_version_unblock_plan.py --evidence-dir evidence/live --record
 python3 -B scripts/select_next_unblock_action.py --format markdown --evidence-dir evidence/live
 python3 -B scripts/select_next_unblock_action.py --evidence-dir evidence/live --record
+python3 -B scripts/run_next_unblock_action.py evidence/live
+python3 -B scripts/run_next_unblock_action.py evidence/live --run --record
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live
 python3 -B scripts/select_next_version_task.py --evidence-dir evidence/live --skip-complete-evidence
 python3 -B scripts/verify_live_validation_queue.py
@@ -130,6 +132,12 @@ blocker using the highest item count, then kind and target name for stable
 ties. With `--record`, it writes `.kubeactuary/next-unblock-action.json` and
 `.kubeactuary/next-unblock-action.md`, preserving the read-only verify,
 refresh, inspect, and record commands for the selected blocker.
+`run_next_unblock_action.py` loads `.kubeactuary/next-unblock-action.json` and
+validates only the selected `verify` commands. Without `--run`, it reports the
+plan. With `--run --record`, it executes only allowlisted tool-version or
+`kubectl cluster-info --request-timeout=5s` checks and records
+`.kubeactuary/next-unblock-action-run.json` plus Markdown status without
+running refresh, inspect, record, install, or write commands.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, including environment reasons such as
 `connection-refused`, so repeated validation can focus on the shared blocker

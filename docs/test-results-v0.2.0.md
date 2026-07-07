@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (82 checks)
-Ran 116 tests
+verification: passed (83 checks)
+Ran 117 tests
 OK
 ```
 
@@ -142,6 +142,9 @@ Coverage included:
 - next unblock action selection with deterministic highest-impact blocker
   selection, read-only verification commands, blocker filters, and persisted
   `.kubeactuary/next-unblock-action.json` plus Markdown reports;
+- next unblock action runner verification with allowlisted verify-only
+  execution, blocked verifier status capture, safe command rejection, and
+  persisted `.kubeactuary/next-unblock-action-run.json` plus Markdown reports;
 - external gate plan generation for remaining VERIFY rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
@@ -195,6 +198,7 @@ python3 -B scripts/verify_version_worklist.py
 python3 -B scripts/verify_version_blockers.py
 python3 -B scripts/verify_version_unblock_plan.py
 python3 -B scripts/verify_next_unblock_action.py
+python3 -B scripts/verify_next_unblock_action_runner.py
 python3 -B scripts/verify_external_gate_plan.py
 python3 -B scripts/verify_external_gate_command_safety.py
 python3 -B scripts/verify_external_gate_evidence.py
@@ -314,6 +318,9 @@ Result:
 - next unblock action check prints `next-unblock-action: passed` and exercises
   deterministic highest-impact blocker selection, read-only verification
   commands, blocker filters, and persisted next-action metadata;
+- next unblock action runner check prints `next-unblock-action-runner: passed`
+  and exercises verify-only execution, blocked verifier status capture, safe
+  command rejection, and persisted runner metadata;
 - external gate plan check prints `external-gate-plan: passed`;
 - external gate command safety check prints `external-gate-command-safety:
   passed`;

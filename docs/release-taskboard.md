@@ -28,6 +28,7 @@ Status legend:
 | Version blocker ledger | DONE | `scripts/record_version_blockers.py` and `scripts/verify_version_blockers.py` verify schema `kube-actuary.version-blockers.v1` for prepared-queue-sourced local blocker records, affected versions, filtered worklist drilldowns, environment reasons, next local loop commands, and persisted `.kubeactuary/version-blockers.json` plus Markdown reports |
 | Version unblock plan | DONE | `scripts/generate_version_unblock_plan.py` and `scripts/verify_version_unblock_plan.py` verify schema `kube-actuary.version-unblock-plan.v1` for grouped missing-tool and environment unblock actions, read-only verification commands, queue refresh commands, and persisted `.kubeactuary/version-unblock-plan.json` plus Markdown reports |
 | Next unblock action | DONE | `scripts/select_next_unblock_action.py` and `scripts/verify_next_unblock_action.py` verify schema `kube-actuary.next-unblock-action.v1` for deterministic highest-impact blocker selection, read-only verification commands, blocker filters, and persisted `.kubeactuary/next-unblock-action.json` plus Markdown reports |
+| Next unblock action runner | DONE | `scripts/run_next_unblock_action.py` and `scripts/verify_next_unblock_action_runner.py` verify schema `kube-actuary.next-unblock-action-run.v1` for allowlisted verify-only execution, blocked verifier status capture, safe command rejection, and persisted `.kubeactuary/next-unblock-action-run.json` plus Markdown reports |
 | External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
 | External gate command safety | DONE | `scripts/verify_external_gate_command_safety.py` verifies generated external commands stay dry-run/read-only/evidence-only |
 | External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
@@ -85,7 +86,7 @@ Last local verification:
 
 ```text
 2026-07-07: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (82 checks)
+verification: passed (83 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization
