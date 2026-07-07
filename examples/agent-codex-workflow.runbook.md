@@ -5,24 +5,18 @@ planning and gate layer while keeping cluster writes outside the agent tool set.
 
 Safety boundary:
 
-- call only the safe MCP tools exposed by `scripts/kube_actuary_mcp_server.py`;
-- keep `execute_approved_capsule` disabled;
+- use only `bin/kube-actuary` commands that record, collect, verify, or gate
+  evidence;
+- never run the proposed Kubernetes write command from the capsule;
 - attach external evidence explicitly before relying on `gate`.
-
-Safe MCP tools:
-
-- `draft_operation_capsule`
-- `inspect_operation_capsule`
-- `attach_operation_evidence`
-- `verify_operation_capsule`
-- `gate_operation_capsule`
 
 Local smoke:
 
 ```sh
-python3 -B scripts/verify_mcp_contract.py
-python3 -B scripts/verify_agent_help_contract.py
-python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B bin/kube-actuary help agents --format json
+python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.json
+python3 -B bin/kube-actuary verify examples/apply-configmap.preflight.capsule.json
+python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
 ```
 
 Agent workflow:

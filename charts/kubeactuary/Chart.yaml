@@ -2,8 +2,8 @@ apiVersion: v2
 name: kubeactuary
 description: Evidence-carrying operations CLI and CRD for AI-assisted Kubernetes.
 type: application
-version: 0.2.0
-appVersion: "0.2.0"
+version: 0.9.5
+appVersion: "0.9.5"
 home: https://github.com/choo-o/kubeactuary
 sources:
   - https://github.com/choo-o/kubeactuary

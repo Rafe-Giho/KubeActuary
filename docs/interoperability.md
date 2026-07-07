@@ -36,28 +36,18 @@ kube-actuary gate op.with-all-evidence.json
 Only `gate: open` is an execution candidate. KubeActuary v0 does not execute the
 candidate command.
 
-## MCP Tool Contract
+## Agent-Readable CLI Contract
 
-The stdlib MCP/JSON-RPC wrapper in `scripts/kube_actuary_mcp_server.py`
-exposes these safe tools:
-
-| Tool | Purpose | Writes cluster |
-| --- | --- | --- |
-| `draft_operation_capsule` | Create a capsule from intent plus command or manifest | No |
-| `inspect_operation_capsule` | Summarize target, risk, evidence, and state | No |
-| `attach_operation_evidence` | Attach an evidence record to a capsule | No |
-| `verify_operation_capsule` | Check required evidence | No |
-| `gate_operation_capsule` | Return open/closed execution decision | No |
-| `execute_approved_capsule` | Execute only a verified capsule | Disabled |
-
-The first five tools are safe for local development because they operate on
-capsule files rather than live cluster state.
-
-Verification:
+The public v0.9.5 integration surface is the CLI help contract:
 
 ```sh
-python3 -B scripts/verify_mcp_contract.py
+python3 -B bin/kube-actuary help agents --format json
 ```
+
+It describes safe commands, expected exit codes, cluster access, and the
+commands that never execute the proposed Kubernetes write. A future MCP wrapper
+should preserve this same boundary instead of introducing direct cluster-write
+execution.
 
 ## GitOps Contract
 

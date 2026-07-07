@@ -13,16 +13,9 @@ Example CI steps:
 
 ```sh
 python3 -B bin/kube-actuary help agents --format json
-python3 -B scripts/verify_agent_help_contract.py
 python3 -B bin/kube-actuary validate examples/apply-configmap.preflight.capsule.json
 python3 -B bin/kube-actuary verify examples/apply-configmap.preflight.capsule.json
 python3 -B bin/kube-actuary gate examples/apply-configmap.preflight.capsule.json
-```
-
-Optional MCP contract check:
-
-```sh
-python3 -B scripts/verify_mcp_contract.py
 ```
 
 The CI job should publish the capsule JSON and command output as artifacts. A

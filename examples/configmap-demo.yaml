@@ -4,5 +4,5 @@ metadata:
   name: kubeactuary-demo
   namespace: default
 data:
-  release: "0.2.0"
+  release: "0.9.5"
   mode: "preflight"

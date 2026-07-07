@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: controller
-          image: ghcr.io/kubeactuary/kubeactuary-controller:0.2.0
+          image: ghcr.io/kubeactuary/kubeactuary-controller:0.9.5
           imagePullPolicy: IfNotPresent
           command:
             - python3

@@ -1,57 +1,40 @@
-# MCP Integration
+# Agent Integration
 
-KubeActuary exposes a safe stdlib JSON-RPC/MCP wrapper for local agent
-workflows. It does not expose raw Kubernetes write execution.
+KubeActuary v0.9.5 exposes an agent-readable CLI contract. A packaged MCP
+server is not part of the public v0.9.5 artifact.
 
-## Client Config
-
-Example config:
-
-```json
-{
-  "mcpServers": {
-    "kube-actuary": {
-      "command": "python3",
-      "args": [
-        "-B",
-        "scripts/kube_actuary_mcp_server.py"
-      ],
-      "env": {}
-    }
-  }
-}
-```
-
-The same config is available at:
-
-```text
-examples/mcp-client-config.json
-```
-
-Run MCP clients from the repository root or adjust the script path to an
-absolute path.
-
-## Safe Tools
-
-- `draft_operation_capsule`
-- `inspect_operation_capsule`
-- `attach_operation_evidence`
-- `verify_operation_capsule`
-- `gate_operation_capsule`
-
-`execute_approved_capsule` remains disabled. The wrapper never runs
-`kubectl apply`, `kubectl delete`, or proposed Kubernetes write commands.
-
-## Verification
+Current integration point:
 
 ```sh
-python3 -B scripts/verify_mcp_contract.py
-python3 -B scripts/verify_mcp_docs.py
+python3 -B bin/kube-actuary help agents --format json
 ```
 
-Expected:
+That JSON describes commands, expected exit codes, cluster access, capsule
+writes, and the no-write safety boundary. Agents should use it to decide which
+CLI commands are safe to call.
 
-```text
-mcp-contract: passed
-mcp-docs: passed
-```
+## Safe Current Flow
+
+1. Draft a capsule with `draft`.
+2. Inspect or validate the capsule.
+3. Collect evidence with `collect auth`, `collect dry-run`, `collect diff`,
+   `collect rollback`, or `collect health-plan`.
+4. Attach external evidence explicitly when required.
+5. Run `verify` and `gate`.
+6. Hand an open-gate capsule to a human, CI, GitOps, or a future bounded
+   executor.
+
+The CLI does not execute the proposed Kubernetes write command.
+
+## Future MCP Boundary
+
+A future MCP wrapper should expose only the same evidence and gate operations:
+
+- draft operation capsule;
+- inspect operation capsule;
+- attach operation evidence;
+- verify operation capsule;
+- gate operation capsule.
+
+Direct execution of approved capsules must remain disabled until the gate,
+audit, and live-evidence story is proven.

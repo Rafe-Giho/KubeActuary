@@ -37,16 +37,17 @@ KubeActuary provides that contract:
 
 ## Current Release
 
-v0.9.5 is a pre-GA, local-complete release. It reflects the current repository
-scope: the CLI, capsule schema, CRD seed, low-overhead controller contract,
-optional packaging assets, policy evidence adapters, safe agent integration
-surfaces, and admission prototype are present in the tree.
+v0.9.5 is a pre-GA, local-complete CLI release. It reflects the public
+repository scope: the CLI, capsule schema, CRD seed, manifest preflight
+collectors, explicit rollback and health-plan evidence, deterministic digests,
+offline verification, example capsules, and low-overhead controller design are
+present and testable from the checked-in tree.
 
 This is still not a 1.0.0 production claim. The remaining 1.0.0 work is live
 evidence capture on approved Kubernetes and provider environments, including
-cluster smoke runs, Helm/Krew install proof, managed-provider checks, and
-resource-budget evidence. Those checks are intentionally blocked in environments
-without the required tools or network access.
+cluster smoke runs, installation proof, managed-provider checks, public CI
+evidence, and resource-budget evidence. Those checks are intentionally blocked
+in environments without the required tools or network access.
 
 What is included:
 
@@ -58,11 +59,8 @@ What is included:
 - deterministic digest output;
 - offline validation, verification, and gate decisions;
 - low-overhead controller reconcile model with status-only boundaries;
-- optional Helm, Kustomize, Krew, SBOM, provenance, and air-gap packaging
-  assets;
-- policy evidence adapter support for common Kubernetes policy tools;
-- safe MCP/agent integration surfaces;
-- optional admission prototype assets;
+- Helm chart seed, Kustomize assets, and optional deployment manifests;
+- optional admission manifest prototype;
 - agent-readable help for safer tool integration.
 
 What is intentionally not included in the default path:
@@ -285,7 +283,7 @@ charts/               Helm chart seed
 controller/           Low-overhead controller reconcile model
 deploy/               CRD, optional controller, admission, and Kustomize assets
 docs/                 Design notes, runbooks, compatibility, and roadmap
-examples/             Capsule, manifest, CRD, and agent integration examples
+examples/             Capsule, manifest, CRD, and CLI-agent workflow examples
 schemas/              JSON Schema and API freeze contract
 tests/                CLI and behavior tests
 ```
@@ -296,8 +294,6 @@ tests/                CLI and behavior tests
 - [CRD design](docs/crd-design.md)
 - [Kubernetes compatibility](docs/kubernetes-compatibility.md)
 - [Controller design](docs/controller.md)
-- [Interoperability](docs/interoperability.md)
-- [Policy adapters](docs/policy-adapters.md)
 - [Security policy](SECURITY.md)
 - [Threat model](docs/threat-model.md)
 - [Roadmap](docs/roadmap.md)

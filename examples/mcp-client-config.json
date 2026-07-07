@@ -1,12 +1,5 @@
 {
-  "mcpServers": {
-    "kube-actuary": {
-      "command": "python3",
-      "args": [
-        "-B",
-        "scripts/kube_actuary_mcp_server.py"
-      ],
-      "env": {}
-    }
-  }
+  "status": "not-packaged-in-v0.9.5",
+  "message": "The public v0.9.5 release exposes agent-readable CLI help instead of a packaged MCP server.",
+  "replacement": "python3 -B bin/kube-actuary help agents --format json"
 }

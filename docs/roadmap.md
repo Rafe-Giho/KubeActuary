@@ -3,13 +3,14 @@
 KubeActuary should grow in small layers. Each layer must preserve the main
 constraint: AI is not trusted with unbounded Kubernetes write execution.
 
-The actionable local taskboard is maintained in
-[release-taskboard.md](release-taskboard.md). Repeatable release verification is
-run with:
+The public v0.9.5 verification path is the checked-in unit test suite:
 
 ```sh
-python3 -B scripts/verify_release.py --version 0.2.0
+python3 -B -m unittest discover -s tests
 ```
+
+Historical local helper scripts are not part of the public v0.9.5 release
+surface.
 
 ## v0.1: Local Capsule CLI
 
@@ -58,10 +59,9 @@ Current local progress:
   frozen for the alpha contract.
 - `render-crd` emits `status.phase`, `status.gate`, missing/failed evidence,
   digest, and condition mappings for local fixtures.
-- `docs/kubernetes-compatibility.md` records the upstream N/N-1/N-2 target and
-  managed-service support snapshot.
-- `scripts/verify_crd_compatibility.py` performs offline CRD compatibility
-  smoke checks. Live kind/minikube matrix validation remains follow-up work.
+- `docs/kubernetes-compatibility.md` records the upstream N/N-1/N-2 target.
+- Offline CRD fixtures are checked in. Live kind/minikube matrix validation
+  remains follow-up work.
 - CRD upgrade and rollback fixtures are available under `deploy/crds/fixtures/`
   with an offline verifier and runbook.
 - The CRD includes OpenAPI descriptions for `kubectl explain`, with an offline
@@ -88,18 +88,12 @@ Current local progress:
   patch JSON for fixtures;
 - `bin/kube-actuary-controller watch-command` documents the intended
   OperationCapsule-only watch boundary;
-- `scripts/verify_controller_contract.py` checks the status patch and watch
-  target offline;
 - namespace-scoped and cluster-scoped RBAC manifests grant only OperationCapsule
   read/watch and status patch permissions;
 - health, readiness, metrics, and leader-election payload contracts are
   deterministic and offline-verifiable;
-- resource budget target is set to idle <50m CPU and <64Mi memory, with a
-  `kubectl top` measurement harness for live cluster evidence;
-- lightweight cluster smoke harness prints or runs the kind, minikube, MicroK8s,
-  and k3s server-side dry-run plan and can write JSON run evidence;
-- status apply helper defaults to server-side dry-run, with persistent
-  status-only writes behind an explicit `--execute` flag;
+- resource budget target is idle <50m CPU and <64Mi memory, to be proven with
+  live cluster evidence before 1.0;
 - live controller process, HTTP serving, deployment manifests, persistent status
   subresource loop, and live matrix evidence remain future work.
 
@@ -107,39 +101,27 @@ Current local progress:
 
 Make KubeActuary installable as a Kubernetes tool:
 
-- Helm chart seed packages the CRD and optional controller RBAC. Static
-  verification and dry-run smoke evidence output are available; live Helm runs
+- Helm chart seed packages the CRD and optional controller RBAC. Live Helm runs
   remain follow-up work.
 - Kustomize base and controller RBAC overlays render with `kubectl kustomize`.
-- Multi-target release archives generate SHA-256 sidecars and pass install
-  smoke checks.
-- Krew manifest generation and isolated install smoke evidence output are
-  available from release archives. Real Krew runs remain follow-up work.
-- SBOM and provenance generation is deterministic and verifies archive digests.
-- Air-gapped install docs and manifest verification list required offline
-  artifacts.
+- Release archives, Krew packaging, SBOM/provenance, and air-gapped install
+  bundles remain future public release work.
 
 ## v0.6: Policy Adapters
 
-Add optional adapters:
+Future optional adapters:
 
-- Kyverno CLI. Adapter available for captured JSON output with pass/fail
-  fixtures.
-- OPA/Rego. Adapter available for captured `opa eval --format=json` output with
-  pass/fail fixtures.
-- kube-linter. Adapter available for captured JSON output with pass/fail
-  fixtures.
-- kube-score. Adapter available for captured JSON output with pass/fail
-  fixtures.
-- Pluto. Adapter available for captured JSON output with pass/fail fixtures.
+- Kyverno CLI.
+- OPA/Rego.
+- kube-linter.
+- kube-score.
+- Pluto.
 
-Adapters attach evidence, not replace the core gate. Adapter outputs include a
-common evidence contract and normalized severity verified by
-`scripts/verify_adapter_contract.py`.
+Adapters should attach evidence, not replace the core gate.
 
 ## v0.7: MCP Server
 
-Expose safe MCP tools through `scripts/kube_actuary_mcp_server.py`:
+Expose safe MCP tools after the CLI contract and audit story are stable:
 
 - `draft_operation_capsule`
 - `inspect_operation_capsule`
@@ -148,8 +130,7 @@ Expose safe MCP tools through `scripts/kube_actuary_mcp_server.py`:
 - `gate_operation_capsule`
 
 Keep `execute_approved_capsule` disabled or experimental until the gate and
-audit story is mature. `scripts/verify_mcp_contract.py` proves the safe tools
-are listed and the execute tool is disabled.
+audit story is mature.
 
 ## v0.8: Admission and Audit
 
