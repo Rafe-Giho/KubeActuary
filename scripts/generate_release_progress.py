@@ -94,14 +94,15 @@ def filter_gate_plan(plan: dict[str, Any], version_filters: list[str]) -> dict[s
         for gate in plan.get("gates", [])
         if (gate.get("version") or gate.get("section")) in requested
     ]
+    statuses = Counter(gate.get("status") for gate in gates)
     return {
         **plan,
         "summary": {
             **plan.get("summary", {}),
-            "verify": len(gates),
+            "verify": statuses["VERIFY"],
             "doing": 0,
             "todo": 0,
-            "blocked": 0,
+            "blocked": statuses["BLOCKED"],
         },
         "gates": gates,
     }
@@ -114,6 +115,7 @@ def summarize_gate_plan(plan: dict[str, Any]) -> dict[str, Any]:
         "verify": plan.get("summary", {}).get("verify", 0),
         "doing": plan.get("summary", {}).get("doing", 0),
         "todo": plan.get("summary", {}).get("todo", 0),
+        "blocked": plan.get("summary", {}).get("blocked", 0),
         "gates": [
             {
                 "id": gate.get("id"),
@@ -785,6 +787,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
         f"- verify: {summary['verify']}",
         f"- doing: {summary['doing']}",
         f"- todo: {summary['todo']}",
+        f"- blocked: {summary['blocked']}",
         f"- release checks: {progress['releaseSuite']['checks']}",
         "",
     ]
@@ -796,6 +799,7 @@ def render_markdown(progress: dict[str, Any]) -> str:
         counts = group["summary"]
         lines.append(
             f"- `{group['version']}` done={counts['done']} verify={counts['verify']} doing={counts['doing']} todo={counts['todo']}"
+            f" blocked={counts['blocked']}"
         )
         for item in group["openItems"]:
             lines.append(f"  - {item['status']}: {item['item']}")
@@ -1009,6 +1013,7 @@ def render_text(progress: dict[str, Any]) -> str:
         f"verify: {summary['verify']}",
         f"doing: {summary['doing']}",
         f"todo: {summary['todo']}",
+        f"blocked: {summary['blocked']}",
         f"release-checks: {progress['releaseSuite']['checks']}",
     ]
     filters = progress.get("filters", {})
@@ -1021,7 +1026,7 @@ def render_text(progress: dict[str, Any]) -> str:
         counts = group["summary"]
         lines.append(
             f"version: {group['version']} done={counts['done']} verify={counts['verify']} "
-            f"doing={counts['doing']} todo={counts['todo']}"
+            f"doing={counts['doing']} todo={counts['todo']} blocked={counts['blocked']}"
         )
         for item in group["openItems"]:
             lines.append(f"item: {group['version']} {item['status']} {item['item']}")

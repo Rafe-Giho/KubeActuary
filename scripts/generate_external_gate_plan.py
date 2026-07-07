@@ -138,7 +138,7 @@ def build_plan(taskboard: Path = TASKBOARD) -> dict[str, Any]:
     text = taskboard.read_text()
     rows = taskboard_rows(text)
     statuses = Counter(row["status"] for row in rows)
-    verify_rows = [row for row in rows if row["status"] == "VERIFY"]
+    gate_rows = [row for row in rows if row["status"] in {"VERIFY", "BLOCKED"}]
     return {
         "schemaVersion": SCHEMA_VERSION,
         "source": str(taskboard.relative_to(ROOT)),
@@ -150,7 +150,7 @@ def build_plan(taskboard: Path = TASKBOARD) -> dict[str, Any]:
             "todo": statuses["TODO"],
             "blocked": statuses["BLOCKED"],
         },
-        "gates": [external_gate(row, index + 1) for index, row in enumerate(verify_rows)],
+        "gates": [external_gate(row, index + 1) for index, row in enumerate(gate_rows)],
         "closureCommands": [
             "python3 -B scripts/validate_live_evidence.py <evidence.json> [...]",
             "python3 -B scripts/build_live_evidence_manifest.py <evidence.json> [...] --output <manifest.json>",
@@ -170,6 +170,7 @@ def render_markdown(plan: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- verify: {plan['summary']['verify']}",
+        f"- blocked: {plan['summary']['blocked']}",
         f"- doing: {plan['summary']['doing']}",
         f"- todo: {plan['summary']['todo']}",
         "",
@@ -177,7 +178,7 @@ def render_markdown(plan: dict[str, Any]) -> str:
         "",
     ]
     for gate in plan["gates"]:
-        lines.append(f"- `{gate['id']}` {gate['item']} ({gate['kind']})")
+        lines.append(f"- `{gate['id']}` {gate['item']} ({gate['kind']}, {gate['status']})")
         lines.append(f"  Required evidence: {gate['requiredEvidence']}")
         if gate["recommendedCommands"]:
             lines.append(f"  First command: `{gate['recommendedCommands'][0]}`")

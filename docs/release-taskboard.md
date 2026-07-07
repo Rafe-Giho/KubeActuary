@@ -29,9 +29,9 @@ Status legend:
 | Version unblock plan | DONE | `scripts/generate_version_unblock_plan.py` and `scripts/verify_version_unblock_plan.py` verify schema `kube-actuary.version-unblock-plan.v1` for grouped missing-tool and environment unblock actions, read-only verification commands, queue refresh commands, and persisted `.kubeactuary/version-unblock-plan.json` plus Markdown reports |
 | Next unblock action | DONE | `scripts/select_next_unblock_action.py` and `scripts/verify_next_unblock_action.py` verify schema `kube-actuary.next-unblock-action.v1` for deterministic highest-impact blocker selection, read-only verification commands, blocker filters, and persisted `.kubeactuary/next-unblock-action.json` plus Markdown reports |
 | Next unblock action runner | DONE | `scripts/run_next_unblock_action.py` and `scripts/verify_next_unblock_action_runner.py` verify schema `kube-actuary.next-unblock-action-run.v1` for allowlisted verify-only execution, blocked verifier status capture, safe command rejection, and persisted `.kubeactuary/next-unblock-action-run.json` plus Markdown reports |
-| External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY rows and evidence commands |
+| External gate plan | DONE | `scripts/verify_external_gate_plan.py` verifies remaining VERIFY/BLOCKED rows and evidence commands |
 | External gate command safety | DONE | `scripts/verify_external_gate_command_safety.py` verifies generated external commands stay dry-run/read-only/evidence-only |
-| External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY rows |
+| External gate evidence evaluation | DONE | `scripts/verify_external_gate_evidence.py` maps captured smoke manifests to VERIFY/BLOCKED rows |
 | External evidence builder | DONE | `scripts/verify_external_evidence_builder.py` verifies supplemental evidence record generation |
 | External evidence bundle | DONE | `scripts/verify_external_evidence_bundle.py` verifies auditable evidence bundle generation |
 | Release evidence directory | DONE | `scripts/verify_release_evidence_directory.py` verifies repeated evidence directory artifact generation |
@@ -54,12 +54,12 @@ Status legend:
 | Controller read-only sync | DONE | `scripts/verify_controller_sync.py` verifies `kubectl get` plus disabled write execution |
 | Controller status apply dry-run | DONE | `scripts/verify_controller_status_apply.py` verifies default server dry-run and explicit status-only execute shape |
 | Controller status loop dry-run | DONE | `scripts/verify_controller_loop.py` verifies repeated read/status-patch ticks stay server-side dry-run by default |
-| Controller resource budget | VERIFY | offline budget verifier and read-only capture helper added; live kind/minikube/k3s measurements still needed |
-| Lightweight cluster smoke | VERIFY | offline smoke plan and JSON evidence-output verifier added; live matrix evidence still needed |
-| Helm chart | VERIFY | chart seed, dry-run smoke harness, and offline verifier added; live Helm run not executed because Helm is not installed |
+| Controller resource budget | BLOCKED | offline budget verifier and read-only capture helper added; current live evidence is blocked by `network-not-permitted` |
+| Lightweight cluster smoke | BLOCKED | offline smoke plan and JSON evidence-output verifier added; blocked by missing kind/minikube/MicroK8s/k3s tools and `network-not-permitted` |
+| Helm chart | BLOCKED | chart seed, dry-run smoke harness, and offline verifier added; blocked because Helm is not installed and current live evidence has `network-not-permitted` |
 | Kustomize | DONE | base and controller overlays render with `kubectl kustomize` |
 | Release archives | DONE | multi-target archive generator, SHA-256 sidecars, and install smoke verifier |
-| Krew manifest | VERIFY | manifest generator, isolated smoke harness, and offline verifier added; real Krew install validation not run because Krew is not installed |
+| Krew manifest | BLOCKED | manifest generator, isolated smoke harness, and offline verifier added; blocked because kubectl-krew is not installed |
 | SBOM and provenance | DONE | deterministic SBOM/provenance generators and archive digest verifier |
 | Air-gapped install | DONE | offline artifact manifest generator and verifier |
 | Kyverno adapter | DONE | captured JSON adapter with pass/fail fixture verifier |
@@ -75,12 +75,12 @@ Status legend:
 | Live evidence schema | DONE | `scripts/verify_live_evidence_schema.py` validates supported captured evidence report schemas |
 | Live evidence manifest | DONE | `scripts/verify_live_evidence_manifest.py` verifies captured report manifest generation |
 | Live evidence coverage | DONE | `scripts/verify_live_evidence_coverage.py` verifies release-gate and provider coverage rules |
-| Managed Kubernetes smoke | VERIFY | `scripts/verify_managed_kubernetes_smoke.py` verifies EKS/GKE/AKS plan and evidence JSON; provider runs still needed |
+| Managed Kubernetes smoke | BLOCKED | `scripts/verify_managed_kubernetes_smoke.py` verifies EKS/GKE/AKS plan and evidence JSON; blocked by missing az/gcloud tools and `network-not-permitted` |
 | Project governance | DONE | `scripts/verify_project_governance.py` verifies LICENSE, NOTICE, SECURITY, and CONTRIBUTING |
-| Controller | VERIFY | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, status apply dry-run, and status loop exist; live cluster loop/resource evidence remains |
-| Packaging | VERIFY | Helm/Krew live validation remains; local chart, Kustomize, archive, SBOM, provenance, and air-gapped verifiers exist |
+| Controller | BLOCKED | Optional `serve` runtime, Deployment seed, status patch plan, read-only sync, status apply dry-run, and status loop exist; current live evidence is blocked by `network-not-permitted` |
+| Packaging | BLOCKED | Helm/Krew live validation remains; blocked by missing Helm/kubectl-krew tools and `network-not-permitted` |
 | MCP server | DONE | safe stdlib JSON-RPC wrapper, client config, docs, and contract verifier exist |
-| Admission/audit | VERIFY | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; live kind webhook smoke remains |
+| Admission/audit | BLOCKED | offline webhook manifest, policy evaluator, local server, response builder, audit fixtures, and kind smoke evidence harness exist; blocked by missing kind and `network-not-permitted` |
 
 Last local verification:
 
@@ -117,10 +117,10 @@ API surface across upstream-supported Kubernetes versions and managed services.
 | --- | --- | --- | --- |
 | 0.3.0 | Freeze CRD field names for `spec`, embedded evidence, rollback, and status | DONE | CRD schema field contract tests |
 | 0.3.0 | Add status condition mapping: `EvidenceComplete`, `GateOpen`, `Blocked`, `RollbackReady`, `Expired` | DONE | rendered CRD status condition tests |
-| 0.3.1 | Add CRD validation smoke for Kubernetes upstream N/N-1/N-2 | VERIFY | offline `scripts/verify_crd_compatibility.py`; live kind/minikube matrix not run locally |
+| 0.3.1 | Add CRD validation smoke for Kubernetes upstream N/N-1/N-2 | BLOCKED | offline `scripts/verify_crd_compatibility.py`; blocked by missing kind/minikube/MicroK8s/k3s tools and `network-not-permitted` |
 | 0.3.1 | Add managed-service notes for EKS, GKE, AKS support windows | DONE | `docs/kubernetes-compatibility.md` source snapshot and smoke check |
 | 0.3.2 | Add CRD upgrade/rollback fixtures | DONE | offline rollback fixture verifier; live disposable-cluster apply still recommended before public CRD release |
-| 0.3.3 | Add `kubectl explain` quality checks and examples | VERIFY | offline explain-quality verifier and runbook; live `kubectl explain` smoke not run locally |
+| 0.3.3 | Add `kubectl explain` quality checks and examples | BLOCKED | offline explain-quality verifier and runbook; current live evidence is blocked by `network-not-permitted` |
 
 ## v0.4.x: Low-Overhead Controller
 
@@ -138,8 +138,8 @@ patches status. It must not scan the cluster or execute writes.
 | 0.4.2 | Read-only sync from watched capsules | DONE | `scripts/verify_controller_sync.py`; live status apply loop remains v0.4.4 |
 | 0.4.3 | Status apply dry-run for watched capsules | DONE | `scripts/verify_controller_status_apply.py`; persistent live loop remains v0.4.4 |
 | 0.4.3 | Status loop dry-run for watched capsules | DONE | `scripts/verify_controller_loop.py`; live cluster loop evidence remains v0.4.4 |
-| 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | VERIFY | `scripts/verify_controller_resource_budget.py`; live kind/minikube/k3s measurement still required |
-| 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | VERIFY | `scripts/verify_lightweight_cluster_smoke.py` verifies plan and evidence JSON; live matrix evidence still required |
+| 0.4.3 | Resource budget target: idle <50m CPU and <64Mi memory | BLOCKED | `scripts/verify_controller_resource_budget.py`; current live evidence is blocked by `network-not-permitted` |
+| 0.4.4 | Lightweight-cluster smoke: kind, minikube, MicroK8s, k3s | BLOCKED | `scripts/verify_lightweight_cluster_smoke.py` verifies plan and evidence JSON; blocked by missing kind/minikube/MicroK8s/k3s tools and `network-not-permitted` |
 
 ## v0.5.x: Packaging and Installation
 
@@ -147,10 +147,10 @@ Goal: make KubeActuary installable as a serious Kubernetes open-source tool.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.5.0 | Helm chart for CRD and optional controller | VERIFY | `scripts/verify_helm_chart.py` and `scripts/run_helm_smoke.py`; live Helm run still required |
+| 0.5.0 | Helm chart for CRD and optional controller | BLOCKED | `scripts/verify_helm_chart.py` and `scripts/run_helm_smoke.py`; blocked because Helm is not installed and current live evidence has `network-not-permitted` |
 | 0.5.0 | Kustomize base and overlays | DONE | `scripts/verify_kustomize.py` runs `kubectl kustomize` for base and overlays |
 | 0.5.1 | Multi-arch release archives for CLI/plugin | DONE | `scripts/verify_release_archives.py` generates archives, verifies SHA-256, and runs install smoke |
-| 0.5.2 | Krew manifest for `kubectl actuary` | VERIFY | `scripts/verify_krew_manifest.py` and `scripts/run_krew_smoke.py`; real Krew run still required |
+| 0.5.2 | Krew manifest for `kubectl actuary` | BLOCKED | `scripts/verify_krew_manifest.py` and `scripts/run_krew_smoke.py`; blocked because kubectl-krew is not installed |
 | 0.5.3 | SBOM and provenance generation | DONE | `scripts/verify_supply_chain.py` validates SBOM and archive provenance |
 | 0.5.4 | Air-gapped install documentation | DONE | `scripts/verify_airgap_bundle.py` validates offline artifact checklist |
 
@@ -187,7 +187,7 @@ operational risk. This remains optional.
 
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
-| 0.8.0 | Validating admission webhook prototype | VERIFY | `scripts/verify_admission_webhook.py` and `scripts/run_admission_kind_smoke.py`; live kind smoke pending because kind is not installed |
+| 0.8.0 | Validating admission webhook prototype | BLOCKED | `scripts/verify_admission_webhook.py` and `scripts/run_admission_kind_smoke.py`; blocked by missing kind and `network-not-permitted` |
 | 0.8.1 | AI identity selector and annotation requirements | DONE | `scripts/verify_admission_policy.py` validates allow/deny fixtures |
 | 0.8.2 | Capsule digest and gate verification | DONE | `scripts/verify_admission_digest_gate.py` validates digest and closed-gate tamper fixtures |
 | 0.8.3 | Audit annotations and incident runbook | DONE | `scripts/verify_admission_audit.py` validates audit fixtures and incident runbook |
@@ -201,7 +201,7 @@ Goal: freeze public contracts and prove compatibility before v1.0.0.
 | Version | Task | Status | Verification |
 | --- | --- | --- | --- |
 | 0.9.0 | Conformance suite for upstream supported Kubernetes minors | DONE | `scripts/verify_conformance_suite.py` validates N/N-1/N-2 matrix |
-| 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | VERIFY | `scripts/verify_managed_kubernetes_smoke.py`; provider run evidence still required |
+| 0.9.0 | Managed Kubernetes smoke: EKS, GKE, AKS | BLOCKED | `scripts/verify_managed_kubernetes_smoke.py`; blocked by missing az/gcloud tools and `network-not-permitted` |
 | 0.9.1 | Security policy, threat model, disclosure process | DONE | `scripts/verify_security_docs.py` validates `SECURITY.md` and threat model |
 | 0.9.2 | API freeze and upgrade compatibility gate | DONE | `scripts/verify_api_freeze.py` guards additive-only no breaking schema diff |
 | 0.9.3 | Documentation freeze and public examples audit | DONE | `scripts/verify_docs_freeze.py` checks public docs and examples |

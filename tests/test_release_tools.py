@@ -220,7 +220,8 @@ class ReleaseToolTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("external-gate-plan: passed", result.stdout)
-        self.assertIn("verify-gates: 16", result.stdout)
+        self.assertIn("external-gates: 16", result.stdout)
+        self.assertIn("blocked-gates: 16", result.stdout)
 
     def test_verify_external_gate_command_safety(self):
         result = subprocess.run(

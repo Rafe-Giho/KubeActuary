@@ -561,9 +561,10 @@ def main() -> int:
     else:
         for snippet in (
             "schema: kube-actuary.release-progress.v1",
-            "verify: 16",
+            "verify: 0",
+            "blocked: 16",
             "release-checks: 83",
-            "version: 0.4.4 done=0 verify=1",
+            "version: 0.4.4 done=0 verify=0 doing=0 todo=0 blocked=1",
             "missing-tool-blocker: minikube",
             "blocker-worklist: python3 -B scripts/generate_version_worklist.py",
         ):
@@ -583,7 +584,7 @@ def main() -> int:
     else:
         for snippet in (
             "versions: `0.4.3`",
-            "`0.4.3` done=2 verify=1",
+            "`0.4.3` done=2 verify=0 doing=0 todo=0 blocked=1",
             "Resource budget target: idle <50m CPU and <64Mi memory",
         ):
             if snippet not in version_markdown_result.stdout:
@@ -595,8 +596,8 @@ def main() -> int:
     else:
         for snippet in (
             "filter-version: 0.4.3",
-            "version: 0.4.3 done=2 verify=1",
-            "item: 0.4.3 VERIFY Resource budget target: idle <50m CPU and <64Mi memory",
+            "version: 0.4.3 done=2 verify=0 doing=0 todo=0 blocked=1",
+            "item: 0.4.3 BLOCKED Resource budget target: idle <50m CPU and <64Mi memory",
             "action: 11-resource-budget-target-idle-50m-cpu-and-64mi-memory tool-ready 0.4.3",
         ):
             if snippet not in version_text_result.stdout:
@@ -641,11 +642,11 @@ def main() -> int:
     if unknown_version.returncode == 0 or "unknown version: 9.9.9" not in unknown_version.stdout:
         errors.append("release progress must reject unknown version filters")
     for snippet in (
-        "VERIFY: Krew manifest",
-        "VERIFY: Managed Kubernetes smoke",
-        "VERIFY: Controller",
-        "VERIFY: Packaging",
-        "VERIFY: Admission/audit",
+        "BLOCKED: Krew manifest",
+        "BLOCKED: Managed Kubernetes smoke",
+        "BLOCKED: Controller",
+        "BLOCKED: Packaging",
+        "BLOCKED: Admission/audit",
     ):
         if snippet not in markdown_result.stdout:
             errors.append(f"markdown progress must include all open items: {snippet}")
@@ -891,8 +892,10 @@ def main() -> int:
         errors.append("release progress schemaVersion mismatch")
     if progress.get("releaseSuite", {}).get("checks") != 83:
         errors.append("release progress must report 83 release checks")
-    if progress.get("summary", {}).get("verify") != 16:
-        errors.append("release progress must report 16 VERIFY rows")
+    if progress.get("summary", {}).get("verify") != 0:
+        errors.append("release progress must report zero VERIFY rows after blockers are accepted")
+    if progress.get("summary", {}).get("blocked") != 16:
+        errors.append("release progress must report 16 BLOCKED rows")
     if progress.get("summary", {}).get("doing") != 0 or progress.get("summary", {}).get("todo") != 0:
         errors.append("release progress must report zero DOING/TODO rows")
     versions = {group.get("version"): group for group in progress.get("versions", [])}
@@ -901,18 +904,18 @@ def main() -> int:
             errors.append(f"release progress missing version group: {expected}")
     if versions.get("0.2.0", {}).get("summary", {}).get("done") != 3:
         errors.append("v0.2.0 group should remain fully DONE")
-    if versions.get("0.4.4", {}).get("summary", {}).get("verify") != 1:
-        errors.append("v0.4.4 group should keep lightweight smoke VERIFY")
-    if progress.get("externalGatePlan", {}).get("verify") != 16:
+    if versions.get("0.4.4", {}).get("summary", {}).get("blocked") != 1:
+        errors.append("v0.4.4 group should keep lightweight smoke BLOCKED")
+    if progress.get("externalGatePlan", {}).get("blocked") != 16:
         errors.append("progress report must include external gate summary")
     if version_progress.get("filters", {}).get("versions") != ["0.4.3"]:
         errors.append("version progress must preserve version filters")
-    if version_progress.get("summary", {}).get("rows") != 3 or version_progress.get("summary", {}).get("verify") != 1:
+    if version_progress.get("summary", {}).get("rows") != 3 or version_progress.get("summary", {}).get("blocked") != 1:
         errors.append("version progress must narrow summary rows to the requested version")
     version_groups = version_progress.get("versions", [])
     if len(version_groups) != 1 or version_groups[0].get("version") != "0.4.3":
         errors.append("version progress must include only the requested version group")
-    if version_progress.get("externalGatePlan", {}).get("verify") != 1:
+    if version_progress.get("externalGatePlan", {}).get("blocked") != 1:
         errors.append("version progress must narrow external gate plan")
     version_actions = version_progress.get("nextActions", {}).get("actions", [])
     if len(version_actions) != 1 or version_actions[0].get("id") != "11-resource-budget-target-idle-50m-cpu-and-64mi-memory":
@@ -1052,7 +1055,7 @@ def main() -> int:
 
     print("release-progress: passed")
     print("versions: ok")
-    print("verify: 16")
+    print("blocked: 16")
     print("checks: 83")
     return 0
 

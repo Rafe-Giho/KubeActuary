@@ -146,7 +146,7 @@ Coverage included:
 - next unblock action runner verification with allowlisted verify-only
   execution, blocked verifier status capture, safe command rejection, and
   persisted `.kubeactuary/next-unblock-action-run.json` plus Markdown reports;
-- external gate plan generation for remaining VERIFY rows;
+- external gate plan generation for remaining VERIFY/BLOCKED rows;
 - external gate evidence evaluation for captured smoke manifests plus
   supplemental external evidence;
 - supplemental external evidence builder for raw live outputs;

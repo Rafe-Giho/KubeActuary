@@ -57,12 +57,16 @@ def main() -> int:
     gates = plan.get("gates", [])
     if plan.get("schemaVersion") != "kube-actuary.external-gate-plan.v1":
         errors.append("external gate plan schemaVersion mismatch")
-    if summary.get("verify") != 16:
-        errors.append(f"expected 16 VERIFY gates, got {summary.get('verify')!r}")
+    if summary.get("verify") != 0:
+        errors.append(f"expected zero VERIFY gates after live blockers are accepted, got {summary.get('verify')!r}")
+    if summary.get("blocked") != 16:
+        errors.append(f"expected 16 BLOCKED gates, got {summary.get('blocked')!r}")
     if summary.get("doing") != 0 or summary.get("todo") != 0:
         errors.append("external gate plan must not leave DOING or TODO rows")
     if not isinstance(gates, list) or len(gates) != 16:
-        errors.append("external gate plan must list each VERIFY row")
+        errors.append("external gate plan must list each external blocked row")
+    if any(gate.get("status") != "BLOCKED" for gate in gates if isinstance(gate, dict)):
+        errors.append("external gate plan must preserve BLOCKED gate status")
 
     kinds = {gate.get("kind") for gate in gates if isinstance(gate, dict)}
     for expected in (
@@ -124,7 +128,8 @@ def main() -> int:
         return 1
 
     print("external-gate-plan: passed")
-    print("verify-gates: 16")
+    print("external-gates: 16")
+    print("blocked-gates: 16")
     print("doing: 0")
     print("todo: 0")
     return 0

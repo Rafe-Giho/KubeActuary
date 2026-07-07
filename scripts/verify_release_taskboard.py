@@ -45,6 +45,8 @@ VERIFY_CONTEXT_WORDS = (
     "pending",
     "remaining",
     "remains",
+    "blocked",
+    "missing",
 )
 
 
@@ -103,7 +105,7 @@ def main() -> int:
             errors.append(f"invalid status for {row['item']}: {row['status']}")
         if row["status"] == "DONE" and not row["evidence"]:
             errors.append(f"DONE row must include evidence: {row['item']}")
-        if row["status"] in {"VERIFY", "DOING"}:
+        if row["status"] in {"VERIFY", "DOING", "BLOCKED"}:
             evidence = row["evidence"].lower()
             if not any(word in evidence for word in VERIFY_CONTEXT_WORDS):
                 errors.append(f"{row['status']} row must explain remaining live/external evidence: {row['item']}")
@@ -125,6 +127,7 @@ def main() -> int:
     print(f"verify: {statuses['VERIFY']}")
     print(f"doing: {statuses['DOING']}")
     print(f"todo: {statuses['TODO']}")
+    print(f"blocked: {statuses['BLOCKED']}")
     print(f"release-checks: {current_checks}")
     return 0
 

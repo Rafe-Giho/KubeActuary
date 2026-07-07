@@ -395,7 +395,8 @@ Confirm from code and tests:
 - next unblock action runner verifier checks allowlisted verify-only execution,
   blocked verifier status capture, safe command rejection, and persisted local
   runner metadata;
-- external gate plan verifier maps remaining VERIFY rows to local evidence
+- external gate plan verifier maps remaining VERIFY/BLOCKED rows to local
+  evidence
   commands and requires zero DOING/TODO rows;
 - external gate evidence verifier maps captured smoke manifests and
   supplemental external evidence back to taskboard rows;
