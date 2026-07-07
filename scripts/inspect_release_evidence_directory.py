@@ -776,6 +776,8 @@ def next_commands(
     environment_probe: dict[str, Any] | None,
     environment_blockers: dict[str, Any] | None,
     next_task_run: dict[str, Any] | None,
+    next_unblock_action: dict[str, Any] | None,
+    next_unblock_action_run: dict[str, Any] | None,
     version_filters: list[str] | None = None,
 ) -> list[str]:
     commands: list[str] = []
@@ -814,6 +816,14 @@ def next_commands(
     ]:
         if command not in commands:
             commands.append(command)
+    unblock_command = next_unblock_retry_command(
+        evidence_dir,
+        next_unblock_action,
+        next_unblock_action_run,
+        version_filters=version_filters,
+    )
+    if unblock_command and unblock_command not in commands:
+        commands.append(unblock_command)
     probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
     runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
     if selected_blocked or scoped_environment_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
@@ -829,6 +839,40 @@ def next_commands(
         if probe_command not in commands:
             commands.insert(0, probe_command)
     return commands
+
+
+def next_unblock_retry_command(
+    evidence_dir: Path,
+    next_unblock_action: dict[str, Any] | None,
+    next_unblock_action_run: dict[str, Any] | None,
+    version_filters: list[str] | None = None,
+) -> str | None:
+    if not isinstance(next_unblock_action, dict):
+        return None
+    selected = next_unblock_action.get("selected")
+    if not isinstance(selected, dict) or not selected.get("id"):
+        return None
+    requested = set(version_filters or [])
+    affected_versions = {
+        str(version)
+        for version in selected.get("affectedVersions", [])
+        if isinstance(version, str)
+    }
+    if requested and affected_versions and not requested.intersection(affected_versions):
+        return None
+    run_status = next_unblock_action_run.get("status") if isinstance(next_unblock_action_run, dict) else None
+    if run_status in {"passed", "clear"}:
+        return None
+    return command_string(
+        [
+            "python3",
+            "-B",
+            "scripts/run_next_unblock_action.py",
+            evidence_dir.as_posix(),
+            "--run",
+            "--record",
+        ]
+    )
 
 
 def inspect_directory(
@@ -952,6 +996,8 @@ def inspect_directory(
             environment_probe,
             environment_blockers,
             next_task_run,
+            next_unblock_action,
+            next_unblock_action_run,
             version_filters=version_filters,
         ),
     }

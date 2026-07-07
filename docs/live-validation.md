@@ -361,8 +361,11 @@ blocker drilldowns, and environment-probe follow-up commands scoped to one
 release version. The status `nextCommands` list recommends only commands whose
 prepared queue item is `tool-ready`; `missing-tools` and
 `blocked-by-environment` actions stay in blocker summaries and next-step text
-instead of being suggested as runnable capture commands. Release progress uses
-the same rule for `nextActions.actions[].firstCommand`.
+instead of being suggested as runnable capture commands. When a selected
+next-unblock verifier exists and has not passed, the same list also includes
+`run_next_unblock_action.py <evidence-dir> --run --record` so the local loop can
+recheck the blocker after the missing tool or environment condition changes.
+Release progress uses the same rule for `nextActions.actions[].firstCommand`.
 The next-task evidence builder reports schema
 `kube-actuary.next-task-evidence-build.v1` when converting prepared raw files
 into local supplemental evidence records. Add `--record` to persist

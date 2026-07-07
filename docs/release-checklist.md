@@ -140,7 +140,8 @@ Expected:
   worklist drilldowns, latest next-unblock action/run status,
   latest advance/runner status, latest advance/next-task
   consistency, latest run artifact paths, latest aggregate and per-version diff
-  summaries, next local loop commands, latest next-task evidence file details,
+  summaries, next local loop and next-unblock retry commands,
+  latest next-task evidence file details,
   latest environment probe failures, and records
   `status.json` plus `status.md` on request,
   selects the next task with schema `kube-actuary.next-version-task.v1`,

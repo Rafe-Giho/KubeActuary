@@ -676,6 +676,9 @@ def main() -> int:
     )
     if expected_resolved_kind in partial_payload.get("nextCommands", []):
         errors.append("partial status must not recommend missing-tool prepared queue commands")
+    expected_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {partial_dir} --run --record"
+    if expected_unblock_retry not in partial_payload.get("nextCommands", []):
+        errors.append("partial status must recommend rerunning the selected next-unblock verifier")
     for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
         if any(placeholder in command for command in partial_payload.get("nextCommands", [])):
             errors.append(f"partial status must not keep prepared queue placeholder in next commands: {placeholder}")
@@ -832,6 +835,8 @@ def main() -> int:
         errors.append("partial text status must print the environment probe next command")
     if f"next: {expected_resolved_capture}" not in partial_text.stdout:
         errors.append("partial text status must print resolved selected next-task command")
+    if f"next: {expected_unblock_retry}" not in partial_text.stdout:
+        errors.append("partial text status must print selected next-unblock retry command")
     if "environment-probe: not-run" not in partial_text.stdout:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:
@@ -932,8 +937,11 @@ def main() -> int:
         errors.append("blocked evidence status must include environment reason drilldown commands")
     if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
         errors.append("blocked evidence status must recommend rerunning the environment probe first")
-    if len(blocked_payload.get("nextCommands", [])) != 1:
-        errors.append("blocked evidence status must recommend only the probe rerun")
+    expected_blocked_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {blocked_dir} --run --record"
+    if expected_blocked_unblock_retry not in blocked_payload.get("nextCommands", []):
+        errors.append("blocked evidence status must recommend the selected next-unblock verifier retry")
+    if len(blocked_payload.get("nextCommands", [])) != 2:
+        errors.append("blocked evidence status must recommend only the probe rerun and unblock verifier retry")
     expected_blocked_capture = (
         f"python3 -B scripts/capture_controller_resource_budget.py "
         f"--output {blocked_dir / 'raw' / '01-controller-resource-budget-kubectl-top.txt'} --run"
@@ -953,6 +961,8 @@ def main() -> int:
             errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
+    if f"next: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
+        errors.append("blocked text status must print selected next-unblock retry command")
     if "environment-worklist: python3 -B scripts/generate_version_worklist.py" not in blocked_text.stdout:
         errors.append("blocked text status must print environment worklist drilldowns")
     if version_blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:
