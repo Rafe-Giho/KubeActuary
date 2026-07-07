@@ -27,6 +27,8 @@ STATUS_REPORT_MD = "release-evidence-status.md"
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
+NEXT_UNBLOCK_ACTION_SCHEMA = "kube-actuary.next-unblock-action.v1"
+NEXT_UNBLOCK_ACTION_RUN_SCHEMA = "kube-actuary.next-unblock-action-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
@@ -219,6 +221,98 @@ def load_next_task_run(
             "environmentStatus": selected.get("environmentStatus"),
             "environmentReason": selected.get("environmentReason"),
             "missingTools": selected.get("missingTools", []),
+            "nextStep": selected.get("nextStep"),
+        },
+    }
+
+
+def next_unblock_selected_summary(selected: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": selected.get("id"),
+        "kind": selected.get("kind"),
+        "target": selected.get("tool") or selected.get("environmentStatus"),
+        "tool": selected.get("tool"),
+        "environmentStatus": selected.get("environmentStatus"),
+        "environmentReason": selected.get("environmentReason"),
+        "items": selected.get("items", 0),
+        "affectedVersions": selected.get("affectedVersions", []),
+        "nextStep": selected.get("nextStep"),
+        "commands": selected.get("commands", {}),
+    }
+
+
+def load_next_unblock_action(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "next-unblock-action.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != NEXT_UNBLOCK_ACTION_SCHEMA:
+        raise ValueError(f"{path}: unsupported next-unblock-action schemaVersion: {payload.get('schemaVersion')!r}")
+    selected = payload.get("selected") if isinstance(payload.get("selected"), dict) else {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "queueSource": payload.get("sourceWorklistQueueSource") or "generated",
+        "status": payload.get("status"),
+        "planStatus": payload.get("planStatus"),
+        "clusterWrites": payload.get("clusterWrites"),
+        "selectionPolicy": payload.get("selectionPolicy"),
+        "summary": payload.get("summary", {}),
+        "selected": next_unblock_selected_summary(selected),
+    }
+
+
+def next_unblock_run_failure(payload: dict[str, Any]) -> dict[str, Any] | None:
+    failure = payload.get("failure")
+    if isinstance(failure, dict):
+        return failure
+    for record in payload.get("records", []):
+        if isinstance(record, dict) and record.get("ok") is False:
+            return {
+                "command": record.get("command"),
+                "exitCode": record.get("exitCode"),
+                "message": failure_message(record),
+            }
+    for record in payload.get("validations", []):
+        if isinstance(record, dict) and record.get("errors"):
+            return {
+                "command": record.get("command"),
+                "exitCode": None,
+                "message": str(record.get("errors", ["validation failed"])[0]),
+            }
+    return None
+
+
+def load_next_unblock_action_run(evidence_dir: Path) -> dict[str, Any] | None:
+    path = evidence_dir / ".kubeactuary" / "next-unblock-action-run.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if payload.get("schemaVersion") != NEXT_UNBLOCK_ACTION_RUN_SCHEMA:
+        raise ValueError(
+            f"{path}: unsupported next-unblock-action-run schemaVersion: {payload.get('schemaVersion')!r}"
+        )
+    action = payload.get("nextUnblockAction") if isinstance(payload.get("nextUnblockAction"), dict) else {}
+    selected = action.get("selected") if isinstance(action.get("selected"), dict) else {}
+    return {
+        "schemaVersion": payload.get("schemaVersion"),
+        "path": str(path),
+        "queueSource": action.get("queueSource") or "generated",
+        "mode": payload.get("mode"),
+        "status": payload.get("status"),
+        "clusterWrites": payload.get("clusterWrites"),
+        "ranAt": payload.get("ranAt"),
+        "summary": payload.get("summary", {}),
+        "failure": next_unblock_run_failure(payload),
+        "selected": {
+            "id": selected.get("id"),
+            "kind": selected.get("kind"),
+            "target": selected.get("target"),
+            "tool": selected.get("tool"),
+            "environmentStatus": selected.get("environmentStatus"),
+            "environmentReason": selected.get("environmentReason"),
+            "items": selected.get("items", 0),
+            "affectedVersions": selected.get("affectedVersions", []),
             "nextStep": selected.get("nextStep"),
         },
     }
@@ -769,6 +863,8 @@ def inspect_directory(
         next_task["queueConsistency"] = next_task_queue_consistency(next_task, live_queue)
         next_task["worklistCommands"] = selected_worklist_commands(next_task.get("selected", {}), evidence_dir)
     next_task_run = load_next_task_run(evidence_dir, fallback_queue_source, fallback_queue_source_origin)
+    next_unblock_action = load_next_unblock_action(evidence_dir)
+    next_unblock_action_run = load_next_unblock_action_run(evidence_dir)
     next_task_evidence_build = load_next_task_evidence_build(evidence_dir)
     environment_probe = load_environment_probe(evidence_dir)
     environment_blockers = load_environment_blockers(evidence_dir, version_filters=version_filters)
@@ -820,6 +916,8 @@ def inspect_directory(
         },
         "nextTask": next_task,
         "nextTaskRun": next_task_run,
+        "nextUnblockAction": next_unblock_action,
+        "nextUnblockActionRun": next_unblock_action_run,
         "nextTaskEvidenceBuild": next_task_evidence_build,
         "environmentProbe": environment_probe,
         "environmentBlockers": environment_blockers,
@@ -920,6 +1018,31 @@ def render_text(status: dict[str, Any]) -> str:
         failure = next_task_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"next-task-run-error: {failure.get('message')}")
+    next_unblock_action = status.get("nextUnblockAction")
+    if isinstance(next_unblock_action, dict):
+        selected_unblock = next_unblock_action.get("selected") or {}
+        if selected_unblock.get("id"):
+            lines.append(f"next-unblock-action: {selected_unblock.get('id')}")
+            lines.append(f"next-unblock-action-target: {selected_unblock.get('target')}")
+            lines.append(f"next-unblock-action-kind: {selected_unblock.get('kind')}")
+            if next_unblock_action.get("queueSource"):
+                lines.append(f"next-unblock-action-queue-source: {next_unblock_action.get('queueSource')}")
+            if selected_unblock.get("items") is not None:
+                lines.append(f"next-unblock-action-items: {selected_unblock.get('items')}")
+            commands = selected_unblock.get("commands") if isinstance(selected_unblock.get("commands"), dict) else {}
+            for command in commands.get("verify") or []:
+                lines.append(f"next-unblock-action-verify: {command}")
+    next_unblock_action_run = status.get("nextUnblockActionRun")
+    if isinstance(next_unblock_action_run, dict):
+        lines.append(f"next-unblock-action-run: {next_unblock_action_run.get('status')}")
+        lines.append(f"next-unblock-action-run-mode: {next_unblock_action_run.get('mode')}")
+        run_summary = next_unblock_action_run.get("summary", {})
+        if run_summary:
+            lines.append(f"next-unblock-action-run-ran: {run_summary.get('ran', 0)}")
+            lines.append(f"next-unblock-action-run-failed: {run_summary.get('failed', 0)}")
+        failure = next_unblock_action_run.get("failure")
+        if isinstance(failure, dict) and failure.get("message"):
+            lines.append(f"next-unblock-action-run-error: {failure.get('message')}")
     next_task_evidence_build = status.get("nextTaskEvidenceBuild")
     if isinstance(next_task_evidence_build, dict):
         build_summary = next_task_evidence_build.get("summary", {})
@@ -1055,6 +1178,33 @@ def render_markdown(status: dict[str, Any]) -> str:
         failure = next_task_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"- error: `{failure.get('message')}`")
+    next_unblock_action = status.get("nextUnblockAction")
+    next_unblock_action_run = status.get("nextUnblockActionRun")
+    if isinstance(next_unblock_action, dict) or isinstance(next_unblock_action_run, dict):
+        lines.extend(["", "## Next Unblock", ""])
+        if isinstance(next_unblock_action, dict):
+            selected_unblock = next_unblock_action.get("selected") or {}
+            if selected_unblock.get("id"):
+                lines.append(
+                    f"- action: `{selected_unblock.get('id')}` "
+                    f"target=`{selected_unblock.get('target')}`"
+                )
+                lines.append(f"- kind: `{selected_unblock.get('kind')}`")
+                lines.append(f"- items: {selected_unblock.get('items', 0)}")
+                if next_unblock_action.get("queueSource"):
+                    lines.append(f"- queue source: `{next_unblock_action.get('queueSource')}`")
+                commands = selected_unblock.get("commands") if isinstance(selected_unblock.get("commands"), dict) else {}
+                for command in commands.get("verify") or []:
+                    lines.append(f"- verify: `{command}`")
+        if isinstance(next_unblock_action_run, dict):
+            lines.append(f"- run: `{next_unblock_action_run.get('status')}` ({next_unblock_action_run.get('mode')})")
+            run_summary = next_unblock_action_run.get("summary", {})
+            if run_summary:
+                lines.append(f"- run commands: {run_summary.get('ran', 0)}")
+                lines.append(f"- run failed: {run_summary.get('failed', 0)}")
+            failure = next_unblock_action_run.get("failure")
+            if isinstance(failure, dict) and failure.get("message"):
+                lines.append(f"- run error: `{failure.get('message')}`")
     next_task_evidence_build = status.get("nextTaskEvidenceBuild")
     if isinstance(next_task_evidence_build, dict):
         build_summary = next_task_evidence_build.get("summary", {})

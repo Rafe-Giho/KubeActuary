@@ -28,6 +28,8 @@ from scripts.verify_live_evidence_schema import sample  # noqa: E402
 NEXT_TASK_SCHEMA = "kube-actuary.next-version-task.v1"
 NEXT_TASK_BUILD_SCHEMA = "kube-actuary.next-task-evidence-build.v1"
 NEXT_TASK_RUN_SCHEMA = "kube-actuary.next-version-task-run.v1"
+NEXT_UNBLOCK_ACTION_SCHEMA = "kube-actuary.next-unblock-action.v1"
+NEXT_UNBLOCK_ACTION_RUN_SCHEMA = "kube-actuary.next-unblock-action-run.v1"
 ENVIRONMENT_PROBE_SCHEMA = "kube-actuary.environment-probe.v1"
 ENVIRONMENT_BLOCKERS_SCHEMA = "kube-actuary.environment-blockers.v1"
 ADVANCE_SCHEMA = "kube-actuary.version-iteration-advance.v1"
@@ -123,6 +125,94 @@ def write_next_task_run(evidence_dir: Path) -> None:
                     "stdout": "controller-resource-capture: failed\nerror: test cluster unavailable\n",
                 }
             ],
+        },
+    )
+
+
+def write_next_unblock_records(evidence_dir: Path) -> None:
+    selected = {
+        "id": "01-missing-tool-kind",
+        "kind": "missing-tool",
+        "tool": "kind",
+        "items": 2,
+        "affectedVersions": ["Current Baseline", "0.8.0"],
+        "nextStep": "install the missing tool or run the evidence capture on a host that already has it",
+        "commands": {
+            "verify": ["kind version"],
+            "refresh": [],
+            "inspect": [],
+            "record": [],
+        },
+    }
+    write_payload(
+        evidence_dir / ".kubeactuary" / "next-unblock-action.json",
+        {
+            "schemaVersion": NEXT_UNBLOCK_ACTION_SCHEMA,
+            "sourcePlanSchema": "kube-actuary.version-unblock-plan.v1",
+            "sourceWorklistQueueSource": "prepared-live-validation-queue",
+            "status": "selected",
+            "planStatus": "blocked",
+            "clusterWrites": "disabled",
+            "selectionPolicy": "highest-items-then-kind-target",
+            "summary": {
+                "candidateActions": 3,
+                "blockedItems": 4,
+                "selected": True,
+            },
+            "selected": selected,
+        },
+    )
+    write_payload(
+        evidence_dir / ".kubeactuary" / "next-unblock-action-run.json",
+        {
+            "schemaVersion": NEXT_UNBLOCK_ACTION_RUN_SCHEMA,
+            "mode": "run",
+            "status": "blocked",
+            "clusterWrites": "disabled",
+            "ranAt": "2026-07-06T00:00:00+00:00",
+            "nextUnblockAction": {
+                "schemaVersion": NEXT_UNBLOCK_ACTION_SCHEMA,
+                "queueSource": "prepared-live-validation-queue",
+                "selected": {
+                    "id": "01-missing-tool-kind",
+                    "kind": "missing-tool",
+                    "target": "kind",
+                    "tool": "kind",
+                    "items": 2,
+                    "affectedVersions": ["Current Baseline", "0.8.0"],
+                    "nextStep": selected["nextStep"],
+                },
+            },
+            "summary": {
+                "commands": 1,
+                "validCommands": 1,
+                "ran": 1,
+                "failed": 1,
+                "validationErrors": 0,
+            },
+            "validations": [
+                {
+                    "index": 1,
+                    "command": "kind version",
+                    "normalized": ["kind", "version"],
+                    "valid": True,
+                    "errors": [],
+                }
+            ],
+            "records": [
+                {
+                    "command": "kind version",
+                    "exitCode": 127,
+                    "ok": False,
+                    "stderr": "kind missing in test\n",
+                    "stdout": "",
+                }
+            ],
+            "failure": {
+                "command": "kind version",
+                "exitCode": 127,
+                "message": "kind missing in test",
+            },
         },
     )
 
@@ -308,6 +398,7 @@ def main() -> int:
             "POD NAME CPU(cores) MEMORY(bytes)\ncontroller-0 controller 12m 41Mi\n"
         )
         write_next_task_run(partial_dir)
+        write_next_unblock_records(partial_dir)
         write_advance_record(partial_dir)
         partial = run_script(INSPECTOR, str(partial_dir), "--format", "json")
         partial_text = run_script(INSPECTOR, str(partial_dir))
@@ -532,6 +623,9 @@ def main() -> int:
         "# KubeActuary Release Evidence Status",
         "file: `present` `output`",
         "command: `python3 -B scripts/capture_controller_resource_budget.py",
+        "## Next Unblock",
+        "action: `01-missing-tool-kind` target=`kind`",
+        "run error: `kind missing in test`",
         "--version 'Current Baseline' --capture-status",
         "history runs: 2",
     ):
@@ -624,6 +718,28 @@ def main() -> int:
     failure = next_task_run.get("failure") or {}
     if failure.get("message") != "error: test cluster unavailable":
         errors.append("partial status must preserve next-task-run failure message")
+    next_unblock_action = partial_payload.get("nextUnblockAction") or {}
+    next_unblock_selected = next_unblock_action.get("selected") or {}
+    if next_unblock_action.get("schemaVersion") != NEXT_UNBLOCK_ACTION_SCHEMA:
+        errors.append("partial status must include next-unblock-action schema")
+    if next_unblock_action.get("queueSource") != "prepared-live-validation-queue":
+        errors.append("partial status must preserve next-unblock-action queue source")
+    if next_unblock_selected.get("id") != "01-missing-tool-kind":
+        errors.append("partial status must preserve selected next-unblock action")
+    if next_unblock_selected.get("target") != "kind":
+        errors.append("partial status must preserve selected next-unblock target")
+    if "kind version" not in (next_unblock_selected.get("commands") or {}).get("verify", []):
+        errors.append("partial status must preserve next-unblock verify command")
+    next_unblock_run = partial_payload.get("nextUnblockActionRun") or {}
+    if next_unblock_run.get("schemaVersion") != NEXT_UNBLOCK_ACTION_RUN_SCHEMA:
+        errors.append("partial status must include next-unblock-action-run schema")
+    if next_unblock_run.get("status") != "blocked" or next_unblock_run.get("mode") != "run":
+        errors.append("partial status must preserve next-unblock-action-run status")
+    if next_unblock_run.get("summary", {}).get("ran") != 1:
+        errors.append("partial status must summarize next-unblock-action-run command count")
+    unblock_failure = next_unblock_run.get("failure") or {}
+    if unblock_failure.get("message") != "kind missing in test":
+        errors.append("partial status must preserve next-unblock-action-run failure message")
     blockers = partial_payload.get("blockers") or {}
     missing_tool_blockers = blockers.get("missingTools") or []
     if not any(
@@ -700,6 +816,16 @@ def main() -> int:
         errors.append("partial text status must print matched next-task-run consistency")
     if "next-task-run-error: error: test cluster unavailable" not in partial_text.stdout:
         errors.append("partial text status must print next-task-run failure message")
+    if "next-unblock-action: 01-missing-tool-kind" not in partial_text.stdout:
+        errors.append("partial text status must print selected next-unblock action")
+    if "next-unblock-action-target: kind" not in partial_text.stdout:
+        errors.append("partial text status must print selected next-unblock target")
+    if "next-unblock-action-verify: kind version" not in partial_text.stdout:
+        errors.append("partial text status must print next-unblock verify command")
+    if "next-unblock-action-run: blocked" not in partial_text.stdout:
+        errors.append("partial text status must print next-unblock runner status")
+    if "next-unblock-action-run-error: kind missing in test" not in partial_text.stdout:
+        errors.append("partial text status must print next-unblock runner failure message")
     if "missing-tool-worklist: python3 -B scripts/generate_version_worklist.py" not in partial_text.stdout:
         errors.append("partial text status must print missing-tool worklist drilldowns")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
@@ -920,11 +1046,14 @@ def main() -> int:
         NEXT_TASK_SCHEMA,
         NEXT_TASK_BUILD_SCHEMA,
         NEXT_TASK_RUN_SCHEMA,
+        NEXT_UNBLOCK_ACTION_SCHEMA,
+        NEXT_UNBLOCK_ACTION_RUN_SCHEMA,
         ENVIRONMENT_PROBE_SCHEMA,
         ENVIRONMENT_BLOCKERS_SCHEMA,
         ADVANCE_SCHEMA,
         "--record",
         "next-task-evidence-build.json",
+        "next-unblock-action-run.json",
         "release-evidence-status.json",
     ):
         if snippet not in README.read_text():

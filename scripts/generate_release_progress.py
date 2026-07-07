@@ -777,6 +777,23 @@ def render_markdown(progress: dict[str, Any]) -> str:
             failure = next_task_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- next-task-run-error: `{failure.get('message')}`")
+        next_unblock_action = evidence_status.get("nextUnblockAction")
+        if isinstance(next_unblock_action, dict):
+            selected_unblock = next_unblock_action.get("selected") or {}
+            if selected_unblock.get("id"):
+                lines.append(
+                    f"- next-unblock-action: `{selected_unblock.get('id')}` "
+                    f"target=`{selected_unblock.get('target')}`"
+                )
+        next_unblock_action_run = evidence_status.get("nextUnblockActionRun")
+        if isinstance(next_unblock_action_run, dict):
+            lines.append(
+                f"- next-unblock-action-run: `{next_unblock_action_run.get('status')}` "
+                f"({next_unblock_action_run.get('mode')})"
+            )
+            failure = next_unblock_action_run.get("failure")
+            if isinstance(failure, dict) and failure.get("message"):
+                lines.append(f"- next-unblock-action-run-error: `{failure.get('message')}`")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")
@@ -933,6 +950,23 @@ def render_text(progress: dict[str, Any]) -> str:
             failure = next_task_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"next-task-run-error: {failure.get('message')}")
+        next_unblock_action = evidence_status.get("nextUnblockAction")
+        if isinstance(next_unblock_action, dict):
+            selected_unblock = next_unblock_action.get("selected") or {}
+            if selected_unblock.get("id"):
+                lines.append(
+                    f"next-unblock-action: {selected_unblock.get('id')} "
+                    f"{selected_unblock.get('target')}"
+                )
+        next_unblock_action_run = evidence_status.get("nextUnblockActionRun")
+        if isinstance(next_unblock_action_run, dict):
+            lines.append(
+                f"next-unblock-action-run: {next_unblock_action_run.get('status')} "
+                f"{next_unblock_action_run.get('mode')}"
+            )
+            failure = next_unblock_action_run.get("failure")
+            if isinstance(failure, dict) and failure.get("message"):
+                lines.append(f"next-unblock-action-run-error: {failure.get('message')}")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"evidence-environment-probe: {environment_probe.get('clusterAccess')}")

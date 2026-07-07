@@ -136,8 +136,9 @@ refresh, inspect, and record commands for the selected blocker.
 validates only the selected `verify` commands. Without `--run`, it reports the
 plan. With `--run --record`, it executes only allowlisted tool-version or
 `kubectl cluster-info --request-timeout=5s` checks and records
-`.kubeactuary/next-unblock-action-run.json` plus Markdown status without
-running refresh, inspect, record, install, or write commands.
+`.kubeactuary/next-unblock-action-run.json` with schema
+`kube-actuary.next-unblock-action-run.v1`, plus Markdown status without running
+refresh, inspect, record, install, or write commands.
 It also summarizes every repeated missing-tool and environment blocker across
 the whole worklist and per version, including environment reasons such as
 `connection-refused`, so repeated validation can focus on the shared blocker
@@ -392,6 +393,9 @@ If the selected next-task artifact is missing, both
 `prepare_live_evidence_directory.py` command needed to initialize the directory.
 Failed runner reports include a `failure` summary and preserve the first
 actionable command error in text, JSON, and recorded Markdown output.
+Release evidence status and release progress also surface
+`.kubeactuary/next-unblock-action-run.json`, so the latest selected blocker
+verifier result is visible beside next-task runner status.
 When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
