@@ -734,6 +734,7 @@ def main() -> int:
             "history-latest-blocker-status: single",
             "history-latest-blocker-action: resolve-environment",
             "history-latest-blocker-retry-recommended: false",
+            "history-latest-blocker-retry-after: environment probe succeeds",
             "history-next: python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_text.stdout:
@@ -771,6 +772,7 @@ def main() -> int:
             "latest blocker streak: `1` (single)",
             "latest blocker action: `resolve-environment`",
             "latest blocker retry recommended: `false`",
+            "latest blocker retry after: environment probe succeeds",
             "history next: `python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_markdown.stdout:

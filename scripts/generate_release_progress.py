@@ -649,6 +649,8 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
             "- latest blocker retry recommended: "
             f"`{str(latest_blocker_action.get('retryRecommended')).lower()}`"
         )
+        if latest_blocker_action.get("retryAfter"):
+            lines.append(f"- latest blocker retry after: {latest_blocker_action.get('retryAfter')}")
         if latest_blocker_action.get("nextStep"):
             lines.append(f"- latest blocker next step: {latest_blocker_action.get('nextStep')}")
     if isinstance(latest_advance, dict):
@@ -720,6 +722,8 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
             "history-latest-blocker-retry-recommended: "
             f"{str(latest_blocker_action.get('retryRecommended')).lower()}"
         )
+        if latest_blocker_action.get("retryAfter"):
+            lines.append(f"history-latest-blocker-retry-after: {latest_blocker_action.get('retryAfter')}")
         if latest_blocker_action.get("nextStep"):
             lines.append(f"history-latest-blocker-next-step: {latest_blocker_action.get('nextStep')}")
     latest_advance = history_status.get("latestAdvance")
