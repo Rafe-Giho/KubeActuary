@@ -1544,6 +1544,11 @@ def main() -> int:
         errors.append("evidence-aware history status should preserve next-unblock runner status")
     if (evidence_latest_unblock_run.get("failure") or {}).get("message") != "kind missing in test":
         errors.append("evidence-aware history status should preserve next-unblock runner failure")
+    evidence_latest_unblock_retry = evidence_history_status_payload.get("latestNextUnblockRetry") or {}
+    if evidence_latest_unblock_retry.get("recommended") is not False:
+        errors.append("evidence-aware history status should suppress next-unblock retry before tool resolution")
+    if evidence_latest_unblock_retry.get("retryAfter") != "required local tools are installed":
+        errors.append("evidence-aware history status should explain when next-unblock retry is useful")
     stale_advance_consistency = (
         (stale_evidence_history_status_payload.get("latestAdvance") or {}).get("nextTaskConsistency") or {}
     )
@@ -1569,6 +1574,8 @@ def main() -> int:
         "latest-next-unblock-action-verify: kind version",
         "latest-next-unblock-run: blocked",
         "latest-next-unblock-run-error: kind missing in test",
+        "latest-next-unblock-retry-recommended: false",
+        "latest-next-unblock-retry-after: required local tools are installed",
     ):
         if snippet not in evidence_history_status_text.stdout:
             errors.append(f"evidence-aware history text should show latest advance detail: {snippet}")
@@ -1591,6 +1598,8 @@ def main() -> int:
         "verify: `kind version`",
         "run: `blocked`",
         "run blocker: `kind missing in test`",
+        "retry recommended: `false`",
+        "retry after: required local tools are installed",
     ):
         if snippet not in evidence_history_status_markdown.stdout:
             errors.append(f"evidence-aware history Markdown should show latest advance detail: {snippet}")

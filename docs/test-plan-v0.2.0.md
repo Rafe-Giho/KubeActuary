@@ -193,6 +193,8 @@ Expected:
 - version iteration history status preserves latest blocker summaries,
   repeated latest blocker streaks, blocker action guidance, retry guards, and
   drilldown commands in text, JSON, and Markdown output;
+- version iteration history status preserves latest next-unblock action/run and
+  retry-guard metadata in text, JSON, and Markdown output;
 - version worklist and next-task selector `--history-dir` attach matching latest
   blocker streak/action guidance to the selected open item in text, JSON, and
   Markdown;
@@ -239,7 +241,7 @@ Expected:
   verifies persisted next-task output, file readiness, next-task evidence build,
   next-task-run status, next-unblock runner status, next-unblock retry command metadata,
   selected next-unblock next-step output, guarded next-unblock retry metadata,
-  version history next-unblock action/run preservation, environment metadata, advance status, queue-source
+  version history next-unblock action/run/retry preservation, environment metadata, advance status, queue-source
   visibility/origin, next-task queue consistency, selected next-task worklist
   drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, runner/evidence-build/advance record
   consistency, legacy

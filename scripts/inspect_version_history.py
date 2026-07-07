@@ -297,6 +297,58 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
     }
 
 
+def next_unblock_retry_status(
+    next_unblock_action: dict[str, Any] | None,
+    next_unblock_action_run: dict[str, Any] | None,
+    filters: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not isinstance(next_unblock_action, dict):
+        return None
+    selected = dict_value(next_unblock_action.get("selected"))
+    if not selected.get("id"):
+        return None
+    evidence_dir = filters.get("evidenceDir")
+    command = None
+    if evidence_dir:
+        command = shell_join(
+            [
+                "python3",
+                "-B",
+                "scripts/run_next_unblock_action.py",
+                str(evidence_dir),
+                "--run",
+                "--record",
+            ]
+        )
+    run_status = next_unblock_action_run.get("status") if isinstance(next_unblock_action_run, dict) else None
+    if run_status in {"passed", "clear"}:
+        return {
+            "recommended": False,
+            "reason": "already-clear",
+            "command": command,
+        }
+    if run_status in {"blocked", "failed"}:
+        if selected.get("kind") == "missing-tool" or selected.get("tool"):
+            retry_after = "required local tools are installed"
+        elif selected.get("environmentStatus"):
+            retry_after = "environment probe succeeds"
+        else:
+            retry_after = "selected blocker is resolved"
+        return {
+            "recommended": False,
+            "reason": f"last-run-{run_status}",
+            "retryAfter": retry_after,
+            "nextStep": selected.get("nextStep"),
+            "command": command,
+        }
+    return {
+        "recommended": True,
+        "reason": "not-run" if not run_status else f"last-run-{run_status}",
+        "nextStep": selected.get("nextStep"),
+        "command": command,
+    }
+
+
 def summarize_latest_advance(latest: dict[str, Any] | None, errors: list[str]) -> dict[str, Any] | None:
     if not isinstance(latest, dict):
         return None
@@ -595,6 +647,11 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     blocker_streak = latest_blocker_streak(inspected_runs)
     next_commands = build_next_commands(history_dir, latest, latest_advance)
     blocker_action = latest_blocker_action(blocker_streak, latest_next_task, next_commands)
+    latest_next_unblock_retry = next_unblock_retry_status(
+        latest_next_unblock_action,
+        latest_next_unblock_action_run,
+        latest_filters,
+    )
     return {
         "schemaVersion": SCHEMA_VERSION,
         "historyDir": history_dir.as_posix(),
@@ -619,6 +676,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestNextTask": latest_next_task,
         "latestNextUnblockAction": latest_next_unblock_action,
         "latestNextUnblockActionRun": latest_next_unblock_action_run,
+        "latestNextUnblockRetry": latest_next_unblock_retry,
         "latestFilters": latest_filters,
         "latestDiffSummary": latest_diff_summary,
         "latestVersionDiffs": latest_version_diffs,
@@ -731,6 +789,16 @@ def render_text(status: dict[str, Any]) -> str:
         failure = dict_value(latest_next_unblock_action_run.get("failure"))
         if failure.get("message"):
             lines.append(f"latest-next-unblock-run-error: {failure.get('message')}")
+    latest_next_unblock_retry = status.get("latestNextUnblockRetry")
+    if isinstance(latest_next_unblock_retry, dict):
+        lines.append(
+            "latest-next-unblock-retry-recommended: "
+            f"{str(latest_next_unblock_retry.get('recommended')).lower()}"
+        )
+        if latest_next_unblock_retry.get("retryAfter"):
+            lines.append(f"latest-next-unblock-retry-after: {latest_next_unblock_retry.get('retryAfter')}")
+        if latest_next_unblock_retry.get("command"):
+            lines.append(f"latest-next-unblock-retry-command: {latest_next_unblock_retry.get('command')}")
     latest_blocker = status.get("latestBlockerStreak")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
@@ -947,6 +1015,7 @@ def render_markdown(status: dict[str, Any]) -> str:
     )
     latest_next_unblock_action = status.get("latestNextUnblockAction")
     latest_next_unblock_action_run = status.get("latestNextUnblockActionRun")
+    latest_next_unblock_retry = status.get("latestNextUnblockRetry")
     if isinstance(latest_next_unblock_action, dict):
         selected = dict_value(latest_next_unblock_action.get("selected"))
         lines.append(f"- action: `{selected.get('id')}`")
@@ -980,6 +1049,15 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- run blocker: `{failure.get('message')}`")
     else:
         lines.append("- run: none")
+    if isinstance(latest_next_unblock_retry, dict):
+        lines.append(
+            "- retry recommended: "
+            f"`{str(latest_next_unblock_retry.get('recommended')).lower()}`"
+        )
+        if latest_next_unblock_retry.get("retryAfter"):
+            lines.append(f"- retry after: {latest_next_unblock_retry.get('retryAfter')}")
+        if latest_next_unblock_retry.get("command"):
+            lines.append(f"- retry command: `{latest_next_unblock_retry.get('command')}`")
     latest_blocker = status.get("latestBlockerStreak")
     lines.extend(
         [

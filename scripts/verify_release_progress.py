@@ -739,6 +739,11 @@ def main() -> int:
             errors.append("history progress must include latest next-unblock runner status")
         if (latest_unblock_run.get("failure") or {}).get("message") != "kind missing in progress test":
             errors.append("history progress must include latest next-unblock runner failure")
+        latest_unblock_retry = history_status.get("latestNextUnblockRetry", {})
+        if latest_unblock_retry.get("recommended") is not False:
+            errors.append("history progress must suppress next-unblock retry before tool resolution")
+        if latest_unblock_retry.get("retryAfter") != "required local tools are installed":
+            errors.append("history progress must explain when next-unblock retry is useful")
         blocker_streak = history_status.get("latestBlockerStreak", {})
         if blocker_streak.get("streak") != 1 or blocker_streak.get("status") != "single":
             errors.append("history progress must include latest blocker streak")
@@ -761,6 +766,8 @@ def main() -> int:
             "history-latest-next-unblock: 01-missing-tool-kind kind",
             "history-latest-next-unblock-run: blocked run",
             "history-latest-next-unblock-run-error: kind missing in progress test",
+            "history-latest-next-unblock-retry-recommended: false",
+            "history-latest-next-unblock-retry-after: required local tools are installed",
             "history-latest-blocker-streak: 1",
             "history-latest-blocker-status: single",
             "history-latest-blocker-action: resolve-environment",
@@ -800,6 +807,8 @@ def main() -> int:
             "latest next unblock: `01-missing-tool-kind` target=`kind`",
             "latest next unblock run: `blocked` (run)",
             "latest next unblock run error: `kind missing in progress test`",
+            "latest next unblock retry recommended: `false`",
+            "latest next unblock retry after: required local tools are installed",
             "latest blocker streak: `1` (single)",
             "latest blocker action: `resolve-environment`",
             "latest blocker retry recommended: `false`",

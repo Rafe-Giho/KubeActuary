@@ -592,6 +592,7 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
     latest_next_task = history_status.get("latestNextTask")
     latest_next_unblock_action = history_status.get("latestNextUnblockAction")
     latest_next_unblock_action_run = history_status.get("latestNextUnblockActionRun")
+    latest_next_unblock_retry = history_status.get("latestNextUnblockRetry")
     latest_blocker = history_status.get("latestBlockerStreak")
     latest_blocker_action = history_status.get("latestBlockerAction")
     lines.extend(
@@ -632,6 +633,13 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
         failure = latest_next_unblock_action_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"- latest next unblock run error: `{failure.get('message')}`")
+    if isinstance(latest_next_unblock_retry, dict):
+        lines.append(
+            "- latest next unblock retry recommended: "
+            f"`{str(latest_next_unblock_retry.get('recommended')).lower()}`"
+        )
+        if latest_next_unblock_retry.get("retryAfter"):
+            lines.append(f"- latest next unblock retry after: {latest_next_unblock_retry.get('retryAfter')}")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
         if not isinstance(signature, dict):
@@ -705,6 +713,17 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
         failure = latest_next_unblock_action_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"history-latest-next-unblock-run-error: {failure.get('message')}")
+    latest_next_unblock_retry = history_status.get("latestNextUnblockRetry")
+    if isinstance(latest_next_unblock_retry, dict):
+        lines.append(
+            "history-latest-next-unblock-retry-recommended: "
+            f"{str(latest_next_unblock_retry.get('recommended')).lower()}"
+        )
+        if latest_next_unblock_retry.get("retryAfter"):
+            lines.append(
+                "history-latest-next-unblock-retry-after: "
+                f"{latest_next_unblock_retry.get('retryAfter')}"
+            )
     latest_blocker = history_status.get("latestBlockerStreak")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})

@@ -337,7 +337,7 @@ Result:
   verifies persisted next-task output, file readiness, next-task evidence
   build, next-task-run status, next-unblock runner status, next-unblock retry command metadata,
   selected next-unblock next-step output, guarded next-unblock retry metadata,
-  version history next-unblock action/run preservation, environment metadata, advance status,
+  version history next-unblock action/run/retry preservation, environment metadata, advance status,
   queue-source visibility/origin, next-task queue consistency,
   selected next-task worklist drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands,
   evidence-build/runner/advance record consistency, complete

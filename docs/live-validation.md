@@ -412,8 +412,9 @@ If a next-unblock verifier already ran and stayed blocked, status keeps the
 retry command in `nextUnblockRetry` with a retry condition instead of treating
 it as an immediate next command.
 Evidence-aware version iteration packs and history status preserve the same
-next-unblock action/run metadata, so repeated validation snapshots keep the
-selected blocker and verifier result attached to the local loop.
+next-unblock action/run and retry-guard metadata, so repeated validation
+snapshots keep the selected blocker, verifier result, and retry condition
+attached to the local loop.
 When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
