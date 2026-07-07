@@ -86,7 +86,7 @@ Last local verification:
 
 ```text
 2026-07-07: python3 -B scripts/verify_release.py --version 0.2.0
-verification: passed (83 checks)
+verification: passed (84 checks)
 ```
 
 ## v0.2.x: Alpha Stabilization

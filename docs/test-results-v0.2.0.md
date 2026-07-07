@@ -1,6 +1,6 @@
 # v0.2.0 Test Results
 
-Run date: 2026-07-06.
+Run date: 2026-07-07.
 
 ## Summary
 
@@ -18,8 +18,8 @@ python3 -B -m unittest discover -s tests
 Result:
 
 ```text
-verification: passed (83 checks)
-Ran 117 tests
+verification: passed (84 checks)
+Ran 118 tests
 OK
 ```
 
@@ -122,6 +122,8 @@ Coverage included:
 - GitHub Actions workflow YAML parsing;
 - release notes dry-run generation;
 - release taskboard status and check-count audit;
+- GA readiness gate verification for the local v1.0.0 safety, support,
+  governance, and release-suite contract;
 - release progress report generation for versioned task tracking,
   text output, tool-ready next actions, selected evidence-directory runtime
   status, runner failure reason, optional version-history status, latest

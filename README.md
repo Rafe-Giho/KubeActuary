@@ -469,6 +469,7 @@ scripts/
   check_live_evidence_coverage.py live evidence release-gate coverage checker
   verify_live_evidence_coverage.py live evidence coverage verifier
   verify_project_governance.py contribution, notice, and license verifier
+  verify_ga_readiness.py     local v1.0.0 GA release-gate verifier
   generate_airgap_manifest.py air-gapped artifact manifest generator
   verify_airgap_bundle.py     offline bundle verifier
   verify_agent_help_contract.py agent help schema contract verifier
