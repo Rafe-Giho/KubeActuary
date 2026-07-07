@@ -151,7 +151,8 @@ Expected:
   file/command details, every runnable tool-ready action and evidence next
   command, persisted queue-source status, and version-iteration advance
   run/history metadata plus `--history-dir` status/consistency, latest
-  blocker streak/action guidance, and latest next-unblock action/run summaries,
+  blocker streak/action guidance, latest next-unblock action/run summaries,
+  and empty-history bootstrap record commands,
   without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and covers complete

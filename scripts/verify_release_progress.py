@@ -369,6 +369,31 @@ def main() -> int:
         with_history = run_generator("--format", "json", "--history-dir", str(history_dir))
         with_history_text = run_generator("--format", "text", "--history-dir", str(history_dir))
         with_history_markdown = run_generator("--format", "markdown", "--history-dir", str(history_dir))
+        bootstrap_history_dir = tmpdir / "bootstrap-history"
+        bootstrap_history = run_generator(
+            "--format",
+            "json",
+            "--evidence-dir",
+            str(evidence_dir),
+            "--history-dir",
+            str(bootstrap_history_dir),
+        )
+        bootstrap_history_text = run_generator(
+            "--format",
+            "text",
+            "--evidence-dir",
+            str(evidence_dir),
+            "--history-dir",
+            str(bootstrap_history_dir),
+        )
+        bootstrap_history_markdown = run_generator(
+            "--format",
+            "markdown",
+            "--evidence-dir",
+            str(evidence_dir),
+            "--history-dir",
+            str(bootstrap_history_dir),
+        )
         version_with_evidence_text = run_generator(
             "--format",
             "text",
@@ -698,6 +723,34 @@ def main() -> int:
         ):
             if snippet not in with_history_markdown.stdout:
                 errors.append(f"history progress markdown missing status detail: {snippet}")
+    expected_bootstrap_command = (
+        f"python3 -B scripts/record_version_iteration.py {bootstrap_history_dir} "
+        f"--evidence-dir {evidence_dir}"
+    )
+    if bootstrap_history.returncode != 0:
+        errors.append(
+            "bootstrap history progress failed: "
+            f"{bootstrap_history.stderr.strip() or bootstrap_history.stdout.strip()}"
+        )
+    else:
+        bootstrap_payload = json.loads(bootstrap_history.stdout)
+        bootstrap_history_status = bootstrap_payload.get("versionHistoryStatus", {})
+        if expected_bootstrap_command not in bootstrap_history_status.get("nextCommands", []):
+            errors.append("bootstrap history progress should recommend the initial evidence-aware history record")
+    if bootstrap_history_text.returncode != 0:
+        errors.append(
+            "bootstrap history progress text failed: "
+            f"{bootstrap_history_text.stderr.strip() or bootstrap_history_text.stdout.strip()}"
+        )
+    elif f"history-next: {expected_bootstrap_command}" not in bootstrap_history_text.stdout:
+        errors.append("bootstrap history progress text should show the initial record command")
+    if bootstrap_history_markdown.returncode != 0:
+        errors.append(
+            "bootstrap history progress markdown failed: "
+            f"{bootstrap_history_markdown.stderr.strip() or bootstrap_history_markdown.stdout.strip()}"
+        )
+    elif f"history next: `{expected_bootstrap_command}`" not in bootstrap_history_markdown.stdout:
+        errors.append("bootstrap history progress markdown should show the initial record command")
     if version_with_evidence_text.returncode != 0:
         errors.append(
             "version evidence progress text failed: "

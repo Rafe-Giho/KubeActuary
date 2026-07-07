@@ -324,6 +324,55 @@ def command_string(args: list[str]) -> str:
     return " ".join(shlex.quote(arg) for arg in args)
 
 
+def history_bootstrap_command(
+    history_dir: Path,
+    evidence_dir: Path,
+    version_filters: list[str],
+    probe_environment: bool,
+    kubectl: str,
+) -> str:
+    args = [
+        "python3",
+        "-B",
+        "scripts/record_version_iteration.py",
+        history_dir.as_posix(),
+        "--evidence-dir",
+        evidence_dir.as_posix(),
+    ]
+    for version in version_filters:
+        args.extend(["--version", version])
+    if probe_environment:
+        args.append("--probe-environment")
+    if kubectl != "kubectl":
+        args.extend(["--kubectl", kubectl])
+    return command_string(args)
+
+
+def add_history_bootstrap_command(
+    history_status: dict[str, Any],
+    history_dir: Path,
+    evidence_dir: Path | None,
+    version_filters: list[str],
+    probe_environment: bool,
+    kubectl: str,
+) -> None:
+    if evidence_dir is None:
+        return
+    summary = history_status.get("summary")
+    if not isinstance(summary, dict) or summary.get("runs", 0) != 0:
+        return
+    command = history_bootstrap_command(
+        history_dir,
+        evidence_dir,
+        version_filters,
+        probe_environment,
+        kubectl,
+    )
+    next_commands = history_status.setdefault("nextCommands", [])
+    if isinstance(next_commands, list) and command not in next_commands:
+        next_commands.append(command)
+
+
 def blocker_worklist_command(
     capture_status: str,
     filter_flag: str,
@@ -524,7 +573,16 @@ def build_progress(
         else:
             report["evidenceStatus"] = unprepared_evidence_status(evidence_dir, target_output, plan)
     if history_dir is not None:
-        report["versionHistoryStatus"] = inspect_history(history_dir)
+        history_status = inspect_history(history_dir)
+        add_history_bootstrap_command(
+            history_status,
+            history_dir,
+            evidence_dir,
+            version_filters,
+            probe_environment,
+            kubectl,
+        )
+        report["versionHistoryStatus"] = history_status
     return report
 
 
