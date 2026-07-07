@@ -955,8 +955,15 @@ def main() -> int:
         for item in blocked_reason_blockers
     ):
         errors.append("blocked evidence status must include environment reason drilldown commands")
-    if not blocked_payload.get("nextCommands") or blocked_payload.get("nextCommands", [None])[0] != expected_blocked_probe_command:
-        errors.append("blocked evidence status must recommend rerunning the environment probe first")
+    if expected_blocked_probe_command in blocked_payload.get("nextCommands", []):
+        errors.append("blocked evidence status must defer repeated unavailable probe reruns")
+    blocked_probe_retry = blocked_payload.get("environmentProbeRetry") or {}
+    if blocked_probe_retry.get("recommended") is not False:
+        errors.append("blocked evidence status must mark unavailable probe rerun as deferred")
+    if blocked_probe_retry.get("retryAfter") != "cluster access is available":
+        errors.append("blocked evidence status must explain when environment probe retry is useful")
+    if blocked_probe_retry.get("command") != expected_blocked_probe_command:
+        errors.append("blocked evidence status must preserve the deferred environment probe command")
     expected_blocked_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {blocked_dir} --run --record"
     if expected_blocked_unblock_retry not in blocked_payload.get("nextCommands", []):
         errors.append("blocked evidence status must recommend the selected next-unblock verifier retry")
@@ -967,8 +974,8 @@ def main() -> int:
         errors.append("blocked evidence status must not add retry-after before the verifier has run")
     if blocked_unblock_retry.get("command") != expected_blocked_unblock_retry:
         errors.append("blocked evidence status must preserve the selected next-unblock retry command")
-    if len(blocked_payload.get("nextCommands", [])) != 2:
-        errors.append("blocked evidence status must recommend only the probe rerun and unblock verifier retry")
+    if len(blocked_payload.get("nextCommands", [])) != 1:
+        errors.append("blocked evidence status must recommend only the immediate unblock verifier retry")
     expected_blocked_capture = (
         f"python3 -B scripts/capture_controller_resource_budget.py "
         f"--output {blocked_dir / 'raw' / '01-controller-resource-budget-kubectl-top.txt'} --run"
@@ -988,6 +995,8 @@ def main() -> int:
             errors.append(f"blocked evidence status must not keep prepared queue placeholder in next commands: {placeholder}")
     if "environment-next: start or select a disposable cluster, then rerun the probe" not in blocked_text.stdout:
         errors.append("blocked text status must print selected environment next step")
+    if f"environment-probe-retry-command: {expected_blocked_probe_command}" not in blocked_text.stdout:
+        errors.append("blocked text status must print deferred environment probe retry command")
     if f"next: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
         errors.append("blocked text status must print selected next-unblock retry command")
     if f"next-unblock-retry-command: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
@@ -1037,13 +1046,18 @@ def main() -> int:
         f"python3 -B scripts/prepare_live_evidence_directory.py {version_blocked_dir} "
         "--version 0.4.3 --probe-environment"
     )
-    if version_blocked_payload.get("nextCommands", [None])[0] != expected_version_probe_command:
-        errors.append("version-blocked status must preserve version filters in the probe next command")
+    version_probe_retry = version_blocked_payload.get("environmentProbeRetry") or {}
+    if expected_version_probe_command in version_blocked_payload.get("nextCommands", []):
+        errors.append("version-blocked status must defer repeated unavailable probe reruns")
+    if version_probe_retry.get("recommended") is not False:
+        errors.append("version-blocked status must mark unavailable probe rerun as deferred")
+    if version_probe_retry.get("command") != expected_version_probe_command:
+        errors.append("version-blocked status must preserve version filters in the deferred probe command")
     for snippet in (
         "filter-version: 0.4.3",
         "covered: 0/1",
         "coverage-errors: 0",
-        f"next: {expected_version_probe_command}",
+        f"environment-probe-retry-command: {expected_version_probe_command}",
         "environment-blockers: 1",
         "--version 0.4.3 --capture-status blocked-by-environment --environment-status cluster-unavailable",
         "--version 0.4.3 --capture-status blocked-by-environment --environment-reason command-failed",

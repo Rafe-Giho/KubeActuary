@@ -768,6 +768,65 @@ def queue_closure_commands(live_queue: dict[str, Any] | None) -> list[str]:
     ]
 
 
+def environment_probe_command(
+    evidence_dir: Path,
+    version_filters: list[str] | None = None,
+) -> str:
+    probe_args = [
+        "python3",
+        "-B",
+        "scripts/prepare_live_evidence_directory.py",
+        evidence_dir.as_posix(),
+    ]
+    add_repeated_args(probe_args, "--version", list(version_filters or []))
+    probe_args.append("--probe-environment")
+    return command_string(probe_args)
+
+
+def environment_probe_retry_status(
+    evidence_dir: Path,
+    environment_probe: dict[str, Any] | None,
+    environment_blockers: dict[str, Any] | None,
+    next_task_run: dict[str, Any] | None,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any] | None:
+    blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
+    selected_blocked = blocker_summary.get("selectedBlocked") is True
+    scoped_environment_blocked = bool(version_filters) and blocker_summary.get("blockedByEnvironment", 0) > 0
+    probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
+    runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
+    needs_probe = (
+        selected_blocked
+        or scoped_environment_blocked
+        or (runner_status == "failed" and probe_status in {None, "not-run"})
+    )
+    if not needs_probe:
+        return None
+    selected_blocker = environment_blockers.get("selected") if isinstance(environment_blockers, dict) else None
+    if not isinstance(selected_blocker, dict):
+        selected_blocker = {}
+    command = environment_probe_command(evidence_dir, version_filters=version_filters)
+    if probe_status in {None, "not-run"}:
+        return {
+            "recommended": True,
+            "reason": "not-run",
+            "nextStep": selected_blocker.get("nextStep"),
+            "command": command,
+        }
+    retry_after = (
+        "cluster access is available"
+        if probe_status in {"unavailable", "kubectl-unavailable"}
+        else "environment evidence is refreshed"
+    )
+    return {
+        "recommended": False,
+        "reason": f"last-probe-{probe_status}",
+        "retryAfter": retry_after,
+        "nextStep": selected_blocker.get("nextStep"),
+        "command": command,
+    }
+
+
 def next_commands(
     gates: list[dict[str, Any]],
     evidence_dir: Path,
@@ -791,7 +850,6 @@ def next_commands(
     selected_status = selected.get("captureStatus")
     blocker_summary = environment_blockers.get("summary", {}) if isinstance(environment_blockers, dict) else {}
     selected_blocked = blocker_summary.get("selectedBlocked") is True
-    scoped_environment_blocked = bool(requested) and blocker_summary.get("blockedByEnvironment", 0) > 0
     selected_ready = selected_status == "tool-ready" and not selected_blocked
     skip_gate_ids = {selected_id} if selected_id and selected_in_scope else set()
     queue_commands, queue_gate_ids = queue_resolved_commands(
@@ -824,19 +882,16 @@ def next_commands(
     )
     if unblock_command and unblock_command not in commands:
         commands.append(unblock_command)
-    probe_status = environment_probe.get("clusterAccess") if isinstance(environment_probe, dict) else None
-    runner_status = next_task_run.get("status") if isinstance(next_task_run, dict) else None
-    if selected_blocked or scoped_environment_blocked or (runner_status == "failed" and probe_status in {None, "not-run"}):
-        probe_args = [
-            "python3",
-            "-B",
-            "scripts/prepare_live_evidence_directory.py",
-            evidence_dir.as_posix(),
-        ]
-        add_repeated_args(probe_args, "--version", list(version_filters or []))
-        probe_args.append("--probe-environment")
-        probe_command = command_string(probe_args)
-        if probe_command not in commands:
+    probe_retry = environment_probe_retry_status(
+        evidence_dir,
+        environment_probe,
+        environment_blockers,
+        next_task_run,
+        version_filters=version_filters,
+    )
+    if isinstance(probe_retry, dict) and probe_retry.get("recommended") is True:
+        probe_command = probe_retry.get("command")
+        if isinstance(probe_command, str) and probe_command not in commands:
             commands.insert(0, probe_command)
     return commands
 
@@ -1011,6 +1066,13 @@ def inspect_directory(
         ),
         "nextTaskEvidenceBuild": next_task_evidence_build,
         "environmentProbe": environment_probe,
+        "environmentProbeRetry": environment_probe_retry_status(
+            evidence_dir,
+            environment_probe,
+            environment_blockers,
+            next_task_run,
+            version_filters=version_filters,
+        ),
         "environmentBlockers": environment_blockers,
         "versionIterationAdvance": version_iteration_advance,
         "blockers": blockers,
@@ -1169,6 +1231,16 @@ def render_text(status: dict[str, Any]) -> str:
         probe_summary = environment_probe.get("summary", {})
         if probe_summary:
             lines.append(f"environment-probe-checks: {probe_summary.get('passed', 0)}/{probe_summary.get('checks', 0)}")
+    environment_probe_retry = status.get("environmentProbeRetry")
+    if isinstance(environment_probe_retry, dict):
+        lines.append(
+            "environment-probe-retry-recommended: "
+            f"{str(environment_probe_retry.get('recommended')).lower()}"
+        )
+        if environment_probe_retry.get("retryAfter"):
+            lines.append(f"environment-probe-retry-after: {environment_probe_retry.get('retryAfter')}")
+        if environment_probe_retry.get("command"):
+            lines.append(f"environment-probe-retry-command: {environment_probe_retry.get('command')}")
     environment_blockers = status.get("environmentBlockers")
     if isinstance(environment_blockers, dict):
         blocker_summary = environment_blockers.get("summary", {})
@@ -1344,6 +1416,16 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"- probe: `{environment_probe.get('clusterAccess')}`")
             if environment_probe.get("reason"):
                 lines.append(f"- probe reason: `{environment_probe.get('reason')}`")
+        environment_probe_retry = status.get("environmentProbeRetry")
+        if isinstance(environment_probe_retry, dict):
+            lines.append(
+                "- probe retry recommended: "
+                f"`{str(environment_probe_retry.get('recommended')).lower()}`"
+            )
+            if environment_probe_retry.get("retryAfter"):
+                lines.append(f"- probe retry after: {environment_probe_retry.get('retryAfter')}")
+            if environment_probe_retry.get("command"):
+                lines.append(f"- probe retry command: `{environment_probe_retry.get('command')}`")
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
             lines.append(f"- blockers: {blocker_summary.get('blockedByEnvironment', 0)}")

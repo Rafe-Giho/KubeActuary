@@ -709,7 +709,7 @@ def main() -> int:
             "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
             "next-unblock-retry-recommended: true",
             "next-unblock-retry-command: python3 -B scripts/run_next_unblock_action.py",
-            "next: python3 -B scripts/prepare_live_evidence_directory.py",
+            "evidence-environment-probe-retry-command: python3 -B scripts/prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_text.stdout:
                 errors.append(f"evidence progress text missing status detail: {snippet}")
@@ -862,7 +862,7 @@ def main() -> int:
             "evidence-covered: 0/8",
             "--version 'Current Baseline' --capture-status blocked-by-environment --environment-status cluster-unavailable",
             "--version 'Current Baseline' --capture-status blocked-by-environment --environment-reason connection-refused",
-            f"next: python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --version 'Current Baseline' --probe-environment",
+            f"evidence-environment-probe-retry-command: python3 -B scripts/prepare_live_evidence_directory.py {evidence_dir} --version 'Current Baseline' --probe-environment",
         ):
             if snippet not in version_with_evidence_text.stdout:
                 errors.append(f"version evidence progress text missing status detail: {snippet}")

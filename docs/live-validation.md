@@ -94,7 +94,11 @@ prints the selected next-task evidence files and resolved commands, so the
 local capture target is visible without opening the evidence status JSON. It also
 prints every action blocker, filtered worklist commands for each blocker, and
 queue-source details from the selected next-task, runner, and advance records
-when an evidence directory has been prepared. It also prints every tool-ready
+when an evidence directory has been prepared.
+When a prepared evidence directory already contains a failed environment probe,
+the progress view keeps the probe command in `environmentProbeRetry` with a
+retry condition instead of presenting the same failed probe as immediate work.
+It also prints every tool-ready
 action and evidence next command instead of truncating runnable local work. The
 same progress view summarizes repeated missing-tool and environment blockers,
 so the remaining local task loop can distinguish installation work from
@@ -370,6 +374,10 @@ instead of being suggested as runnable capture commands. When a selected
 next-unblock verifier exists and has not passed, the same list also includes
 `run_next_unblock_action.py <evidence-dir> --run --record` so the local loop can
 recheck the blocker after the missing tool or environment condition changes.
+If an environment probe has not run yet, `nextCommands` can recommend the
+read-only probe first. If the probe already failed, the status report preserves
+the exact probe command in `environmentProbeRetry` and marks it deferred until
+cluster access is available.
 When `generate_release_progress.py` receives both `--evidence-dir` and an empty
 `--history-dir`, the version-history section also prints the initial
 `record_version_iteration.py <history-dir> --evidence-dir <evidence-dir>`
@@ -421,8 +429,9 @@ When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.
 When the probe classifies the selected task as environment-blocked, status and
-progress output print the selected blocker next step instead of blocked capture
-commands. Direct selected-task runner invocations use the same zero-run
+progress output print the selected blocker next step and deferred probe retry
+condition instead of blocked capture commands. Direct selected-task runner
+invocations use the same zero-run
 behavior, so a prepared environment-blocked task does not reattempt live
 capture until the evidence directory is refreshed after cluster access changes.
 

@@ -936,6 +936,16 @@ def render_markdown(progress: dict[str, Any]) -> str:
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")
+        environment_probe_retry = evidence_status.get("environmentProbeRetry")
+        if isinstance(environment_probe_retry, dict):
+            lines.append(
+                "- environment-probe-retry-recommended: "
+                f"`{str(environment_probe_retry.get('recommended')).lower()}`"
+            )
+            if environment_probe_retry.get("retryAfter"):
+                lines.append(f"- environment-probe-retry-after: {environment_probe_retry.get('retryAfter')}")
+            if environment_probe_retry.get("command"):
+                lines.append(f"- environment-probe-retry-command: `{environment_probe_retry.get('command')}`")
         environment_blockers = evidence_status.get("environmentBlockers")
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
@@ -1121,6 +1131,16 @@ def render_text(progress: dict[str, Any]) -> str:
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"evidence-environment-probe: {environment_probe.get('clusterAccess')}")
+        environment_probe_retry = evidence_status.get("environmentProbeRetry")
+        if isinstance(environment_probe_retry, dict):
+            lines.append(
+                "evidence-environment-probe-retry-recommended: "
+                f"{str(environment_probe_retry.get('recommended')).lower()}"
+            )
+            if environment_probe_retry.get("retryAfter"):
+                lines.append(f"evidence-environment-probe-retry-after: {environment_probe_retry.get('retryAfter')}")
+            if environment_probe_retry.get("command"):
+                lines.append(f"evidence-environment-probe-retry-command: {environment_probe_retry.get('command')}")
         environment_blockers = evidence_status.get("environmentBlockers")
         if isinstance(environment_blockers, dict):
             blocker_summary = environment_blockers.get("summary", {})
