@@ -252,6 +252,73 @@ def main() -> int:
                 "history": {"runs": 1},
             },
         )
+        write_payload(
+            history_evidence_dir / ".kubeactuary" / "next-unblock-action.json",
+            {
+                "schemaVersion": "kube-actuary.next-unblock-action.v1",
+                "sourceWorklistQueueSource": "prepared-live-validation-queue",
+                "status": "selected",
+                "planStatus": "blocked",
+                "clusterWrites": "disabled",
+                "selectionPolicy": "highest-items-then-kind-target",
+                "summary": {
+                    "candidateActions": 1,
+                    "blockedItems": 2,
+                    "selected": True,
+                },
+                "selected": {
+                    "id": "01-missing-tool-kind",
+                    "kind": "missing-tool",
+                    "tool": "kind",
+                    "items": 2,
+                    "affectedVersions": ["Current Baseline", "0.8.0"],
+                    "nextStep": "install the missing tool or run the evidence capture on a host that already has it",
+                    "commands": {"verify": ["kind version"]},
+                },
+            },
+        )
+        write_payload(
+            history_evidence_dir / ".kubeactuary" / "next-unblock-action-run.json",
+            {
+                "schemaVersion": "kube-actuary.next-unblock-action-run.v1",
+                "mode": "run",
+                "status": "blocked",
+                "clusterWrites": "disabled",
+                "nextUnblockAction": {
+                    "schemaVersion": "kube-actuary.next-unblock-action.v1",
+                    "queueSource": "prepared-live-validation-queue",
+                    "selected": {
+                        "id": "01-missing-tool-kind",
+                        "kind": "missing-tool",
+                        "target": "kind",
+                        "tool": "kind",
+                        "items": 2,
+                        "affectedVersions": ["Current Baseline", "0.8.0"],
+                    },
+                },
+                "summary": {
+                    "commands": 1,
+                    "validCommands": 1,
+                    "ran": 1,
+                    "failed": 1,
+                    "validationErrors": 0,
+                },
+                "records": [
+                    {
+                        "command": "kind version",
+                        "stdout": "",
+                        "stderr": "kind missing in progress test",
+                        "exitCode": 127,
+                        "ok": False,
+                    }
+                ],
+                "failure": {
+                    "command": "kind version",
+                    "exitCode": 127,
+                    "message": "kind missing in progress test",
+                },
+            },
+        )
         history_dir = tmpdir / "history"
         history_recorded = run_recorder(
             str(history_dir),
@@ -572,6 +639,14 @@ def main() -> int:
             errors.append("history progress must include latest advance status")
         if history_status.get("latestAdvance", {}).get("nextTaskConsistency", {}).get("status") != "matched":
             errors.append("history progress must include latest advance consistency")
+        latest_unblock = history_status.get("latestNextUnblockAction", {})
+        if latest_unblock.get("selected", {}).get("id") != "01-missing-tool-kind":
+            errors.append("history progress must include latest next-unblock action")
+        latest_unblock_run = history_status.get("latestNextUnblockActionRun", {})
+        if latest_unblock_run.get("status") != "blocked":
+            errors.append("history progress must include latest next-unblock runner status")
+        if (latest_unblock_run.get("failure") or {}).get("message") != "kind missing in progress test":
+            errors.append("history progress must include latest next-unblock runner failure")
         blocker_streak = history_status.get("latestBlockerStreak", {})
         if blocker_streak.get("streak") != 1 or blocker_streak.get("status") != "single":
             errors.append("history progress must include latest blocker streak")
@@ -591,6 +666,9 @@ def main() -> int:
             "history-latest-run-id: progress-history",
             "history-latest-advance-status: failed",
             "history-latest-advance-next-task-consistency: matched",
+            "history-latest-next-unblock: 01-missing-tool-kind kind",
+            "history-latest-next-unblock-run: blocked run",
+            "history-latest-next-unblock-run-error: kind missing in progress test",
             "history-latest-blocker-streak: 1",
             "history-latest-blocker-status: single",
             "history-latest-blocker-action: resolve-environment",
@@ -610,6 +688,9 @@ def main() -> int:
             "latest run: `progress-history`",
             "latest advance: `failed`",
             "latest advance next task consistency: `matched`",
+            "latest next unblock: `01-missing-tool-kind` target=`kind`",
+            "latest next unblock run: `blocked` (run)",
+            "latest next unblock run error: `kind missing in progress test`",
             "latest blocker streak: `1` (single)",
             "latest blocker action: `resolve-environment`",
             "latest blocker retry recommended: `false`",

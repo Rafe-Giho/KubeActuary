@@ -532,6 +532,8 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
     summary = history_status.get("summary", {})
     latest_advance = history_status.get("latestAdvance")
     latest_next_task = history_status.get("latestNextTask")
+    latest_next_unblock_action = history_status.get("latestNextUnblockAction")
+    latest_next_unblock_action_run = history_status.get("latestNextUnblockActionRun")
     latest_blocker = history_status.get("latestBlockerStreak")
     latest_blocker_action = history_status.get("latestBlockerAction")
     lines.extend(
@@ -556,6 +558,22 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
             lines.append(f"- latest next task environment: `{latest_next_task.get('environmentStatus')}`")
         if latest_next_task.get("environmentReason"):
             lines.append(f"- latest next task environment reason: `{latest_next_task.get('environmentReason')}`")
+    if isinstance(latest_next_unblock_action, dict):
+        selected_unblock = latest_next_unblock_action.get("selected")
+        if isinstance(selected_unblock, dict) and selected_unblock.get("id"):
+            lines.append(
+                f"- latest next unblock: `{selected_unblock.get('id')}` "
+                f"target=`{selected_unblock.get('target')}`"
+            )
+    if isinstance(latest_next_unblock_action_run, dict):
+        lines.append(
+            "- latest next unblock run: "
+            f"`{latest_next_unblock_action_run.get('status')}` "
+            f"({latest_next_unblock_action_run.get('mode')})"
+        )
+        failure = latest_next_unblock_action_run.get("failure")
+        if isinstance(failure, dict) and failure.get("message"):
+            lines.append(f"- latest next unblock run error: `{failure.get('message')}`")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
         if not isinstance(signature, dict):
@@ -610,6 +628,23 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
             lines.append(f"history-latest-next-task-environment: {latest_next_task.get('environmentStatus')}")
         if latest_next_task.get("environmentReason"):
             lines.append(f"history-latest-next-task-environment-reason: {latest_next_task.get('environmentReason')}")
+    latest_next_unblock_action = history_status.get("latestNextUnblockAction")
+    if isinstance(latest_next_unblock_action, dict):
+        selected_unblock = latest_next_unblock_action.get("selected")
+        if isinstance(selected_unblock, dict) and selected_unblock.get("id"):
+            lines.append(
+                f"history-latest-next-unblock: {selected_unblock.get('id')} "
+                f"{selected_unblock.get('target')}"
+            )
+    latest_next_unblock_action_run = history_status.get("latestNextUnblockActionRun")
+    if isinstance(latest_next_unblock_action_run, dict):
+        lines.append(
+            f"history-latest-next-unblock-run: {latest_next_unblock_action_run.get('status')} "
+            f"{latest_next_unblock_action_run.get('mode')}"
+        )
+        failure = latest_next_unblock_action_run.get("failure")
+        if isinstance(failure, dict) and failure.get("message"):
+            lines.append(f"history-latest-next-unblock-run-error: {failure.get('message')}")
     latest_blocker = history_status.get("latestBlockerStreak")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
