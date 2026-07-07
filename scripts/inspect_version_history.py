@@ -274,6 +274,10 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         errors.append(f"run {run_id} missing version files: {', '.join(sorted(missing_version_files))}")
 
     blockers = worklist.get("blockers", {})
+    next_unblock_action = dict_value(worklist.get("nextUnblockAction")) or dict_value(run.get("nextUnblockAction"))
+    next_unblock_action_run = dict_value(worklist.get("nextUnblockActionRun")) or dict_value(
+        run.get("nextUnblockActionRun")
+    )
     return {
         "runId": run_id,
         "path": relative_path,
@@ -284,6 +288,8 @@ def inspect_run(history_dir: Path, run: dict[str, Any], errors: list[str]) -> di
         "blockers": blockers if isinstance(blockers, dict) else {},
         "environmentProbe": summarize_environment_probe(worklist.get("environmentProbe")),
         "nextTask": summarize_next_task(worklist),
+        "nextUnblockAction": next_unblock_action or None,
+        "nextUnblockActionRun": next_unblock_action_run or None,
         "filters": run.get("filters", {}) if isinstance(run.get("filters"), dict) else {},
         "diffStatus": diff_status,
         "diffSummary": diff_summary,
@@ -548,6 +554,12 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
     latest_next_task = latest.get("nextTask") if latest else None
     if not isinstance(latest_next_task, dict):
         latest_next_task = None
+    latest_next_unblock_action = latest.get("nextUnblockAction") if latest else None
+    if not isinstance(latest_next_unblock_action, dict):
+        latest_next_unblock_action = None
+    latest_next_unblock_action_run = latest.get("nextUnblockActionRun") if latest else None
+    if not isinstance(latest_next_unblock_action_run, dict):
+        latest_next_unblock_action_run = None
     latest_filters = latest.get("filters", {}) if latest else {}
     if not isinstance(latest_filters, dict):
         latest_filters = {}
@@ -589,6 +601,8 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         "latestBlockers": latest_blockers,
         "latestEnvironmentProbe": latest_environment_probe,
         "latestNextTask": latest_next_task,
+        "latestNextUnblockAction": latest_next_unblock_action,
+        "latestNextUnblockActionRun": latest_next_unblock_action_run,
         "latestFilters": latest_filters,
         "latestDiffSummary": latest_diff_summary,
         "latestVersionDiffs": latest_version_diffs,
@@ -667,6 +681,40 @@ def render_text(status: dict[str, Any]) -> str:
             lines.append(f"latest-next-task-command: {command}")
         for command in list_value(latest_next_task.get("worklistCommands")):
             lines.append(f"latest-next-task-worklist: {command}")
+    latest_next_unblock_action = status.get("latestNextUnblockAction")
+    if isinstance(latest_next_unblock_action, dict):
+        selected = dict_value(latest_next_unblock_action.get("selected"))
+        lines.append(f"latest-next-unblock-action: {selected.get('id')}")
+        lines.append(f"latest-next-unblock-action-status: {latest_next_unblock_action.get('status')}")
+        if latest_next_unblock_action.get("queueSource"):
+            lines.append(f"latest-next-unblock-action-queue-source: {latest_next_unblock_action.get('queueSource')}")
+        if selected.get("kind"):
+            lines.append(f"latest-next-unblock-action-kind: {selected.get('kind')}")
+        if selected.get("target"):
+            lines.append(f"latest-next-unblock-action-target: {selected.get('target')}")
+        if selected.get("items") is not None:
+            lines.append(f"latest-next-unblock-action-items: {selected.get('items')}")
+        if selected.get("nextStep"):
+            lines.append(f"latest-next-unblock-action-next-step: {selected.get('nextStep')}")
+        commands = dict_value(selected.get("commands"))
+        for command in list_value(commands.get("verify")):
+            lines.append(f"latest-next-unblock-action-verify: {command}")
+    latest_next_unblock_action_run = status.get("latestNextUnblockActionRun")
+    if isinstance(latest_next_unblock_action_run, dict):
+        summary = dict_value(latest_next_unblock_action_run.get("summary"))
+        lines.append(f"latest-next-unblock-run: {latest_next_unblock_action_run.get('status')}")
+        lines.append(f"latest-next-unblock-run-mode: {latest_next_unblock_action_run.get('mode')}")
+        if latest_next_unblock_action_run.get("queueSource"):
+            lines.append(f"latest-next-unblock-run-queue-source: {latest_next_unblock_action_run.get('queueSource')}")
+        if summary:
+            lines.append(
+                "latest-next-unblock-run-ran: "
+                f"{summary.get('ran', 0)}/{summary.get('commands', 0)}"
+            )
+            lines.append(f"latest-next-unblock-run-failed: {summary.get('failed', 0)}")
+        failure = dict_value(latest_next_unblock_action_run.get("failure"))
+        if failure.get("message"):
+            lines.append(f"latest-next-unblock-run-error: {failure.get('message')}")
     latest_blocker = status.get("latestBlockerStreak")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
@@ -874,6 +922,48 @@ def render_markdown(status: dict[str, Any]) -> str:
             lines.append(f"  - worklist: `{command}`")
     else:
         lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Latest Next Unblock",
+            "",
+        ]
+    )
+    latest_next_unblock_action = status.get("latestNextUnblockAction")
+    latest_next_unblock_action_run = status.get("latestNextUnblockActionRun")
+    if isinstance(latest_next_unblock_action, dict):
+        selected = dict_value(latest_next_unblock_action.get("selected"))
+        lines.append(f"- action: `{selected.get('id')}`")
+        lines.append(f"- status: `{latest_next_unblock_action.get('status')}`")
+        if latest_next_unblock_action.get("queueSource"):
+            lines.append(f"- queue source: `{latest_next_unblock_action.get('queueSource')}`")
+        if selected.get("kind"):
+            lines.append(f"- kind: `{selected.get('kind')}`")
+        if selected.get("target"):
+            lines.append(f"- target: `{selected.get('target')}`")
+        if selected.get("items") is not None:
+            lines.append(f"- items: {selected.get('items')}")
+        if selected.get("nextStep"):
+            lines.append(f"- next step: {selected.get('nextStep')}")
+        commands = dict_value(selected.get("commands"))
+        for command in list_value(commands.get("verify")):
+            lines.append(f"- verify: `{command}`")
+    else:
+        lines.append("- action: none")
+    if isinstance(latest_next_unblock_action_run, dict):
+        summary = dict_value(latest_next_unblock_action_run.get("summary"))
+        lines.append(f"- run: `{latest_next_unblock_action_run.get('status')}`")
+        lines.append(f"- run mode: `{latest_next_unblock_action_run.get('mode')}`")
+        if summary:
+            lines.append(
+                f"- run commands: `{summary.get('ran', 0)}/{summary.get('commands', 0)}` "
+                f"failed={summary.get('failed', 0)}"
+            )
+        failure = dict_value(latest_next_unblock_action_run.get("failure"))
+        if failure.get("message"):
+            lines.append(f"- run blocker: `{failure.get('message')}`")
+    else:
+        lines.append("- run: none")
     latest_blocker = status.get("latestBlockerStreak")
     lines.extend(
         [

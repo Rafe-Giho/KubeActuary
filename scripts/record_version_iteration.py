@@ -20,6 +20,7 @@ from scripts.prepare_version_iteration import prepare_iteration_pack  # noqa: E4
 
 
 SCHEMA_VERSION = "kube-actuary.version-iteration-history.v1"
+NEXT_UNBLOCK_METADATA_KEYS = ("nextUnblockAction", "nextUnblockActionRun")
 
 
 def slug(value: str) -> str:
@@ -79,6 +80,24 @@ def render_history(index: dict[str, Any]) -> str:
                 f"blocked-by-environment-delta={diff['blockedByEnvironmentDelta']} "
                 f"existing-evidence-files-delta={diff.get('existingEvidenceFilesDelta', 0)}"
             )
+        action = run.get("nextUnblockAction") if isinstance(run.get("nextUnblockAction"), dict) else {}
+        selected = action.get("selected") if isinstance(action.get("selected"), dict) else {}
+        if selected.get("id"):
+            lines.append(
+                f"  next-unblock-action: `{selected.get('id')}` "
+                f"target=`{selected.get('target')}` status={action.get('status')}"
+            )
+        action_run = run.get("nextUnblockActionRun") if isinstance(run.get("nextUnblockActionRun"), dict) else {}
+        if action_run:
+            summary = action_run.get("summary") if isinstance(action_run.get("summary"), dict) else {}
+            lines.append(
+                f"  next-unblock-run: `{action_run.get('status')}` "
+                f"mode={action_run.get('mode')} "
+                f"ran={summary.get('ran', 0)} failed={summary.get('failed', 0)}"
+            )
+            failure = action_run.get("failure") if isinstance(action_run.get("failure"), dict) else {}
+            if failure.get("message"):
+                lines.append(f"  next-unblock-run-blocker: `{failure.get('message')}`")
     return "\n".join(lines) + "\n"
 
 
@@ -157,6 +176,9 @@ def record_iteration(
         "diffPath": diff_path,
         "diffSummary": diff_summary,
     }
+    for key in NEXT_UNBLOCK_METADATA_KEYS:
+        if worklist.get(key):
+            entry[key] = worklist[key]
     index["runs"].append(entry)
     write_json(history_dir / "index.json", index)
     (history_dir / "README.md").write_text(render_history(index))

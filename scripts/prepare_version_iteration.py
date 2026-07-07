@@ -15,9 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.generate_version_worklist import build_worklist, render_markdown  # noqa: E402
+from scripts.inspect_release_evidence_directory import (  # noqa: E402
+    load_next_unblock_action,
+    load_next_unblock_action_run,
+)
 
 
 SCHEMA_VERSION = "kube-actuary.version-iteration.v1"
+NEXT_UNBLOCK_METADATA_KEYS = ("nextUnblockAction", "nextUnblockActionRun")
 
 
 def slug(value: str) -> str:
@@ -46,7 +51,61 @@ def iteration_record(version: dict[str, Any], worklist: dict[str, Any]) -> dict[
         record["resolvedClosureCommands"] = worklist["resolvedClosureCommands"]
     if worklist.get("environmentProbe"):
         record["environmentProbe"] = worklist["environmentProbe"]
+    for key in NEXT_UNBLOCK_METADATA_KEYS:
+        if worklist.get(key):
+            record[key] = worklist[key]
     return record
+
+
+def attach_next_unblock_metadata(worklist: dict[str, Any], evidence_dir: Path | None) -> None:
+    if evidence_dir is None:
+        return
+    next_unblock_action = load_next_unblock_action(evidence_dir)
+    if next_unblock_action is not None:
+        worklist["nextUnblockAction"] = next_unblock_action
+    next_unblock_action_run = load_next_unblock_action_run(evidence_dir)
+    if next_unblock_action_run is not None:
+        worklist["nextUnblockActionRun"] = next_unblock_action_run
+
+
+def render_next_unblock_sections(record: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    action = record.get("nextUnblockAction")
+    if isinstance(action, dict):
+        selected = action.get("selected") if isinstance(action.get("selected"), dict) else {}
+        lines.extend(["## Next Unblock Action", ""])
+        if selected:
+            lines.append(
+                f"- `{selected.get('id')}` {selected.get('kind')} "
+                f"`{selected.get('target')}` ({selected.get('items', 0)} items)"
+            )
+            if selected.get("nextStep"):
+                lines.append(f"  next: {selected.get('nextStep')}")
+            commands = selected.get("commands") if isinstance(selected.get("commands"), dict) else {}
+            for command in commands.get("verify", []) or []:
+                lines.append(f"  verify: `{command}`")
+        else:
+            lines.append("- none")
+        lines.append("")
+    action_run = record.get("nextUnblockActionRun")
+    if isinstance(action_run, dict):
+        selected = action_run.get("selected") if isinstance(action_run.get("selected"), dict) else {}
+        summary = action_run.get("summary") if isinstance(action_run.get("summary"), dict) else {}
+        failure = action_run.get("failure") if isinstance(action_run.get("failure"), dict) else {}
+        lines.extend(["## Next Unblock Action Run", ""])
+        lines.append(f"- status: `{action_run.get('status')}`")
+        lines.append(f"- mode: `{action_run.get('mode')}`")
+        if selected.get("id"):
+            lines.append(f"- selected: `{selected.get('id')}` target=`{selected.get('target')}`")
+        if summary:
+            lines.append(
+                f"- commands: {summary.get('commands', 0)} "
+                f"ran={summary.get('ran', 0)} failed={summary.get('failed', 0)}"
+            )
+        if failure.get("message"):
+            lines.append(f"- blocker: `{failure.get('message')}`")
+        lines.append("")
+    return lines
 
 
 def render_iteration(record: dict[str, Any]) -> str:
@@ -92,6 +151,7 @@ def render_iteration(record: dict[str, Any]) -> str:
         for item in environment_next_steps:
             lines.append(f"- blocker-next-step: {item['nextStep']} ({item['items']} items)")
         lines.append("")
+    lines.extend(render_next_unblock_sections(record))
     lines.extend(["## Open Items", ""])
     if not record["openItems"]:
         lines.append("- none")
@@ -153,6 +213,7 @@ def render_index(worklist: dict[str, Any]) -> str:
         for name, values in active_filters:
             lines.append(f"- {name}: `{', '.join(values)}`")
         lines.append("")
+    lines.extend(render_next_unblock_sections(worklist))
     lines.extend(["## Versions", ""])
     for version in worklist["versions"]:
         name = str(version["version"])
@@ -189,6 +250,7 @@ def prepare_iteration_pack(
         environment_reason_filters=environment_reason_filters,
         prefer_prepared_queue=prefer_prepared_queue,
     )
+    attach_next_unblock_metadata(worklist, evidence_dir)
     versions_dir = output_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)
     write_json(output_dir / "worklist.json", worklist)

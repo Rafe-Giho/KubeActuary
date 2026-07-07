@@ -360,6 +360,106 @@ def main() -> int:
             )
             + "\n"
         )
+        (completed_evidence_dir / ".kubeactuary" / "next-unblock-action.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.next-unblock-action.v1",
+                    "sourceWorklistQueueSource": "prepared-live-validation-queue",
+                    "source": "docs/roadmap.md",
+                    "status": "selected",
+                    "planStatus": "blocked",
+                    "clusterWrites": "disabled",
+                    "selectionPolicy": "highest-items-then-kind-target",
+                    "summary": {
+                        "candidateActions": 1,
+                        "blockedItems": 5,
+                        "affectedVersions": 2,
+                        "selected": True,
+                        "selectedActionId": "01-missing-tool-kind",
+                        "selectedKind": "missing-tool",
+                        "selectedTarget": "kind",
+                        "selectedItems": 5,
+                    },
+                    "selected": {
+                        "id": "01-missing-tool-kind",
+                        "kind": "missing-tool",
+                        "tool": "kind",
+                        "items": 5,
+                        "affectedVersions": ["0.2.0", "0.3.0"],
+                        "nextStep": "install kind or run the verifier on a host that has kind",
+                        "commands": {
+                            "verify": ["kind version"],
+                            "refresh": [
+                                "python3 -B scripts/prepare_live_evidence_directory.py "
+                                + completed_evidence_dir.as_posix()
+                            ],
+                        },
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+        (completed_evidence_dir / ".kubeactuary" / "next-unblock-action-run.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "kube-actuary.next-unblock-action-run.v1",
+                    "mode": "run",
+                    "status": "blocked",
+                    "clusterWrites": "disabled",
+                    "ranAt": "2026-07-06T00:03:10+00:00",
+                    "evidenceDir": completed_evidence_dir.as_posix(),
+                    "nextUnblockAction": {
+                        "schemaVersion": "kube-actuary.next-unblock-action.v1",
+                        "queueSource": "prepared-live-validation-queue",
+                        "path": (completed_evidence_dir / ".kubeactuary" / "next-unblock-action.json").as_posix(),
+                        "selected": {
+                            "id": "01-missing-tool-kind",
+                            "kind": "missing-tool",
+                            "target": "kind",
+                            "tool": "kind",
+                            "items": 5,
+                            "affectedVersions": ["0.2.0", "0.3.0"],
+                            "nextStep": "install kind or run the verifier on a host that has kind",
+                        },
+                    },
+                    "summary": {
+                        "commands": 1,
+                        "validCommands": 1,
+                        "ran": 1,
+                        "failed": 1,
+                        "validationErrors": 0,
+                    },
+                    "validations": [
+                        {
+                            "index": 1,
+                            "command": "kind version",
+                            "normalized": ["kind", "version"],
+                            "valid": True,
+                            "errors": [],
+                        }
+                    ],
+                    "records": [
+                        {
+                            "command": "kind version",
+                            "stdout": "",
+                            "stderr": "kind missing in test",
+                            "exitCode": 127,
+                            "ok": False,
+                        }
+                    ],
+                    "failure": {
+                        "command": "kind version",
+                        "exitCode": 127,
+                        "message": "kind missing in test",
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
         evidence_worklist_result = run_generator(
             "--format",
             "json",
@@ -915,8 +1015,22 @@ def main() -> int:
         errors.append("evidence-aware iteration should preserve complete item evidence summary")
     if not evidence_iteration_payload.get("resolvedClosureCommands"):
         errors.append("evidence-aware iteration should preserve resolved closure commands")
+    evidence_iteration_unblock = evidence_iteration_payload.get("nextUnblockAction") or {}
+    if evidence_iteration_unblock.get("selected", {}).get("id") != "01-missing-tool-kind":
+        errors.append("evidence-aware iteration should preserve selected next-unblock action")
+    if evidence_iteration_unblock.get("selected", {}).get("target") != "kind":
+        errors.append("evidence-aware iteration should preserve selected next-unblock target")
+    evidence_iteration_unblock_run = evidence_iteration_payload.get("nextUnblockActionRun") or {}
+    if evidence_iteration_unblock_run.get("status") != "blocked":
+        errors.append("evidence-aware iteration should preserve next-unblock runner status")
+    if (evidence_iteration_unblock_run.get("failure") or {}).get("message") != "kind missing in test":
+        errors.append("evidence-aware iteration should preserve next-unblock runner failure")
     if "evidence: `3/3`" not in evidence_iteration_markdown:
         errors.append("evidence-aware iteration markdown must render evidence readiness")
+    if "## Next Unblock Action" not in evidence_iteration_markdown:
+        errors.append("evidence-aware iteration markdown must render next-unblock action details")
+    if "## Next Unblock Action Run" not in evidence_iteration_markdown:
+        errors.append("evidence-aware iteration markdown must render next-unblock runner details")
     if probe_iteration_result.returncode != 0:
         errors.append(
             f"probe version iteration failed: {probe_iteration_result.stderr.strip() or probe_iteration_result.stdout.strip()}"
@@ -1389,6 +1503,10 @@ def main() -> int:
         errors.append("evidence-aware history should preserve evidence directory filter")
     if evidence_second_run.get("summary", {}).get("completeEvidenceItems") != 1:
         errors.append("evidence-aware history should preserve complete evidence item count")
+    if evidence_second_run.get("nextUnblockAction", {}).get("selected", {}).get("id") != "01-missing-tool-kind":
+        errors.append("evidence-aware history index should preserve selected next-unblock action")
+    if evidence_second_run.get("nextUnblockActionRun", {}).get("status") != "blocked":
+        errors.append("evidence-aware history index should preserve next-unblock runner status")
     evidence_diff_summary = evidence_history_diff.get("summary", {})
     if evidence_diff_summary.get("completeEvidenceItemsDelta") != 1:
         errors.append("evidence-aware history diff should record complete evidence item delta")
@@ -1416,6 +1534,16 @@ def main() -> int:
     evidence_latest_advance_consistency = evidence_latest_advance.get("nextTaskConsistency") or {}
     if evidence_latest_advance_consistency.get("status") != "matched":
         errors.append("evidence-aware history status should match latest advance to latest next task")
+    evidence_latest_unblock = evidence_history_status_payload.get("latestNextUnblockAction") or {}
+    if evidence_latest_unblock.get("selected", {}).get("id") != "01-missing-tool-kind":
+        errors.append("evidence-aware history status should preserve selected next-unblock action")
+    if evidence_latest_unblock.get("selected", {}).get("target") != "kind":
+        errors.append("evidence-aware history status should preserve selected next-unblock target")
+    evidence_latest_unblock_run = evidence_history_status_payload.get("latestNextUnblockActionRun") or {}
+    if evidence_latest_unblock_run.get("status") != "blocked":
+        errors.append("evidence-aware history status should preserve next-unblock runner status")
+    if (evidence_latest_unblock_run.get("failure") or {}).get("message") != "kind missing in test":
+        errors.append("evidence-aware history status should preserve next-unblock runner failure")
     stale_advance_consistency = (
         (stale_evidence_history_status_payload.get("latestAdvance") or {}).get("nextTaskConsistency") or {}
     )
@@ -1436,6 +1564,11 @@ def main() -> int:
         "latest-advance-runner-ran: 2/2",
         "latest-advance-next-task: 01-controller-resource-budget",
         "latest-advance-next-task-consistency: matched",
+        "latest-next-unblock-action: 01-missing-tool-kind",
+        "latest-next-unblock-action-target: kind",
+        "latest-next-unblock-action-verify: kind version",
+        "latest-next-unblock-run: blocked",
+        "latest-next-unblock-run-error: kind missing in test",
     ):
         if snippet not in evidence_history_status_text.stdout:
             errors.append(f"evidence-aware history text should show latest advance detail: {snippet}")
@@ -1452,6 +1585,12 @@ def main() -> int:
         "runner ran: `2/2`",
         "next task: `01-controller-resource-budget`",
         "next task consistency: `matched`",
+        "## Latest Next Unblock",
+        "action: `01-missing-tool-kind`",
+        "target: `kind`",
+        "verify: `kind version`",
+        "run: `blocked`",
+        "run blocker: `kind missing in test`",
     ):
         if snippet not in evidence_history_status_markdown.stdout:
             errors.append(f"evidence-aware history Markdown should show latest advance detail: {snippet}")

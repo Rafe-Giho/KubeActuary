@@ -396,6 +396,9 @@ actionable command error in text, JSON, and recorded Markdown output.
 Release evidence status and release progress also surface
 `.kubeactuary/next-unblock-action-run.json`, so the latest selected blocker
 verifier result is visible beside next-task runner status.
+Evidence-aware version iteration packs and history status preserve the same
+next-unblock action/run metadata, so repeated validation snapshots keep the
+selected blocker and verifier result attached to the local loop.
 When a runner fails before the environment probe has run, release evidence
 status recommends `prepare_live_evidence_directory.py --probe-environment`
 before more live capture attempts.

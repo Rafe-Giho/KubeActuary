@@ -137,7 +137,8 @@ Expected:
   inspects evidence-aware history status with schema `kube-actuary.version-iteration-history-status.v1`
   in text, JSON, and Markdown while preserving latest blocker summaries and
   drilldown commands, latest run filters, latest next-task details and
-  worklist drilldowns, latest advance/runner status, latest advance/next-task
+  worklist drilldowns, latest next-unblock action/run status,
+  latest advance/runner status, latest advance/next-task
   consistency, latest run artifact paths, latest aggregate and per-version diff
   summaries, next local loop commands, latest next-task evidence file details,
   latest environment probe failures, and records
