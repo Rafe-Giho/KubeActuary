@@ -454,7 +454,22 @@ def latest_blocker_action(
     }
 
 
-def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> list[str]:
+def advance_retry_should_probe(latest_advance: dict[str, Any] | None) -> bool:
+    if not isinstance(latest_advance, dict):
+        return False
+    if latest_advance.get("runnerStatus") != "failed":
+        return False
+    next_task = latest_advance.get("nextTask")
+    if not isinstance(next_task, dict):
+        return False
+    return next_task.get("captureStatus") == "tool-ready"
+
+
+def build_next_commands(
+    history_dir: Path,
+    latest: dict[str, Any] | None,
+    latest_advance: dict[str, Any] | None = None,
+) -> list[str]:
     commands = [
         shell_join(
             [
@@ -471,6 +486,7 @@ def build_next_commands(history_dir: Path, latest: dict[str, Any] | None) -> lis
     filters = latest.get("filters", {}) if isinstance(latest.get("filters"), dict) else {}
     evidence_dir = filters.get("evidenceDir")
     probe_environment = filters.get("probeEnvironment") is True
+    probe_environment = probe_environment or advance_retry_should_probe(latest_advance)
     kubectl = str(filters.get("kubectl") or "kubectl")
     if evidence_dir:
         args = [
@@ -577,7 +593,7 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
             latest_advance,
         )
     blocker_streak = latest_blocker_streak(inspected_runs)
-    next_commands = build_next_commands(history_dir, latest)
+    next_commands = build_next_commands(history_dir, latest, latest_advance)
     blocker_action = latest_blocker_action(blocker_streak, latest_next_task, next_commands)
     return {
         "schemaVersion": SCHEMA_VERSION,

@@ -329,6 +329,41 @@ def main() -> int:
             "--evidence-dir",
             str(history_evidence_dir),
         )
+        probe_retry_evidence_dir = tmpdir / "probe-retry-evidence"
+        (probe_retry_evidence_dir / ".kubeactuary").mkdir(parents=True)
+        write_payload(
+            probe_retry_evidence_dir / ".kubeactuary" / "live-validation-queue.json",
+            json.loads((evidence_dir / ".kubeactuary" / "live-validation-queue.json").read_text()),
+        )
+        write_payload(
+            probe_retry_evidence_dir / ".kubeactuary" / "version-iteration-advance.json",
+            {
+                "schemaVersion": "kube-actuary.version-iteration-advance.v1",
+                "mode": "run",
+                "status": "failed",
+                "clusterWrites": "disabled-or-server-side-dry-run-only",
+                "runId": "probe-retry",
+                "createdAt": "2026-07-06T00:00:01+00:00",
+                "runner": {"status": "failed"},
+                "nextTask": {
+                    "selected": "01-controller-resource-budget",
+                    "captureStatus": "tool-ready",
+                    "nextStep": "capture evidence with the listed commands",
+                    "skippedCompleteEvidence": 0,
+                },
+                "history": {"runs": 1},
+            },
+        )
+        probe_retry_history_dir = tmpdir / "probe-retry-history"
+        probe_retry_recorded = run_recorder(
+            str(probe_retry_history_dir),
+            "--run-id",
+            "probe-retry-history",
+            "--created-at",
+            "2026-07-06T00:00:01+00:00",
+            "--evidence-dir",
+            str(probe_retry_evidence_dir),
+        )
 
         json_result = run_generator("--format", "json")
         text_result = run_generator("--format", "text")
@@ -369,6 +404,7 @@ def main() -> int:
         with_history = run_generator("--format", "json", "--history-dir", str(history_dir))
         with_history_text = run_generator("--format", "text", "--history-dir", str(history_dir))
         with_history_markdown = run_generator("--format", "markdown", "--history-dir", str(history_dir))
+        probe_retry_history_text = run_generator("--format", "text", "--history-dir", str(probe_retry_history_dir))
         bootstrap_history_dir = tmpdir / "bootstrap-history"
         bootstrap_history = run_generator(
             "--format",
@@ -702,6 +738,22 @@ def main() -> int:
         ):
             if snippet not in with_history_text.stdout:
                 errors.append(f"history progress text missing status detail: {snippet}")
+    expected_probe_retry_command = (
+        f"history-next: python3 -B scripts/advance_version_iteration.py "
+        f"{probe_retry_evidence_dir} {probe_retry_history_dir} --probe-environment --run"
+    )
+    if probe_retry_recorded.returncode != 0:
+        errors.append(
+            "probe retry history fixture failed: "
+            f"{probe_retry_recorded.stderr.strip() or probe_retry_recorded.stdout.strip()}"
+        )
+    elif probe_retry_history_text.returncode != 0:
+        errors.append(
+            "probe retry history progress text failed: "
+            f"{probe_retry_history_text.stderr.strip() or probe_retry_history_text.stdout.strip()}"
+        )
+    elif expected_probe_retry_command not in probe_retry_history_text.stdout:
+        errors.append("probe retry history progress text should add --probe-environment after failed tool-ready advance")
     if with_history_markdown.returncode != 0:
         errors.append(
             f"history progress markdown failed: {with_history_markdown.stderr.strip() or with_history_markdown.stdout.strip()}"

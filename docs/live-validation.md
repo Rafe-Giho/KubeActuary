@@ -167,7 +167,10 @@ no-op reruns from changed evidence readiness or blocker state for each release
 line. When the latest run used `--probe-environment`, history status also shows
 the failed probe checks and messages. Persisted next-task runner and
 version-iteration advance reports keep it too, so recorded local execution
-state stays tied to the queue snapshot that selected the task.
+state stays tied to the queue snapshot that selected the task. If the latest
+tool-ready advance failed before a probe classified the environment, history
+next commands add `--probe-environment` to the next advance retry so the local
+loop does not blindly repeat the same live capture failure.
 
 The queue generator uses schema `kube-actuary.live-validation-queue.v1` and
 turns the current taskboard gates into an ordered evidence collection queue. It
