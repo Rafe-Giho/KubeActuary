@@ -1075,6 +1075,8 @@ def render_text(status: dict[str, Any]) -> str:
                 lines.append(f"next-unblock-action-queue-source: {next_unblock_action.get('queueSource')}")
             if selected_unblock.get("items") is not None:
                 lines.append(f"next-unblock-action-items: {selected_unblock.get('items')}")
+            if selected_unblock.get("nextStep"):
+                lines.append(f"next-unblock-action-next-step: {selected_unblock.get('nextStep')}")
             commands = selected_unblock.get("commands") if isinstance(selected_unblock.get("commands"), dict) else {}
             for command in commands.get("verify") or []:
                 lines.append(f"next-unblock-action-verify: {command}")
@@ -1239,6 +1241,8 @@ def render_markdown(status: dict[str, Any]) -> str:
                 lines.append(f"- items: {selected_unblock.get('items', 0)}")
                 if next_unblock_action.get("queueSource"):
                     lines.append(f"- queue source: `{next_unblock_action.get('queueSource')}`")
+                if selected_unblock.get("nextStep"):
+                    lines.append(f"- next step: {selected_unblock.get('nextStep')}")
                 commands = selected_unblock.get("commands") if isinstance(selected_unblock.get("commands"), dict) else {}
                 for command in commands.get("verify") or []:
                     lines.append(f"- verify: `{command}`")

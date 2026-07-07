@@ -625,6 +625,7 @@ def main() -> int:
         "command: `python3 -B scripts/capture_controller_resource_budget.py",
         "## Next Unblock",
         "action: `01-missing-tool-kind` target=`kind`",
+        "next step: install the missing tool or run the evidence capture on a host that already has it",
         "run error: `kind missing in test`",
         "--version 'Current Baseline' --capture-status",
         "history runs: 2",
@@ -823,6 +824,12 @@ def main() -> int:
         errors.append("partial text status must print selected next-unblock action")
     if "next-unblock-action-target: kind" not in partial_text.stdout:
         errors.append("partial text status must print selected next-unblock target")
+    expected_unblock_next_step = (
+        "next-unblock-action-next-step: "
+        "install the missing tool or run the evidence capture on a host that already has it"
+    )
+    if expected_unblock_next_step not in partial_text.stdout:
+        errors.append("partial text status must print selected next-unblock next step")
     if "next-unblock-action-verify: kind version" not in partial_text.stdout:
         errors.append("partial text status must print next-unblock verify command")
     if "next-unblock-action-run: blocked" not in partial_text.stdout:

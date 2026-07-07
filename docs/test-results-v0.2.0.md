@@ -281,9 +281,9 @@ Result:
   next-task file/command details, every runnable tool-ready action and evidence
   next command, persisted queue-source status, and version-iteration advance
   run/history metadata plus `--history-dir` status/consistency, latest
-  blocker streak/action guidance, latest next-unblock action/run summaries,
-  empty-history bootstrap record commands, and probe-aware failed advance retry
-  commands
+  blocker streak/action guidance, latest next-unblock action/run summaries and
+  next-step guidance, empty-history bootstrap record commands, and
+  probe-aware failed advance retry commands
   without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;
 - version worklist check prints `version-worklist: passed` and exercises
@@ -335,7 +335,8 @@ Result:
   directories;
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence
-  build, next-task-run status, next-unblock runner status, next-unblock retry next-command, version history next-unblock action/run preservation, environment metadata, advance status,
+  build, next-task-run status, next-unblock runner status, next-unblock retry next-command,
+  selected next-unblock next-step output, version history next-unblock action/run preservation, environment metadata, advance status,
   queue-source visibility/origin, next-task queue consistency,
   selected next-task worklist drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands,
   evidence-build/runner/advance record consistency, complete

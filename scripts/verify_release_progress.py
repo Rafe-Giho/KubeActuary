@@ -225,6 +225,31 @@ def main() -> int:
                 },
             },
         )
+        write_payload(
+            evidence_dir / ".kubeactuary" / "next-unblock-action.json",
+            {
+                "schemaVersion": "kube-actuary.next-unblock-action.v1",
+                "sourceWorklistQueueSource": "prepared-live-validation-queue",
+                "status": "selected",
+                "planStatus": "blocked",
+                "clusterWrites": "disabled",
+                "selectionPolicy": "highest-items-then-kind-target",
+                "summary": {
+                    "candidateActions": 1,
+                    "blockedItems": 2,
+                    "selected": True,
+                },
+                "selected": {
+                    "id": "01-missing-tool-kind",
+                    "kind": "missing-tool",
+                    "tool": "kind",
+                    "items": 2,
+                    "affectedVersions": ["Current Baseline", "0.8.0"],
+                    "nextStep": "install the missing tool or run the evidence capture on a host that already has it",
+                    "commands": {"verify": ["kind version"]},
+                },
+            },
+        )
         history_evidence_dir = tmpdir / "history-evidence"
         history_evidence_dir.mkdir()
         write_payload(
@@ -653,6 +678,8 @@ def main() -> int:
             "version-iteration-advance-blocker-streak: `2`",
             "version-iteration-advance-blocker-status: `repeated`",
             "next-action-source: `prepared-live-validation-queue`",
+            "next-unblock-action: `01-missing-tool-kind` target=`kind`",
+            "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
             "environment-reason-blocker: `connection-refused` (1 actions)",
@@ -676,6 +703,8 @@ def main() -> int:
             "version-iteration-advance: failed",
             "version-iteration-advance-blocker-streak: 2",
             "version-iteration-advance-blocker-status: repeated",
+            "next-unblock-action: 01-missing-tool-kind kind",
+            "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
             "next: python3 -B scripts/prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_text.stdout:

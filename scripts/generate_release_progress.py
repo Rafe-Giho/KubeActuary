@@ -882,6 +882,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
                     f"- next-unblock-action: `{selected_unblock.get('id')}` "
                     f"target=`{selected_unblock.get('target')}`"
                 )
+                if selected_unblock.get("nextStep"):
+                    lines.append(f"- next-unblock-next-step: {selected_unblock.get('nextStep')}")
         next_unblock_action_run = evidence_status.get("nextUnblockActionRun")
         if isinstance(next_unblock_action_run, dict):
             lines.append(
@@ -1055,6 +1057,8 @@ def render_text(progress: dict[str, Any]) -> str:
                     f"next-unblock-action: {selected_unblock.get('id')} "
                     f"{selected_unblock.get('target')}"
                 )
+                if selected_unblock.get("nextStep"):
+                    lines.append(f"next-unblock-next-step: {selected_unblock.get('nextStep')}")
         next_unblock_action_run = evidence_status.get("nextUnblockActionRun")
         if isinstance(next_unblock_action_run, dict):
             lines.append(
