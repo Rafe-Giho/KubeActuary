@@ -305,8 +305,9 @@ Result:
   next-task details, latest next-task evidence file details, latest next-task
   worklist drilldowns, latest advance/runner status, latest advance/next-task
   consistency, latest artifact paths, latest aggregate/per-version diff
-  summaries, and next-command preservation across text, JSON, Markdown,
-  recorded status reports, and latest probe failures,
+  summaries, immediate next-command preservation plus blocked rerun retry
+  metadata across text, JSON, Markdown, recorded status reports, and latest
+  probe failures,
   scaffold/advance filter propagation,
   scaffold/runner/advance queue-source preservation,
   next-task selection,

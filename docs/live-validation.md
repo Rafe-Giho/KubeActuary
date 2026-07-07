@@ -156,8 +156,10 @@ blocker summaries and drilldown commands, so run-to-run comparisons remain
 traceable and actionable. History status can be emitted as text, JSON, or
 Markdown, and `--record` writes `status.json` and `status.md` into the history
 directory. It also includes latest run filters, latest run/worklist/diff
-artifact paths, the selected latest next task, and next local loop commands for
-refreshing the recorded status and rerunning the latest iteration filters. When
+artifact paths, the selected latest next task, immediate next local loop
+commands for refreshing the recorded status, and deferred retry commands on
+blocker actions for rerunning the latest iteration filters after the blocker is
+resolved. When
 a latest task has resolved evidence files, history status lists each file role,
 path, and readiness so the next capture target is visible from the status
 report. When

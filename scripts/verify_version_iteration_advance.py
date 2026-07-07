@@ -523,15 +523,17 @@ def main() -> int:
                 f"{blocked_history_status.stderr.strip() or blocked_history_status.stdout.strip()}"
             )
         else:
+            if "next-command: python3 -B scripts/advance_version_iteration.py" in blocked_history_status.stdout:
+                errors.append("probe-blocked history must not show blocked advance retry as a next command")
             for snippet in (
-                "next-command: python3 -B scripts/advance_version_iteration.py",
+                "latest-blocker-action-retry-command: python3 -B scripts/advance_version_iteration.py",
                 "--version 0.4.3 --probe-environment",
                 "--capture-status blocked-by-environment --run",
                 "latest-blocker-streak: 2",
                 "latest-blocker-status: repeated",
             ):
                 if snippet not in blocked_history_status.stdout:
-                    errors.append(f"probe-blocked history next command must preserve filters: {snippet}")
+                    errors.append(f"probe-blocked history retry command must preserve filters: {snippet}")
 
         output = tmpdir / "advance.json"
         written = run_script(ADVANCE, str(evidence_dir), str(history_dir / "plan-only"), "--format", "json", "--output", str(output))

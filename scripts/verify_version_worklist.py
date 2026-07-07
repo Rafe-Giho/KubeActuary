@@ -1141,9 +1141,12 @@ def main() -> int:
     if len(latest_version_diff.get("changedItems", [])) != 1:
         errors.append("version iteration history status should preserve latest version changed items")
     history_next_commands = history_status_payload.get("nextCommands", [])
-    for command in (history_status_record_command, history_status_iteration_command):
-        if command not in history_next_commands:
-            errors.append(f"version iteration history status should show next command: {command}")
+    if history_status_record_command not in history_next_commands:
+        errors.append(f"version iteration history status should show next command: {history_status_record_command}")
+    if history_status_iteration_command in history_next_commands:
+        errors.append("version iteration history status should not show blocked iteration retry as a next command")
+    if (history_status_payload.get("latestBlockerAction") or {}).get("retryCommand") != history_status_iteration_command:
+        errors.append("version iteration history status should preserve blocked iteration retry on the blocker action")
     latest_history_probe = history_status_payload.get("latestEnvironmentProbe", {})
     if latest_history_probe.get("clusterAccess") != "unavailable":
         errors.append("version iteration history status should preserve latest probe cluster access")
@@ -1382,8 +1385,10 @@ def main() -> int:
         errors.append("version iteration history text should show latest per-version diff")
     if f"next-command: {history_status_record_command}" not in history_status.stdout:
         errors.append("version iteration history text should show the record next command")
-    if f"next-command: {history_status_iteration_command}" not in history_status.stdout:
-        errors.append("version iteration history text should show the iteration next command")
+    if f"next-command: {history_status_iteration_command}" in history_status.stdout:
+        errors.append("version iteration history text should not show blocked iteration retry as a next command")
+    if f"latest-blocker-action-retry-command: {history_status_iteration_command}" not in history_status.stdout:
+        errors.append("version iteration history text should show blocked iteration retry on the blocker action")
     if history_status_markdown.returncode != 0:
         errors.append("version iteration history Markdown status must pass")
     if "# KubeActuary Version Iteration History Status" not in history_status_markdown.stdout:
@@ -1422,9 +1427,12 @@ def main() -> int:
         errors.append("version iteration history Markdown should show latest per-version diff")
     if "## Next Commands" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should include next commands")
-    for command in (history_status_record_command, history_status_iteration_command):
-        if f"- `{command}`" not in history_status_markdown.stdout:
-            errors.append(f"version iteration history Markdown should show next command: {command}")
+    if f"- `{history_status_record_command}`" not in history_status_markdown.stdout:
+        errors.append(f"version iteration history Markdown should show next command: {history_status_record_command}")
+    if f"- `{history_status_iteration_command}`" in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should not show blocked iteration retry as a next command")
+    if f"- retry command: `{history_status_iteration_command}`" not in history_status_markdown.stdout:
+        errors.append("version iteration history Markdown should show blocked iteration retry on the blocker action")
     if "environment `cluster-unavailable`: 1 items" not in history_status_markdown.stdout:
         errors.append("version iteration history Markdown should show latest environment blocker summary")
     if history_status_markdown_worklist not in history_status_markdown.stdout:
@@ -1446,9 +1454,12 @@ def main() -> int:
     if history_status_record_payload.get("record", {}).get("json") != str(history_status_record_json):
         errors.append("version iteration history recorded JSON should include record metadata")
     recorded_next_commands = history_status_record_payload.get("nextCommands", [])
-    for command in (history_status_record_command, history_status_iteration_command):
-        if command not in recorded_next_commands:
-            errors.append(f"version iteration history recorded JSON should preserve next command: {command}")
+    if history_status_record_command not in recorded_next_commands:
+        errors.append(f"version iteration history recorded JSON should preserve next command: {history_status_record_command}")
+    if history_status_iteration_command in recorded_next_commands:
+        errors.append("version iteration history recorded JSON should not preserve blocked iteration retry as a next command")
+    if (history_status_record_payload.get("latestBlockerAction") or {}).get("retryCommand") != history_status_iteration_command:
+        errors.append("version iteration history recorded JSON should preserve blocked iteration retry on the blocker action")
     recorded_latest_diff = history_status_record_payload.get("latestDiffSummary", {})
     if recorded_latest_diff.get("blockedByEnvironmentDelta") != 1:
         errors.append("version iteration history recorded JSON should preserve latest diff summary")
@@ -1488,9 +1499,12 @@ def main() -> int:
         errors.append("version iteration history recorded Markdown should preserve latest per-version diff")
     if "## Next Commands" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve next commands")
-    for command in (history_status_record_command, history_status_iteration_command):
-        if f"- `{command}`" not in history_status_record_md_text:
-            errors.append(f"version iteration history recorded Markdown should preserve next command: {command}")
+    if f"- `{history_status_record_command}`" not in history_status_record_md_text:
+        errors.append(f"version iteration history recorded Markdown should preserve next command: {history_status_record_command}")
+    if f"- `{history_status_iteration_command}`" in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should not preserve blocked iteration retry as a next command")
+    if f"- retry command: `{history_status_iteration_command}`" not in history_status_record_md_text:
+        errors.append("version iteration history recorded Markdown should preserve blocked iteration retry on the blocker action")
     if "environment `cluster-unavailable`: 1 items" not in history_status_record_md_text:
         errors.append("version iteration history recorded Markdown should preserve latest blockers")
     if "failed `cluster-info` exit=1 reason=command-failed: cluster unavailable from fake kubectl" not in history_status_record_md_text:

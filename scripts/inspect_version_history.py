@@ -521,6 +521,7 @@ def build_next_commands(
     history_dir: Path,
     latest: dict[str, Any] | None,
     latest_advance: dict[str, Any] | None = None,
+    include_blocked_retry: bool = False,
 ) -> list[str]:
     commands = [
         shell_join(
@@ -576,7 +577,13 @@ def build_next_commands(
             args.append("--probe-environment")
         if kubectl != "kubectl":
             args.extend(["--kubectl", kubectl])
-    commands.append(shell_join(args))
+    retry_command = shell_join(args)
+    if (
+        include_blocked_retry
+        or blocker_signature(latest) is None
+        or advance_retry_should_probe(latest_advance)
+    ):
+        commands.append(retry_command)
     return commands
 
 
@@ -646,7 +653,13 @@ def inspect_history(history_dir: Path) -> dict[str, Any]:
         )
     blocker_streak = latest_blocker_streak(inspected_runs)
     next_commands = build_next_commands(history_dir, latest, latest_advance)
-    blocker_action = latest_blocker_action(blocker_streak, latest_next_task, next_commands)
+    retry_commands = build_next_commands(
+        history_dir,
+        latest,
+        latest_advance,
+        include_blocked_retry=True,
+    )
+    blocker_action = latest_blocker_action(blocker_streak, latest_next_task, retry_commands)
     latest_next_unblock_retry = next_unblock_retry_status(
         latest_next_unblock_action,
         latest_next_unblock_action_run,
