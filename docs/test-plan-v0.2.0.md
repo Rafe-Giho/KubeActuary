@@ -152,7 +152,7 @@ Expected:
   command, persisted queue-source status, and version-iteration advance
   run/history metadata plus `--history-dir` status/consistency, latest
   blocker streak/action guidance, latest next-unblock action/run summaries and
-  next-step guidance, empty-history bootstrap record commands, and
+  next-step guidance, deferred retry commands, empty-history bootstrap record commands, and
   probe-aware failed advance retry commands,
   without recommending environment-blocked capture
   commands or runnable JSON first commands for blocked actions;

@@ -681,6 +681,7 @@ def main() -> int:
             "next-unblock-action: `01-missing-tool-kind` target=`kind`",
             "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
             "next-unblock-retry-recommended: `true`",
+            "next-unblock-retry-command: `python3 -B scripts/run_next_unblock_action.py",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
             "environment-reason-blocker: `connection-refused` (1 actions)",
@@ -707,6 +708,7 @@ def main() -> int:
             "next-unblock-action: 01-missing-tool-kind kind",
             "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
             "next-unblock-retry-recommended: true",
+            "next-unblock-retry-command: python3 -B scripts/run_next_unblock_action.py",
             "next: python3 -B scripts/prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_text.stdout:
@@ -768,11 +770,13 @@ def main() -> int:
             "history-latest-next-unblock-run-error: kind missing in progress test",
             "history-latest-next-unblock-retry-recommended: false",
             "history-latest-next-unblock-retry-after: required local tools are installed",
+            "history-latest-next-unblock-retry-command: python3 -B scripts/run_next_unblock_action.py",
             "history-latest-blocker-streak: 1",
             "history-latest-blocker-status: single",
             "history-latest-blocker-action: resolve-environment",
             "history-latest-blocker-retry-recommended: false",
             "history-latest-blocker-retry-after: environment probe succeeds",
+            "history-latest-blocker-retry-command: python3 -B scripts/advance_version_iteration.py",
             "history-next: python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_text.stdout:
@@ -809,10 +813,12 @@ def main() -> int:
             "latest next unblock run error: `kind missing in progress test`",
             "latest next unblock retry recommended: `false`",
             "latest next unblock retry after: required local tools are installed",
+            "latest next unblock retry command: `python3 -B scripts/run_next_unblock_action.py",
             "latest blocker streak: `1` (single)",
             "latest blocker action: `resolve-environment`",
             "latest blocker retry recommended: `false`",
             "latest blocker retry after: environment probe succeeds",
+            "latest blocker retry command: `python3 -B scripts/advance_version_iteration.py",
             "history next: `python3 -B scripts/inspect_version_history.py",
         ):
             if snippet not in with_history_markdown.stdout:

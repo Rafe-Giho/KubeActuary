@@ -640,6 +640,8 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
         )
         if latest_next_unblock_retry.get("retryAfter"):
             lines.append(f"- latest next unblock retry after: {latest_next_unblock_retry.get('retryAfter')}")
+        if latest_next_unblock_retry.get("command"):
+            lines.append(f"- latest next unblock retry command: `{latest_next_unblock_retry.get('command')}`")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
         if not isinstance(signature, dict):
@@ -659,6 +661,8 @@ def append_history_markdown(lines: list[str], history_status: dict[str, Any]) ->
         )
         if latest_blocker_action.get("retryAfter"):
             lines.append(f"- latest blocker retry after: {latest_blocker_action.get('retryAfter')}")
+        if latest_blocker_action.get("retryCommand"):
+            lines.append(f"- latest blocker retry command: `{latest_blocker_action.get('retryCommand')}`")
         if latest_blocker_action.get("nextStep"):
             lines.append(f"- latest blocker next step: {latest_blocker_action.get('nextStep')}")
     if isinstance(latest_advance, dict):
@@ -724,6 +728,11 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
                 "history-latest-next-unblock-retry-after: "
                 f"{latest_next_unblock_retry.get('retryAfter')}"
             )
+        if latest_next_unblock_retry.get("command"):
+            lines.append(
+                "history-latest-next-unblock-retry-command: "
+                f"{latest_next_unblock_retry.get('command')}"
+            )
     latest_blocker = history_status.get("latestBlockerStreak")
     if isinstance(latest_blocker, dict):
         signature = latest_blocker.get("signature", {})
@@ -743,6 +752,8 @@ def append_history_text(lines: list[str], history_status: dict[str, Any]) -> Non
         )
         if latest_blocker_action.get("retryAfter"):
             lines.append(f"history-latest-blocker-retry-after: {latest_blocker_action.get('retryAfter')}")
+        if latest_blocker_action.get("retryCommand"):
+            lines.append(f"history-latest-blocker-retry-command: {latest_blocker_action.get('retryCommand')}")
         if latest_blocker_action.get("nextStep"):
             lines.append(f"history-latest-blocker-next-step: {latest_blocker_action.get('nextStep')}")
     latest_advance = history_status.get("latestAdvance")
@@ -920,6 +931,8 @@ def render_markdown(progress: dict[str, Any]) -> str:
             )
             if next_unblock_retry.get("retryAfter"):
                 lines.append(f"- next-unblock-retry-after: {next_unblock_retry.get('retryAfter')}")
+            if next_unblock_retry.get("command"):
+                lines.append(f"- next-unblock-retry-command: `{next_unblock_retry.get('command')}`")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")
@@ -1103,6 +1116,8 @@ def render_text(progress: dict[str, Any]) -> str:
             )
             if next_unblock_retry.get("retryAfter"):
                 lines.append(f"next-unblock-retry-after: {next_unblock_retry.get('retryAfter')}")
+            if next_unblock_retry.get("command"):
+                lines.append(f"next-unblock-retry-command: {next_unblock_retry.get('command')}")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"evidence-environment-probe: {environment_probe.get('clusterAccess')}")
