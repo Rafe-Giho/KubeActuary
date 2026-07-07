@@ -678,8 +678,15 @@ def main() -> int:
     if expected_resolved_kind in partial_payload.get("nextCommands", []):
         errors.append("partial status must not recommend missing-tool prepared queue commands")
     expected_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {partial_dir} --run --record"
-    if expected_unblock_retry not in partial_payload.get("nextCommands", []):
-        errors.append("partial status must recommend rerunning the selected next-unblock verifier")
+    if expected_unblock_retry in partial_payload.get("nextCommands", []):
+        errors.append("partial status must not recommend immediate next-unblock retry after a blocked run")
+    partial_unblock_retry = partial_payload.get("nextUnblockRetry") or {}
+    if partial_unblock_retry.get("recommended") is not False:
+        errors.append("partial status must suppress next-unblock retry before tool resolution")
+    if partial_unblock_retry.get("retryAfter") != "required local tools are installed":
+        errors.append("partial status must explain when next-unblock retry is useful")
+    if partial_unblock_retry.get("command") != expected_unblock_retry:
+        errors.append("partial status must preserve the selected next-unblock retry command")
     for placeholder in ("<path>", "<kubectl-top-output.txt>", "<external-evidence.json>", "<evidence-dir>"):
         if any(placeholder in command for command in partial_payload.get("nextCommands", [])):
             errors.append(f"partial status must not keep prepared queue placeholder in next commands: {placeholder}")
@@ -836,14 +843,20 @@ def main() -> int:
         errors.append("partial text status must print next-unblock runner status")
     if "next-unblock-action-run-error: kind missing in test" not in partial_text.stdout:
         errors.append("partial text status must print next-unblock runner failure message")
+    if "next-unblock-retry-recommended: false" not in partial_text.stdout:
+        errors.append("partial text status must print next-unblock retry guard")
+    if "next-unblock-retry-after: required local tools are installed" not in partial_text.stdout:
+        errors.append("partial text status must print next-unblock retry condition")
+    if f"next-unblock-retry-command: {expected_unblock_retry}" not in partial_text.stdout:
+        errors.append("partial text status must print selected next-unblock retry command")
     if "missing-tool-worklist: python3 -B scripts/generate_version_worklist.py" not in partial_text.stdout:
         errors.append("partial text status must print missing-tool worklist drilldowns")
     if f"next: {expected_probe_command}" not in partial_text.stdout:
         errors.append("partial text status must print the environment probe next command")
     if f"next: {expected_resolved_capture}" not in partial_text.stdout:
         errors.append("partial text status must print resolved selected next-task command")
-    if f"next: {expected_unblock_retry}" not in partial_text.stdout:
-        errors.append("partial text status must print selected next-unblock retry command")
+    if f"next: {expected_unblock_retry}" in partial_text.stdout:
+        errors.append("partial text status must not print blocked next-unblock retry as a next command")
     if "environment-probe: not-run" not in partial_text.stdout:
         errors.append("partial text status must print environment probe status")
     if "environment-blockers: 0" not in partial_text.stdout:
@@ -947,6 +960,13 @@ def main() -> int:
     expected_blocked_unblock_retry = f"python3 -B scripts/run_next_unblock_action.py {blocked_dir} --run --record"
     if expected_blocked_unblock_retry not in blocked_payload.get("nextCommands", []):
         errors.append("blocked evidence status must recommend the selected next-unblock verifier retry")
+    blocked_unblock_retry = blocked_payload.get("nextUnblockRetry") or {}
+    if blocked_unblock_retry.get("recommended") is not True:
+        errors.append("blocked evidence status must mark untried next-unblock retry as recommended")
+    if blocked_unblock_retry.get("retryAfter"):
+        errors.append("blocked evidence status must not add retry-after before the verifier has run")
+    if blocked_unblock_retry.get("command") != expected_blocked_unblock_retry:
+        errors.append("blocked evidence status must preserve the selected next-unblock retry command")
     if len(blocked_payload.get("nextCommands", [])) != 2:
         errors.append("blocked evidence status must recommend only the probe rerun and unblock verifier retry")
     expected_blocked_capture = (
@@ -970,6 +990,10 @@ def main() -> int:
         errors.append("blocked text status must print selected environment next step")
     if f"next: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
         errors.append("blocked text status must print selected next-unblock retry command")
+    if f"next-unblock-retry-command: {expected_blocked_unblock_retry}" not in blocked_text.stdout:
+        errors.append("blocked text status must print selected next-unblock retry command")
+    if "next-unblock-retry-recommended: true" not in blocked_text.stdout:
+        errors.append("blocked text status must print selected next-unblock retry recommendation")
     if "environment-worklist: python3 -B scripts/generate_version_worklist.py" not in blocked_text.stdout:
         errors.append("blocked text status must print environment worklist drilldowns")
     if version_blocked_payload.get("filters", {}).get("versions") != ["0.4.3"]:

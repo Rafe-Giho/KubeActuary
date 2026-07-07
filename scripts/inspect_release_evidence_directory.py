@@ -847,6 +847,23 @@ def next_unblock_retry_command(
     next_unblock_action_run: dict[str, Any] | None,
     version_filters: list[str] | None = None,
 ) -> str | None:
+    retry = next_unblock_retry_status(
+        evidence_dir,
+        next_unblock_action,
+        next_unblock_action_run,
+        version_filters=version_filters,
+    )
+    if isinstance(retry, dict) and retry.get("recommended") is True:
+        return retry.get("command")
+    return None
+
+
+def next_unblock_retry_status(
+    evidence_dir: Path,
+    next_unblock_action: dict[str, Any] | None,
+    next_unblock_action_run: dict[str, Any] | None,
+    version_filters: list[str] | None = None,
+) -> dict[str, Any] | None:
     if not isinstance(next_unblock_action, dict):
         return None
     selected = next_unblock_action.get("selected")
@@ -861,9 +878,7 @@ def next_unblock_retry_command(
     if requested and affected_versions and not requested.intersection(affected_versions):
         return None
     run_status = next_unblock_action_run.get("status") if isinstance(next_unblock_action_run, dict) else None
-    if run_status in {"passed", "clear"}:
-        return None
-    return command_string(
+    command = command_string(
         [
             "python3",
             "-B",
@@ -873,6 +888,32 @@ def next_unblock_retry_command(
             "--record",
         ]
     )
+    if run_status in {"passed", "clear"}:
+        return {
+            "recommended": False,
+            "reason": "already-clear",
+            "command": command,
+        }
+    if run_status in {"blocked", "failed"}:
+        if selected.get("kind") == "missing-tool" or selected.get("tool"):
+            retry_after = "required local tools are installed"
+        elif selected.get("environmentStatus"):
+            retry_after = "environment probe succeeds"
+        else:
+            retry_after = "selected blocker is resolved"
+        return {
+            "recommended": False,
+            "reason": f"last-run-{run_status}",
+            "retryAfter": retry_after,
+            "nextStep": selected.get("nextStep"),
+            "command": command,
+        }
+    return {
+        "recommended": True,
+        "reason": "not-run" if not run_status else f"last-run-{run_status}",
+        "nextStep": selected.get("nextStep"),
+        "command": command,
+    }
 
 
 def inspect_directory(
@@ -962,6 +1003,12 @@ def inspect_directory(
         "nextTaskRun": next_task_run,
         "nextUnblockAction": next_unblock_action,
         "nextUnblockActionRun": next_unblock_action_run,
+        "nextUnblockRetry": next_unblock_retry_status(
+            evidence_dir,
+            next_unblock_action,
+            next_unblock_action_run,
+            version_filters=version_filters,
+        ),
         "nextTaskEvidenceBuild": next_task_evidence_build,
         "environmentProbe": environment_probe,
         "environmentBlockers": environment_blockers,
@@ -1091,6 +1138,16 @@ def render_text(status: dict[str, Any]) -> str:
         failure = next_unblock_action_run.get("failure")
         if isinstance(failure, dict) and failure.get("message"):
             lines.append(f"next-unblock-action-run-error: {failure.get('message')}")
+    next_unblock_retry = status.get("nextUnblockRetry")
+    if isinstance(next_unblock_retry, dict):
+        lines.append(
+            "next-unblock-retry-recommended: "
+            f"{str(next_unblock_retry.get('recommended')).lower()}"
+        )
+        if next_unblock_retry.get("retryAfter"):
+            lines.append(f"next-unblock-retry-after: {next_unblock_retry.get('retryAfter')}")
+        if next_unblock_retry.get("command"):
+            lines.append(f"next-unblock-retry-command: {next_unblock_retry.get('command')}")
     next_task_evidence_build = status.get("nextTaskEvidenceBuild")
     if isinstance(next_task_evidence_build, dict):
         build_summary = next_task_evidence_build.get("summary", {})
@@ -1255,6 +1312,16 @@ def render_markdown(status: dict[str, Any]) -> str:
             failure = next_unblock_action_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- run error: `{failure.get('message')}`")
+        next_unblock_retry = status.get("nextUnblockRetry")
+        if isinstance(next_unblock_retry, dict):
+            lines.append(
+                "- retry recommended: "
+                f"`{str(next_unblock_retry.get('recommended')).lower()}`"
+            )
+            if next_unblock_retry.get("retryAfter"):
+                lines.append(f"- retry after: {next_unblock_retry.get('retryAfter')}")
+            if next_unblock_retry.get("command"):
+                lines.append(f"- retry command: `{next_unblock_retry.get('command')}`")
     next_task_evidence_build = status.get("nextTaskEvidenceBuild")
     if isinstance(next_task_evidence_build, dict):
         build_summary = next_task_evidence_build.get("summary", {})

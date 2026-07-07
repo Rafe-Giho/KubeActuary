@@ -893,6 +893,14 @@ def render_markdown(progress: dict[str, Any]) -> str:
             failure = next_unblock_action_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"- next-unblock-action-run-error: `{failure.get('message')}`")
+        next_unblock_retry = evidence_status.get("nextUnblockRetry")
+        if isinstance(next_unblock_retry, dict):
+            lines.append(
+                "- next-unblock-retry-recommended: "
+                f"`{str(next_unblock_retry.get('recommended')).lower()}`"
+            )
+            if next_unblock_retry.get("retryAfter"):
+                lines.append(f"- next-unblock-retry-after: {next_unblock_retry.get('retryAfter')}")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"- environment-probe: `{environment_probe.get('clusterAccess')}`")
@@ -1068,6 +1076,14 @@ def render_text(progress: dict[str, Any]) -> str:
             failure = next_unblock_action_run.get("failure")
             if isinstance(failure, dict) and failure.get("message"):
                 lines.append(f"next-unblock-action-run-error: {failure.get('message')}")
+        next_unblock_retry = evidence_status.get("nextUnblockRetry")
+        if isinstance(next_unblock_retry, dict):
+            lines.append(
+                "next-unblock-retry-recommended: "
+                f"{str(next_unblock_retry.get('recommended')).lower()}"
+            )
+            if next_unblock_retry.get("retryAfter"):
+                lines.append(f"next-unblock-retry-after: {next_unblock_retry.get('retryAfter')}")
         environment_probe = evidence_status.get("environmentProbe")
         if isinstance(environment_probe, dict):
             lines.append(f"evidence-environment-probe: {environment_probe.get('clusterAccess')}")

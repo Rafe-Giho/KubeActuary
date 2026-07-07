@@ -237,8 +237,9 @@ Expected:
   directories;
 - release evidence status check prints `release-evidence-status: passed` and
   verifies persisted next-task output, file readiness, next-task evidence build,
-  next-task-run status, next-unblock runner status, next-unblock retry next-command,
-  selected next-unblock next-step output, version history next-unblock action/run preservation, environment metadata, advance status, queue-source
+  next-task-run status, next-unblock runner status, next-unblock retry command metadata,
+  selected next-unblock next-step output, guarded next-unblock retry metadata,
+  version history next-unblock action/run preservation, environment metadata, advance status, queue-source
   visibility/origin, next-task queue consistency, selected next-task worklist
   drilldowns, version-scoped coverage totals, missing gates, and blocker drilldown commands, runner/evidence-build/advance record
   consistency, legacy

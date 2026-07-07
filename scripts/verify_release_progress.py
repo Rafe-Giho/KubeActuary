@@ -680,6 +680,7 @@ def main() -> int:
             "next-action-source: `prepared-live-validation-queue`",
             "next-unblock-action: `01-missing-tool-kind` target=`kind`",
             "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
+            "next-unblock-retry-recommended: `true`",
             "environment-blocked-actions: 1",
             "environment-blocker: `cluster-unavailable` (1 actions)",
             "environment-reason-blocker: `connection-refused` (1 actions)",
@@ -705,6 +706,7 @@ def main() -> int:
             "version-iteration-advance-blocker-status: repeated",
             "next-unblock-action: 01-missing-tool-kind kind",
             "next-unblock-next-step: install the missing tool or run the evidence capture on a host that already has it",
+            "next-unblock-retry-recommended: true",
             "next: python3 -B scripts/prepare_live_evidence_directory.py",
         ):
             if snippet not in with_evidence_text.stdout:
